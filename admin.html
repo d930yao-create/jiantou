@@ -23,14 +23,15 @@
     <div v-if="!isLoggedIn" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
             <h1 class="text-2xl font-bold text-stone-800 mb-2">後台管理系統</h1>
-            <input type="text" v-model="loginUser" placeholder="帳號 (admin)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
-            <input type="password" v-model="loginPass" placeholder="密碼 (8888)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
+            <input type="text" v-model="loginUser" placeholder="帳號" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
+            <input type="password" inputmode="numeric" pattern="[0-9]*" v-model="loginPass" placeholder="密碼" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
             <button @click="checkLogin" class="w-full bg-stone-800 text-white font-bold py-3 rounded-lg hover:bg-black">登入</button>
             <p v-if="loginError" class="text-red-500 text-xs mt-4">帳號或密碼錯誤</p>
         </div>
     </div>
 
-    <div v-else class="flex-1 flex flex-col h-full">
+    <div v-else class="flex-1 flex flex-col h-full overflow-hidden">
+        
         <div class="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0">
             <div>
                 <button @click="toggleShopStatus" 
@@ -39,6 +40,10 @@
                     <span class="material-icons-round text-sm">{{ shopIsOpen ? 'store' : 'storefront' }}</span>
                     {{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
+                <div class="flex items-center gap-1 mt-2">
+                    <span class="material-icons-round text-stone-400 text-sm">calendar_today</span>
+                    <input type="date" v-model="selectedDate" class="text-xs text-stone-600 bg-transparent border-b border-stone-200 outline-none focus:border-brick font-medium">
+                </div>
             </div>
             <div class="text-right">
                 <p class="text-xs text-stone-400 uppercase">{{ isToday ? '今日營收' : '歷史營收' }}</p>
@@ -49,96 +54,120 @@
             </div>
         </div>
 
-        <div class="flex bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0">
-            <button @click="currentTab='orders'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='orders' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
-                電子訂單
+        <div class="flex md:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0">
+            <button @click="currentTab='pending'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
+                待結帳 ({{ pendingOrders.length }})
             </button>
-            <button @click="currentTab='manual'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-1" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'">
-                <span class="material-icons-round text-sm">campaign</span> 簡易叫號
+            <button @click="currentTab='processing'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
+                製作中 ({{ displayRightColumn.length }})
+            </button>
+            <button @click="currentTab='manual'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'">
+                現場叫號
             </button>
         </div>
 
-        <div class="flex-1 overflow-hidden relative">
+        <div class="flex-1 overflow-hidden relative flex flex-col md:flex-row p-2 gap-2 min-h-0">
             
-            <div v-if="currentTab === 'orders'" class="flex flex-col md:flex-row h-full p-2 gap-2">
-                <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden">
-                    <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2 flex-shrink-0">
-                        <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
-                    </div>
-                    <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                        <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group">
-                            <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
-                                <span class="material-icons-round text-sm">close</span>
-                            </button>
-                            <div @click="updateStatus(order, 'paid')">
-                                <div class="absolute top-2 right-2 text-[10px] text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</div>
-                                <div class="flex justify-between font-bold text-xl"><span>#{{ order.number }}</span><span>${{ order.total }}</span></div>
-                                <div class="text-xs text-stone-400 mt-1 line-clamp-2">{{ formatItems(order.items) }}</div>
-                                <div v-if="isToday" class="mt-2 text-center text-xs bg-gray-100 text-gray-500 py-1 rounded">點擊收款</div>
-                            </div>
-                        </div>
-                        <div v-if="pendingOrders.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
-                    </div>
+            <div v-show="currentTab === 'pending' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0 md:flex">
+                <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2 flex-shrink-0">
+                    <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
                 </div>
-
-                <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden">
-                    <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2 flex-shrink-0">
-                        <span>{{ isToday ? '製作中' : '已完成' }}</span>
-                        <span class="bg-red-100 px-2 rounded-full text-xs">{{ displayRightColumn.length }}</span>
-                    </div>
-                    <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                        <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group">
-                            <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
-                                <span class="material-icons-round text-sm">close</span>
-                            </button>
-                            <div @click="isToday ? updateStatus(order, 'done') : null">
-                                <div class="absolute top-2 right-2 text-[10px] text-brick/50 bg-white/50 px-1 rounded">{{ order.timeString }}</div>
-                                <div class="flex justify-between font-bold text-xl text-brick">
-                                    <span>#{{ order.number }}</span>
-                                    <span v-if="isToday" class="text-xs bg-brick text-white px-2 py-1 rounded">通知</span>
-                                    <span v-else class="text-xs bg-stone-200 text-stone-500 px-2 py-1 rounded">完結</span>
-                                </div>
-                                <div class="text-xs text-stone-500 mt-1">{{ formatItems(order.items) }}</div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group">
+                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
+                            <span class="material-icons-round text-sm">close</span>
+                        </button>
+                        <div @click="updateStatus(order, 'paid')">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</span>
+                                <span class="font-bold text-xl text-stone-800">#{{ order.number }}</span>
                             </div>
+                            
+                            <div class="flex justify-between items-end border-b border-dashed border-stone-100 pb-2 mb-2">
+                                <span class="text-xs text-stone-400">總金額</span>
+                                <span class="text-2xl font-bold text-brick">${{ order.total }}</span>
+                            </div>
+
+                            <div class="text-lg font-bold text-stone-700 leading-tight">
+                                {{ formatItems(order.items) }}
+                            </div>
+                            <div v-if="isToday" class="mt-3 text-center text-xs bg-gray-100 text-gray-500 py-2 rounded font-bold hover:bg-stone-200">點擊收款</div>
                         </div>
-                        <div v-if="displayRightColumn.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
                     </div>
+                    <div v-if="pendingOrders.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無新訂單</div>
                 </div>
             </div>
 
-            <div v-if="currentTab === 'manual'" class="h-full p-4 flex flex-col items-center">
-                <div class="w-full max-w-sm bg-white p-4 rounded-2xl shadow-sm border border-stone-200 mb-6">
-                    <h3 class="text-sm font-bold text-stone-600 mb-2 text-center">手動輸入號碼</h3>
-                    <div class="flex gap-2">
-                        <input type="number" v-model="manualInput" placeholder="輸入號碼 (如 66)" class="flex-1 bg-stone-50 text-center text-xl font-bold py-3 rounded-xl border border-stone-200 outline-none focus:border-brick focus:ring-1 focus:ring-brick">
-                        <button @click="addToManualQueue" :disabled="!manualInput" class="bg-brick text-white px-6 rounded-xl font-bold shadow-lg shadow-red-100 active:scale-95 transition-transform disabled:opacity-50">加入</button>
-                    </div>
+            <div v-show="currentTab === 'processing' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden min-h-0 md:flex">
+                <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2 flex-shrink-0">
+                    <span>{{ isToday ? '製作中' : '已完成' }}</span>
+                    <span class="bg-red-100 px-2 rounded-full text-xs">{{ displayRightColumn.length }}</span>
                 </div>
-
-                <div class="w-full max-w-sm flex-1 flex flex-col">
-                    <div class="flex justify-between items-end mb-2 px-2">
-                        <h3 class="text-sm font-bold text-brick">等待叫號列表</h3>
-                        <button @click="clearManualQueue" class="text-xs text-stone-400 underline">清空列表</button>
-                    </div>
-                    
-                    <div class="flex-1 bg-white rounded-2xl border border-stone-200 p-2 overflow-y-auto space-y-2">
-                        <div v-for="(num, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
-                            <span class="text-2xl font-bold text-stone-700 w-16 text-center">#{{ num }}</span>
-                            <div class="flex gap-2">
-                                <button @click="callManualNumber(num, key)" class="bg-brick text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-800 transition-colors flex items-center gap-1">
-                                    <span class="material-icons-round text-sm">campaign</span> 叫號
-                                </button>
-                                <button @click="removeManualNumber(key)" class="bg-stone-200 text-stone-500 px-3 py-2 rounded-lg hover:bg-stone-300">
-                                    <span class="material-icons-round text-sm">close</span>
-                                </button>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group">
+                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
+                            <span class="material-icons-round text-sm">close</span>
+                        </button>
+                        <div @click="isToday ? updateStatus(order, 'done') : null">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
+                                <span class="font-bold text-xl text-brick">#{{ order.number }}</span>
+                            </div>
+                            <div class="text-lg font-bold text-stone-800 mt-2 leading-tight">
+                                {{ formatItems(order.items) }}
+                            </div>
+                            <div v-if="isToday" class="mt-2 flex justify-end">
+                                <span class="text-xs bg-brick text-white px-3 py-1 rounded-full font-bold shadow-sm">通知取餐</span>
                             </div>
                         </div>
-                        <div v-if="Object.keys(manualQueue).length === 0" class="h-40 flex flex-col items-center justify-center text-stone-300">
-                            <span class="material-icons-round text-4xl mb-2">playlist_add</span>
-                            <p class="text-xs">目前沒有手動排隊的號碼</p>
+                    </div>
+                    <div v-if="displayRightColumn.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
+                </div>
+            </div>
+
+            <div v-show="currentTab === 'manual' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-600 overflow-hidden min-h-0 md:flex">
+                <div class="p-2 bg-stone-100 font-bold text-stone-600 text-sm text-center flex-shrink-0">
+                    現場叫號 / 記帳
+                </div>
+                
+                <div class="p-3 bg-white border-b border-stone-100 flex-shrink-0">
+                    <div class="flex gap-2 mb-2">
+                        <div class="flex-1">
+                            <label class="text-[10px] text-stone-400 pl-1">號碼</label>
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualInput" placeholder="66" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[10px] text-stone-400 pl-1">金額 (選填)</label>
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualPrice" placeholder="0" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick text-brick">
                         </div>
                     </div>
+                    <button @click="addToManualQueue" :disabled="!manualInput" class="w-full bg-stone-700 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-50">
+                        加入列表
+                    </button>
                 </div>
+
+                <div class="flex justify-between items-end px-3 py-2 bg-stone-50 border-b border-stone-100 flex-shrink-0">
+                    <h3 class="text-xs font-bold text-stone-500">等待叫號 ({{ Object.keys(manualQueue).length }})</h3>
+                    <button @click="clearManualQueue" class="text-[10px] text-stone-400 underline">清空</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50">
+                    <div v-for="(item, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-white rounded-xl border border-stone-200 shadow-sm">
+                        <div class="flex flex-col">
+                            <span class="text-2xl font-bold text-stone-700">#{{ item.n }}</span>
+                            <span v-if="item.p > 0" class="text-xs text-brick font-bold">${{ item.p }}</span>
+                            <span v-else class="text-[10px] text-stone-400">純叫號</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="callManualNumber(item, key)" class="bg-brick text-white px-3 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-800 flex items-center gap-1">
+                                <span class="material-icons-round text-sm">campaign</span>
+                            </button>
+                            <button @click="removeManualNumber(key)" class="bg-stone-200 text-stone-500 px-2 py-2 rounded-lg hover:bg-stone-300">
+                                <span class="material-icons-round text-sm">close</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="h-10"></div> </div>
             </div>
 
         </div>
@@ -206,11 +235,14 @@
             const showReport = ref(false);
             const selectedDate = ref('');
             const shopIsOpen = ref(false);
-            const currentTab = ref('orders');
+            const currentTab = ref('pending'); // 預設分頁
             const manualInput = ref('');
+            const manualPrice = ref('');
             const manualQueue = ref({});
+            const isDesktop = ref(window.innerWidth >= 768); // 判斷螢幕寬度
 
             onMounted(() => {
+                window.addEventListener('resize', () => { isDesktop.value = window.innerWidth >= 768; });
                 const now = new Date();
                 const yyyy = now.getFullYear();
                 const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -238,31 +270,31 @@
 
             const addToManualQueue = () => {
                 if(!manualInput.value) return;
+                const price = manualPrice.value ? parseInt(manualPrice.value) : 0;
                 const queueRef = dbRef(db, 'manualQueue');
-                push(queueRef, manualInput.value);
+                push(queueRef, { n: manualInput.value, p: price });
                 manualInput.value = '';
+                manualPrice.value = '';
             };
 
-            // 🌟 核心修正：使用 Date.now() 確保時間戳記是單純數字，且立即有效 🌟
-            const callManualNumber = (num, key) => {
+            const callManualNumber = (item, key) => {
                 const now = new Date();
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
                 const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
 
                 const newOrderData = {
-                    number: num,
-                    items: [{name: '現場叫號', qty: 1, price: 0}], 
-                    total: 0,
+                    number: item.n,
+                    items: [{name: '現場叫號', qty: 1, price: item.p}], 
+                    total: item.p,
                     status: 'done',
-                    createdAt: Date.now(), // 👈 這裡改成 Date.now()，解決不顯示的問題！
+                    createdAt: Date.now(),
                     timeString: timeString,
                     dateString: dateString
                 };
 
                 const ordersRef = dbRef(db, 'orders');
                 push(ordersRef, newOrderData);
-                
-                set(dbRef(db, 'currentCallingNumber'), num);
+                set(dbRef(db, 'currentCallingNumber'), item.n);
                 remove(dbRef(db, `manualQueue/${key}`));
             };
 
@@ -333,14 +365,17 @@
                 link.click();
                 document.body.removeChild(link);
             };
+
             const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending'));
             const displayRightColumn = computed(() => isToday.value ? filteredOrders.value.filter(o => o.status === 'paid') : filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done'));
             const validOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done'));
             const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
-            const completedOrdersCount = computed(() => validOrders.value.length);
+            
+            const realOrders = computed(() => validOrders.value.filter(o => o.total > 0));
+            const completedOrdersCount = computed(() => realOrders.value.length);
             const salesReport = computed(() => {
                 const report = {};
-                validOrders.value.forEach(order => {
+                realOrders.value.forEach(order => {
                     order.items.forEach(item => {
                         if (!report[item.name]) report[item.name] = { name: item.name, count: 0, total: 0 };
                         report[item.name].count += item.qty;
@@ -356,7 +391,8 @@
                 selectedDate, isToday, formattedDateString,
                 pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport,
                 updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteAllOrdersByDate, exportToCSV,
-                currentTab, manualInput, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue
+                currentTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue,
+                isDesktop // 🌟
             };
         }
     }).mount('#app');

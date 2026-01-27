@@ -18,7 +18,7 @@
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
-<body class="text-stone-600 h-screen flex flex-col overflow-hidden select-none">
+<body class="text-stone-600 h-[100dvh] flex flex-col overflow-hidden select-none">
 
 <div id="app" class="h-full flex flex-col relative">
     
@@ -28,22 +28,34 @@
         </div>
         <h2 class="text-3xl font-bold serif mb-2">本店休息中</h2>
         <p class="text-stone-400 text-sm tracking-widest">CLOSED</p>
-        <div class="mt-8 text-sm text-stone-500">
-            <p>營業時間結束或準備中</p>
-            <p>請稍後再來光顧 🥣</p>
-        </div>
+        <div class="mt-8 text-sm text-stone-500"><p>營業時間結束或準備中</p><p>請稍後再來光顧 🥣</p></div>
         <div class="mt-12 p-4 bg-white/5 rounded-2xl w-full max-w-xs border border-white/10">
             <p class="text-xs text-stone-500 mb-1">目前叫號</p>
             <p class="text-3xl font-bold text-white serif">#{{ currentCallingNumber || '--' }}</p>
         </div>
     </div>
 
-    <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10">
+    <div v-if="showPaymentModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6" @click.self="showPaymentModal=false">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center relative">
+            <button @click="showPaymentModal=false" class="absolute top-4 right-4 text-stone-400">✕</button>
+            <h3 class="text-xl font-bold text-stone-800 mb-1">掃碼付款</h3>
+            <p class="text-xs text-stone-400 mb-4">請使用 LINE Pay 掃描下方條碼</p>
+            
+            <div class="bg-stone-100 p-4 rounded-xl mb-4 border border-stone-200 inline-block">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=我是阿寶老闆的LINEPAY連結" class="w-48 h-48 object-contain">
+            </div>
+
+            <p class="text-sm font-bold text-brick mb-6">應付金額：${{ myOrder?.total }}</p>
+            <button @click="showPaymentModal=false" class="w-full py-3 bg-green-500 text-white rounded-xl font-bold">已完成付款</button>
+        </div>
+    </div>
+
+    <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0">
         <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif">傳統古早味</h1> 
         <p class="text-xs text-brick mt-1 tracking-widest">TRADITIONAL TASTE</p>
     </div>
 
-    <div class="mx-6 mb-4 p-3 bg-white rounded-xl shadow-sm border border-stone-100 flex items-center justify-between">
+    <div class="mx-6 mb-2 p-3 bg-white rounded-xl shadow-sm border border-stone-100 flex items-center justify-between flex-shrink-0">
         <div class="flex items-center gap-2">
             <span class="material-icons-round text-brick">notifications_active</span>
             <span class="text-sm font-medium text-stone-600">目前叫號</span>
@@ -51,7 +63,7 @@
         <span class="text-2xl font-bold text-brick serif">#{{ currentCallingNumber || '--' }}</span>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-6 pb-32 space-y-4">
+    <div class="flex-1 overflow-y-auto px-6 pb-40 space-y-4">
         <div v-for="item in menu" :key="item.id" class="flex justify-between items-start bg-white p-4 rounded-xl shadow-sm border border-stone-50">
             <div class="flex-1">
                 <h3 class="text-lg font-medium text-stone-800 serif">{{ item.name }}</h3>
@@ -66,20 +78,64 @@
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 right-0 z-20">
+    <div class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom">
+        
         <div v-if="!myOrder" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
             <div class="flex justify-between items-center mb-4">
-                <div><p class="text-xs text-stone-400">總金額</p><p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p></div>
-                <div class="text-right"><p class="text-xs text-stone-400">已選品項</p><p class="text-sm text-stone-800">{{ cartCount }} 份</p></div>
+                <div>
+                    <p class="text-xs text-stone-400">總金額</p>
+                    <p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-stone-400">已選品項</p>
+                    <p class="text-sm text-stone-800">{{ cartCount }} 份</p>
+                </div>
             </div>
-            <button @click="submitOrder" :disabled="cartCount===0 || isSubmitting" class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all">{{ isSubmitting ? '送出中...' : '確認點餐' }}</button>
+            <button @click="submitOrder" :disabled="cartCount===0 || isSubmitting" 
+                class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">
+                {{ isSubmitting ? '送出中...' : '確認點餐' }}
+            </button>
         </div>
-        <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-10">
-            <div class="flex justify-between items-start">
-                <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p><h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder.number }}</h2></div>
-                <div class="text-right"><span class="px-3 py-1 rounded-full text-xs font-bold" :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">{{ getStatusText(myOrder.status) }}</span></div>
+
+        <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-6 max-h-[60vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
+                    <h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder.number }}</h2>
+                </div>
+                <div class="text-right">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold"
+                        :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">
+                        {{ getStatusText(myOrder.status) }}
+                    </span>
+                </div>
             </div>
-            <p v-if="myOrder.status === 'pending'" class="text-center text-xs text-stone-400 mt-4">請向櫃檯出示此畫面付款</p>
+
+            <div class="bg-stone-50 rounded-xl p-4 mb-4 border border-stone-100">
+                <div class="flex justify-between items-center mb-2 cursor-pointer" @click="showDetails = !showDetails">
+                    <span class="text-xs font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span>
+                    <span class="material-icons-round text-stone-400 text-sm transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span>
+                </div>
+                
+                <div v-if="showDetails" class="space-y-2 border-t border-stone-200 pt-2 mt-2">
+                    <div v-for="(item, index) in myOrder.items" :key="index" class="flex justify-between text-sm text-stone-600">
+                        <span>{{ item.name }} x{{ item.qty }}</span>
+                        <span class="font-medium">${{ item.price * item.qty }}</span>
+                    </div>
+                    <div class="flex justify-between text-base font-bold text-stone-800 pt-2 border-t border-stone-200 mt-2">
+                        <span>總計</span>
+                        <span>${{ myOrder.total }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="myOrder.status === 'pending'">
+                <p class="text-center text-xs text-stone-400 mb-3">請向櫃檯付款 或 線上支付</p>
+                <button @click="showPaymentModal=true" class="w-full py-3 bg-[#00C300] text-white rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-[#00b300] transition-colors">
+                    <span class="font-black italic text-lg">LINE</span> <span class="font-bold">Pay</span> 付款
+                </button>
+            </div>
+
             <p v-if="myOrder.status === 'done'" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
             <button @click="myOrder=null" v-if="myOrder.status==='done'" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉 (下一單)</button>
         </div>
@@ -118,16 +174,16 @@
             const myOrder = ref(null);
             const isSubmitting = ref(false);
             const currentCallingNumber = ref(null);
-            const shopIsOpen = ref(true); // 🌟 預設開啟，會馬上被 Firebase 覆蓋
+            const shopIsOpen = ref(true);
+            const showPaymentModal = ref(false);
+            const showDetails = ref(true); // 🌟 預設展開明細
 
             onMounted(() => {
                 const callRef = dbRef(db, 'currentCallingNumber');
                 onValue(callRef, (snapshot) => { currentCallingNumber.value = snapshot.val(); });
 
-                // 🌟 監聽營業狀態
                 const shopStatusRef = dbRef(db, 'shopStatus');
                 onValue(shopStatusRef, (snapshot) => {
-                    // 如果資料庫是空的 (null)，預設為開啟
                     const val = snapshot.val();
                     shopIsOpen.value = (val === null) ? true : val;
                 });
@@ -187,7 +243,7 @@
             return { 
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
-                shopIsOpen // 🌟
+                shopIsOpen, showPaymentModal, showDetails // 🌟
             };
         }
     }).mount('#app');
