@@ -35,21 +35,6 @@
         </div>
     </div>
 
-    <div v-if="showPaymentModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6" @click.self="showPaymentModal=false">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center relative">
-            <button @click="showPaymentModal=false" class="absolute top-4 right-4 text-stone-400">✕</button>
-            <h3 class="text-xl font-bold text-stone-800 mb-1">掃碼付款</h3>
-            <p class="text-xs text-stone-400 mb-4">請使用 LINE Pay 掃描下方條碼</p>
-            
-            <div class="bg-stone-100 p-4 rounded-xl mb-4 border border-stone-200 inline-block">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=我是阿寶老闆的LINEPAY連結" class="w-48 h-48 object-contain">
-            </div>
-
-            <p class="text-sm font-bold text-brick mb-6">應付金額：${{ myOrder?.total }}</p>
-            <button @click="showPaymentModal=false" class="w-full py-3 bg-green-500 text-white rounded-xl font-bold">已完成付款</button>
-        </div>
-    </div>
-
     <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0">
         <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif">傳統古早味</h1> 
         <p class="text-xs text-brick mt-1 tracking-widest">TRADITIONAL TASTE</p>
@@ -129,11 +114,8 @@
                 </div>
             </div>
 
-            <div v-if="myOrder.status === 'pending'">
-                <p class="text-center text-xs text-stone-400 mb-3">請向櫃檯付款 或 線上支付</p>
-                <button @click="showPaymentModal=true" class="w-full py-3 bg-[#00C300] text-white rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-[#00b300] transition-colors">
-                    <span class="font-black italic text-lg">LINE</span> <span class="font-bold">Pay</span> 付款
-                </button>
+            <div v-if="myOrder.status === 'pending'" class="text-center p-2 bg-stone-100 rounded-lg text-stone-500 text-sm">
+                請向櫃檯出示此畫面並付款
             </div>
 
             <p v-if="myOrder.status === 'done'" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
@@ -175,8 +157,7 @@
             const isSubmitting = ref(false);
             const currentCallingNumber = ref(null);
             const shopIsOpen = ref(true);
-            const showPaymentModal = ref(false);
-            const showDetails = ref(true); // 🌟 預設展開明細
+            const showDetails = ref(true); // 預設展開明細
 
             onMounted(() => {
                 const callRef = dbRef(db, 'currentCallingNumber');
@@ -210,6 +191,7 @@
                     const item = menu.value.find(i => i.id == id);
                     orderItems.push({ ...item, qty });
                 }
+                // 這裡就是產生隨機號碼的地方 (1-99)
                 const orderNum = Math.floor(Math.random() * 99) + 1;
                 const now = new Date();
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
@@ -243,7 +225,7 @@
             return { 
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
-                shopIsOpen, showPaymentModal, showDetails // 🌟
+                shopIsOpen, showDetails
             };
         }
     }).mount('#app');
