@@ -35,6 +35,37 @@
         </div>
     </div>
 
+    <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false">
+        <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
+            <h3 class="text-xl font-bold text-stone-800 mb-4 serif text-center border-b border-stone-100 pb-3">確認餐點內容</h3>
+            
+            <div class="space-y-3 max-h-[50vh] overflow-y-auto mb-4 px-1">
+                <div v-for="(qty, id) in cart" :key="id" class="flex justify-between items-center text-sm">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-stone-700">{{ getMenuName(id) }}</span>
+                        <span class="text-xs text-stone-400">{{ getMenuDesc(id) }}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-stone-500">x{{ qty }}</span>
+                        <span class="font-medium w-12 text-right">${{ getMenuPrice(id) * qty }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center border-t border-dashed border-stone-300 pt-4 mb-6">
+                <span class="text-stone-500 font-bold">總計金額</span>
+                <span class="text-3xl font-bold text-brick serif">${{ cartTotal }}</span>
+            </div>
+
+            <div class="flex gap-3">
+                <button @click="isConfirming=false" class="flex-1 py-3 bg-stone-100 text-stone-500 rounded-xl font-bold">返回修改</button>
+                <button @click="submitOrder" :disabled="isSubmitting" class="flex-1 py-3 bg-brick text-white rounded-xl font-bold shadow-lg shadow-red-100 disabled:opacity-50">
+                    {{ isSubmitting ? '傳送中...' : '確認送單' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0">
         <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif">傳統古早味</h1> 
         <p class="text-xs text-brick mt-1 tracking-widest">TRADITIONAL TASTE</p>
@@ -76,9 +107,9 @@
                     <p class="text-sm text-stone-800">{{ cartCount }} 份</p>
                 </div>
             </div>
-            <button @click="submitOrder" :disabled="cartCount===0 || isSubmitting" 
+            <button @click="openConfirmation" :disabled="cartCount===0" 
                 class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">
-                {{ isSubmitting ? '送出中...' : '確認點餐' }}
+                餐點確認
             </button>
         </div>
 
@@ -101,7 +132,6 @@
                     <span class="text-xs font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span>
                     <span class="material-icons-round text-stone-400 text-sm transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span>
                 </div>
-                
                 <div v-if="showDetails" class="space-y-2 border-t border-stone-200 pt-2 mt-2">
                     <div v-for="(item, index) in myOrder.items" :key="index" class="flex justify-between text-sm text-stone-600">
                         <span>{{ item.name }} x{{ item.qty }}</span>
@@ -123,6 +153,10 @@
         </div>
     </div>
 </div>
+
+<style>
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+</style>
 
 <script type="module">
     import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
@@ -157,7 +191,8 @@
             const isSubmitting = ref(false);
             const currentCallingNumber = ref(null);
             const shopIsOpen = ref(true);
-            const showDetails = ref(true); // 預設展開明細
+            const showDetails = ref(true);
+            const isConfirming = ref(false); // 🌟 新增：確認視窗狀態
 
             onMounted(() => {
                 const callRef = dbRef(db, 'currentCallingNumber');
@@ -183,15 +218,28 @@
                 return total;
             });
 
+            // 🌟 輔助函式：為了在確認視窗顯示資料
+            const getMenuName = (id) => menu.value.find(i => i.id == id)?.name;
+            const getMenuDesc = (id) => menu.value.find(i => i.id == id)?.desc;
+            const getMenuPrice = (id) => menu.value.find(i => i.id == id)?.price;
+
+            // 🌟 打開確認視窗
+            const openConfirmation = () => {
+                if (cartCount.value > 0) {
+                    isConfirming.value = true;
+                }
+            };
+
             const submitOrder = () => {
                 if (isSubmitting.value) return;
                 isSubmitting.value = true;
+                
                 const orderItems = [];
                 for (const [id, qty] of Object.entries(cart.value)) {
                     const item = menu.value.find(i => i.id == id);
                     orderItems.push({ ...item, qty });
                 }
-                // 這裡就是產生隨機號碼的地方 (1-99)
+                
                 const orderNum = Math.floor(Math.random() * 99) + 1;
                 const now = new Date();
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
@@ -205,8 +253,11 @@
                 const ordersRef = dbRef(db, 'orders');
                 const newRef = push(ordersRef, newOrderData);
                 const localOrder = { ...newOrderData, key: newRef.key };
+                
+                // 成功後清空狀態
                 myOrder.value = localOrder;
                 cart.value = {};
+                isConfirming.value = false; // 🌟 關閉確認視窗
                 isSubmitting.value = false;
 
                 const thisOrderRef = dbRef(db, `orders/${newRef.key}`);
@@ -225,7 +276,8 @@
             return { 
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
-                shopIsOpen, showDetails
+                shopIsOpen, showDetails, isConfirming, openConfirmation, // 🌟
+                getMenuName, getMenuDesc, getMenuPrice // 🌟
             };
         }
     }).mount('#app');
