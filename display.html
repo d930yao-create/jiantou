@@ -6,6 +6,7 @@
     <title>叫號顯示屏</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
@@ -13,9 +14,8 @@
         .text-brick { color: #9E5A5A; }
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        /* 列表進場動畫 */
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-        .list-item { animation: slideIn 0.3s ease-out; }
+        .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
+        .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
     </style>
 </head>
 <body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
@@ -44,19 +44,32 @@
     <div class="w-[40%] h-full bg-stone-950 flex flex-col">
         <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20">
             <h2 class="text-3xl font-bold text-white tracking-wider flex items-center gap-3">
-                <span class="material-icons-round text-brick">已叫號碼</span> 取餐區
+                <span class="material-icons-round text-brick">restaurant_menu</span> 取餐區
             </h2>
-            <p class="text-sm text-stone-400 mt-2">Ready for Pickup</p>
+            <p class="text-xs text-stone-500 mt-2">點擊卡片重叫，點擊打勾完成</p>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-6 content-start grid grid-cols-1 gap-4">
-            <div v-for="order in recentDoneOrders" :key="order.key" 
-                class="list-item bg-stone-800/80 border border-stone-700 rounded-xl p-4 flex items-center justify-between hover:bg-stone-800 transition-colors">
-                <span class="text-5xl font-bold text-stone-200 serif">#{{ order.number }}</span>
-                <span class="text-xs text-stone-500 bg-stone-900 px-3 py-1 rounded-full border border-stone-800">{{ order.timeString }}</span>
-            </div>
+        <div class="flex-1 overflow-hidden p-6 relative">
+            <transition-group name="list" tag="div" class="grid grid-cols-1 gap-4">
+                <div v-for="order in recentDoneOrders" :key="order.key" 
+                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden">
+                    
+                    <div class="flex-1 flex items-center justify-between pr-4" @click="reCall(order.number)">
+                        <span class="text-5xl font-bold text-stone-200 serif">#{{ order.number }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-stone-500 bg-stone-900 px-3 py-1 rounded-full border border-stone-800">{{ order.timeString }}</span>
+                            <span class="material-icons-round text-stone-500 opacity-20 group-hover:opacity-100 group-hover:text-brick transition-opacity">campaign</span>
+                        </div>
+                    </div>
+
+                    <button @click.stop="finishOrder(order)" class="w-12 h-12 rounded-lg bg-stone-700/50 hover:bg-green-600 text-stone-400 hover:text-white flex items-center justify-center transition-colors z-10 border border-stone-600">
+                        <span class="material-icons-round text-2xl">check</span>
+                    </button>
+
+                </div>
+            </transition-group>
             
-            <div v-if="recentDoneOrders.length === 0" class="text-center text-stone-600 mt-20">
+            <div v-if="recentDoneOrders.length === 0" class="absolute inset-0 flex items-center justify-center text-stone-600">
                 <p>目前無待取餐號碼</p>
             </div>
         </div>
@@ -71,7 +84,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
@@ -91,54 +104,58 @@
             const doneOrders = ref([]);
 
             onMounted(() => {
-                // 1. 監聽最新叫號 (大螢幕)
                 const callRef = dbRef(db, 'currentCallingNumber');
-                onValue(callRef, (snapshot) => {
-                    currentNumber.value = snapshot.val();
-                });
+                onValue(callRef, (snapshot) => { currentNumber.value = snapshot.val(); });
 
-                // 2. 監聽所有訂單，抓出「最近已完成」的
                 const ordersRef = dbRef(db, 'orders');
                 onValue(ordersRef, (snapshot) => {
                     const data = snapshot.val();
                     const list = [];
-                    // 取得現在時間戳 (毫秒)
                     const nowTs = Date.now();
-                    // 12小時的毫秒數 (避免顯示昨天的舊單)
                     const twelveHours = 12 * 60 * 60 * 1000;
 
                     if (data) {
                         Object.keys(data).forEach(key => {
                             const order = data[key];
-                            
-                            // 判斷條件：
-                            // 1. 狀態必須是 'done'
-                            // 2. 建立時間必須在過去 12 小時內 (這樣就不用管日期格式字串了)
-                            // 3. 容錯：如果沒有 createdAt 欄位，就暫時放過 (為了相容舊資料)
                             let isRecent = true;
-                            if (order.createdAt) {
-                                isRecent = (nowTs - order.createdAt) < twelveHours;
-                            }
-
+                            if (order.createdAt) { isRecent = (nowTs - order.createdAt) < twelveHours; }
                             if (order.status === 'done' && isRecent) {
                                 list.push({ ...order, key: key });
                             }
                         });
                     }
-                    // 排序：最新的 (createdAt 大的) 排在最前面
                     list.sort((a, b) => b.createdAt - a.createdAt);
-                    
                     doneOrders.value = list;
                 });
             });
 
-            // 3. 過濾列表：把「正在大螢幕顯示」的號碼拿掉
             const recentDoneOrders = computed(() => {
-                // 用寬鬆比對 (==) 避免字串跟數字不相等的問題
-                return doneOrders.value.filter(o => o.number != currentNumber.value);
+                const filtered = doneOrders.value.filter(o => o.number != currentNumber.value);
+                return filtered.slice(0, 6);
             });
 
-            return { currentNumber, recentDoneOrders };
+            // 🌟 重新叫號功能
+            const reCall = (number) => {
+                // 更新大螢幕顯示
+                set(dbRef(db, 'currentCallingNumber'), number);
+            };
+
+            // 🌟 完成訂單 (取餐完畢，從資料庫移除)
+            const finishOrder = (order) => {
+                if(confirm(`確定 #${order.number} 已取餐？(將從列表移除)`)) {
+                    // 這邊使用 remove 會把資料完全刪除。
+                    // 如果妳希望保留報表紀錄，但不要顯示在螢幕上，
+                    // 應該要把狀態改為 'archived' 而不是 remove。
+                    // 但為了維持現在系統簡單，我們先用 remove (刪除 = 結案)
+                    // ⚠️ 注意：刪除後，這筆單就不會出現在後台的「今日營收」了！
+                    // remove(dbRef(db, `orders/${order.key}`)); // 舊做法 (會刪除營收)
+                    
+                    // 新做法：改成 'archived' (封存)
+                    set(dbRef(db, `orders/${order.key}/status`), 'archived');
+                }
+            };
+
+            return { currentNumber, recentDoneOrders, reCall, finishOrder };
         }
     }).mount('#app');
 </script>

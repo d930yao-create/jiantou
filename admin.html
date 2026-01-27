@@ -11,8 +11,6 @@
         body { font-family: sans-serif; background-color: #f5f5f4; }
         .text-brick { color: #9E5A5A; }
         .bg-brick { background-color: #9E5A5A; }
-        .toggle-checkbox:checked { right: 0; border-color: #9E5A5A; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #9E5A5A; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
@@ -40,10 +38,6 @@
                     <span class="material-icons-round text-sm">{{ shopIsOpen ? 'store' : 'storefront' }}</span>
                     {{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
-                <div class="flex items-center gap-1 mt-2">
-                    <span class="material-icons-round text-stone-400 text-sm">calendar_today</span>
-                    <input type="date" v-model="selectedDate" class="text-xs text-stone-600 bg-transparent border-b border-stone-200 outline-none focus:border-brick font-medium">
-                </div>
             </div>
             <div class="text-right">
                 <p class="text-xs text-stone-400 uppercase">{{ isToday ? '今日營收' : '歷史營收' }}</p>
@@ -54,120 +48,122 @@
             </div>
         </div>
 
-        <div class="flex md:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0">
-            <button @click="currentTab='pending'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
-                待結帳 ({{ pendingOrders.length }})
+        <div class="flex bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0 overflow-x-auto">
+            <button @click="currentTab='orders'" class="flex-1 py-2 px-4 whitespace-nowrap rounded-lg text-sm font-bold transition-colors" :class="currentTab==='orders' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
+                電子訂單
             </button>
-            <button @click="currentTab='processing'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
-                製作中 ({{ displayRightColumn.length }})
+            <button @click="currentTab='manual'" class="flex-1 py-2 px-4 whitespace-nowrap rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'">
+                簡易叫號
             </button>
-            <button @click="currentTab='manual'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'">
-                現場叫號
+            <button @click="currentTab='menu'" class="flex-1 py-2 px-4 whitespace-nowrap rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-1" :class="currentTab==='menu' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
+                <span class="material-icons-round text-sm">edit_note</span> 菜單
             </button>
         </div>
 
-        <div class="flex-1 overflow-hidden relative flex flex-col md:flex-row p-2 gap-2 min-h-0">
+        <div class="flex-1 overflow-hidden relative flex flex-col min-h-0">
             
-            <div v-show="currentTab === 'pending' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0 md:flex">
-                <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2 flex-shrink-0">
-                    <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
-                </div>
-                <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group">
-                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
-                            <span class="material-icons-round text-sm">close</span>
-                        </button>
-                        <div @click="updateStatus(order, 'paid')">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</span>
-                                <span class="font-bold text-xl text-stone-800">#{{ order.number }}</span>
-                            </div>
-                            
-                            <div class="flex justify-between items-end border-b border-dashed border-stone-100 pb-2 mb-2">
-                                <span class="text-xs text-stone-400">總金額</span>
-                                <span class="text-2xl font-bold text-brick">${{ order.total }}</span>
-                            </div>
-
-                            <div class="text-lg font-bold text-stone-700 leading-tight">
-                                {{ formatItems(order.items) }}
-                            </div>
-                            <div v-if="isToday" class="mt-3 text-center text-xs bg-gray-100 text-gray-500 py-2 rounded font-bold hover:bg-stone-200">點擊收款</div>
-                        </div>
+            <div v-if="currentTab === 'orders'" class="flex flex-col md:flex-row h-full p-2 gap-2 overflow-hidden">
+                <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0">
+                    <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2 flex-shrink-0">
+                        <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
                     </div>
-                    <div v-if="pendingOrders.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無新訂單</div>
-                </div>
-            </div>
-
-            <div v-show="currentTab === 'processing' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden min-h-0 md:flex">
-                <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2 flex-shrink-0">
-                    <span>{{ isToday ? '製作中' : '已完成' }}</span>
-                    <span class="bg-red-100 px-2 rounded-full text-xs">{{ displayRightColumn.length }}</span>
-                </div>
-                <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group">
-                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
-                            <span class="material-icons-round text-sm">close</span>
-                        </button>
-                        <div @click="isToday ? updateStatus(order, 'done') : null">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
-                                <span class="font-bold text-xl text-brick">#{{ order.number }}</span>
-                            </div>
-                            <div class="text-lg font-bold text-stone-800 mt-2 leading-tight">
-                                {{ formatItems(order.items) }}
-                            </div>
-                            <div v-if="isToday" class="mt-2 flex justify-end">
-                                <span class="text-xs bg-brick text-white px-3 py-1 rounded-full font-bold shadow-sm">通知取餐</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="displayRightColumn.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
-                </div>
-            </div>
-
-            <div v-show="currentTab === 'manual' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-600 overflow-hidden min-h-0 md:flex">
-                <div class="p-2 bg-stone-100 font-bold text-stone-600 text-sm text-center flex-shrink-0">
-                    現場叫號 / 記帳
-                </div>
-                
-                <div class="p-3 bg-white border-b border-stone-100 flex-shrink-0">
-                    <div class="flex gap-2 mb-2">
-                        <div class="flex-1">
-                            <label class="text-[10px] text-stone-400 pl-1">號碼</label>
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualInput" placeholder="66" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick">
-                        </div>
-                        <div class="flex-1">
-                            <label class="text-[10px] text-stone-400 pl-1">金額 (選填)</label>
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualPrice" placeholder="0" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick text-brick">
-                        </div>
-                    </div>
-                    <button @click="addToManualQueue" :disabled="!manualInput" class="w-full bg-stone-700 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-50">
-                        加入列表
-                    </button>
-                </div>
-
-                <div class="flex justify-between items-end px-3 py-2 bg-stone-50 border-b border-stone-100 flex-shrink-0">
-                    <h3 class="text-xs font-bold text-stone-500">等待叫號 ({{ Object.keys(manualQueue).length }})</h3>
-                    <button @click="clearManualQueue" class="text-[10px] text-stone-400 underline">清空</button>
-                </div>
-
-                <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50">
-                    <div v-for="(item, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-white rounded-xl border border-stone-200 shadow-sm">
-                        <div class="flex flex-col">
-                            <span class="text-2xl font-bold text-stone-700">#{{ item.n }}</span>
-                            <span v-if="item.p > 0" class="text-xs text-brick font-bold">${{ item.p }}</span>
-                            <span v-else class="text-[10px] text-stone-400">純叫號</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button @click="callManualNumber(item, key)" class="bg-brick text-white px-3 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-800 flex items-center gap-1">
-                                <span class="material-icons-round text-sm">campaign</span>
-                            </button>
-                            <button @click="removeManualNumber(key)" class="bg-stone-200 text-stone-500 px-2 py-2 rounded-lg hover:bg-stone-300">
+                    <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                        <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group">
+                            <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
                                 <span class="material-icons-round text-sm">close</span>
                             </button>
+                            <div @click="updateStatus(order, 'paid')">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</span>
+                                    <span class="font-bold text-xl text-stone-800">#{{ order.number }}</span>
+                                </div>
+                                <div class="flex justify-between items-end border-b border-dashed border-stone-100 pb-2 mb-2">
+                                    <span class="text-xs text-stone-400">總金額</span>
+                                    <span class="text-2xl font-bold text-brick">${{ order.total }}</span>
+                                </div>
+                                <div class="text-lg font-bold text-stone-700 leading-tight">{{ formatItems(order.items) }}</div>
+                                <div v-if="isToday" class="mt-3 text-center text-xs bg-gray-100 text-gray-500 py-2 rounded font-bold">點擊收款</div>
+                            </div>
+                        </div>
+                        <div v-if="pendingOrders.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無新訂單</div>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden min-h-0">
+                    <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2 flex-shrink-0">
+                        <span>{{ isToday ? '製作中' : '已完成' }}</span>
+                        <span class="bg-red-100 px-2 rounded-full text-xs">{{ displayRightColumn.length }}</span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                        <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group">
+                            <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
+                                <span class="material-icons-round text-sm">close</span>
+                            </button>
+                            <div @click="isToday ? updateStatus(order, 'done') : null">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
+                                    <span class="font-bold text-xl text-brick">#{{ order.number }}</span>
+                                </div>
+                                <div class="text-lg font-bold text-stone-800 mt-2 leading-tight">{{ formatItems(order.items) }}</div>
+                            </div>
+                        </div>
+                        <div v-if="displayRightColumn.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'manual'" class="h-full p-4 flex flex-col items-center overflow-hidden">
+                <div class="w-full max-w-sm bg-white p-4 rounded-2xl shadow-sm border border-stone-200 mb-6 flex-shrink-0">
+                    <h3 class="text-sm font-bold text-stone-600 mb-2 text-center">現場叫號 / 記帳</h3>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex gap-2">
+                            <div class="flex-1"><label class="text-[10px] text-stone-400 pl-1">號碼</label><input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualInput" placeholder="66" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick"></div>
+                            <div class="flex-1"><label class="text-[10px] text-stone-400 pl-1">金額 (選填)</label><input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualPrice" placeholder="0" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick text-brick"></div>
+                        </div>
+                        <button @click="addToManualQueue" :disabled="!manualInput" class="w-full bg-brick text-white py-3 rounded-xl font-bold shadow-lg shadow-red-100 active:scale-95 transition-transform disabled:opacity-50">加入排隊</button>
+                    </div>
+                </div>
+                <div class="w-full max-w-sm flex-1 flex flex-col overflow-hidden min-h-0">
+                    <div class="flex justify-between items-end mb-2 px-2 flex-shrink-0"><h3 class="text-sm font-bold text-brick">等待叫號 ({{ Object.keys(manualQueue).length }})</h3><button @click="clearManualQueue" class="text-xs text-stone-400 underline">清空</button></div>
+                    <div class="flex-1 bg-white rounded-2xl border border-stone-200 p-2 overflow-y-auto space-y-2">
+                        <div v-for="(item, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
+                            <div class="flex flex-col"><span class="text-2xl font-bold text-stone-700">#{{ item.n }}</span><span v-if="item.p > 0" class="text-xs text-brick font-bold">${{ item.p }}</span><span v-else class="text-[10px] text-stone-400">純叫號</span></div>
+                            <div class="flex gap-2">
+                                <button @click="callManualNumber(item, key)" class="bg-brick text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-800 transition-colors flex items-center gap-1"><span class="material-icons-round text-sm">campaign</span></button>
+                                <button @click="removeManualNumber(key)" class="bg-stone-200 text-stone-500 px-3 py-2 rounded-lg hover:bg-stone-300"><span class="material-icons-round text-sm">close</span></button>
+                            </div>
+                        </div>
+                        <div class="h-10"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'menu'" class="h-full p-4 overflow-y-auto pb-20">
+                <div class="max-w-md mx-auto space-y-4">
+                    <div v-for="(item, index) in menuSettings" :key="index" class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 flex gap-3 items-center">
+                        <div class="flex-1 space-y-2">
+                            <div class="flex gap-2">
+                                <input type="text" v-model="item.name" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm font-bold" placeholder="品名">
+                                <input type="number" inputmode="numeric" v-model="item.price" class="w-20 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm font-bold text-center" placeholder="價格">
+                            </div>
+                            <input type="text" v-model="item.desc" class="w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs text-stone-500" placeholder="描述">
+                        </div>
+                        <div class="flex flex-col items-center gap-1">
+                            <button @click="item.active = !item.active" class="w-12 h-8 rounded-full flex items-center transition-colors p-1" :class="item.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'">
+                                <div class="w-6 h-6 bg-white rounded-full shadow-sm"></div>
+                            </button>
+                            <span class="text-[10px]" :class="item.active ? 'text-green-500' : 'text-stone-400'">{{ item.active ? '販售中' : '停售' }}</span>
                         </div>
                     </div>
-                    <div class="h-10"></div> </div>
+                    
+                    <button @click="addMenuItem" class="w-full py-3 border-2 border-dashed border-stone-300 text-stone-400 rounded-xl font-bold hover:bg-stone-50">+ 新增品項</button>
+                </div>
+            </div>
+            
+            <div v-if="currentTab === 'menu'" class="absolute bottom-16 left-0 right-0 p-4 flex justify-center pointer-events-none">
+                <button @click="saveMenuToFirebase" class="pointer-events-auto bg-stone-800 text-white px-8 py-3 rounded-full font-bold shadow-xl active:scale-95 transition-transform flex items-center gap-2">
+                    <span class="material-icons-round text-sm">save</span> 儲存變更
+                </button>
             </div>
 
         </div>
@@ -179,26 +175,12 @@
 
     <div v-if="showReport" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showReport=false">
         <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0">
-                <h3 class="font-bold">{{ formattedDateString }} 銷售報表</h3>
-                <button @click="showReport=false">✕</button>
-            </div>
+            <div class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0"><h3 class="font-bold">{{ formattedDateString }} 銷售報表</h3><button @click="showReport=false">✕</button></div>
             <div class="flex-1 overflow-y-auto p-4">
-                <div class="flex justify-between items-end mb-6 pb-4 border-b border-dashed border-stone-200">
-                    <div class="text-stone-500 text-sm">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div>
-                    <div class="text-right"><p class="text-xs text-stone-400">總營業額</p><p class="text-2xl font-bold text-brick">${{ dailyRevenue }}</p></div>
-                </div>
-                <table class="w-full text-sm text-left mb-8">
-                    <thead class="text-xs text-stone-400 uppercase bg-stone-50"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">額</th></tr></thead>
-                    <tbody class="text-stone-600">
-                        <tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-100"><td class="px-2 py-3 font-medium">{{ item.name }}</td><td class="px-2 py-3 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-3 text-right text-stone-800">${{ item.total }}</td></tr>
-                    </tbody>
-                </table>
+                <div class="flex justify-between items-end mb-6 pb-4 border-b border-dashed border-stone-200"><div class="text-stone-500 text-sm">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div><div class="text-right"><p class="text-xs text-stone-400">總營業額</p><p class="text-2xl font-bold text-brick">${{ dailyRevenue }}</p></div></div>
+                <table class="w-full text-sm text-left mb-8"><thead class="text-xs text-stone-400 uppercase bg-stone-50"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">額</th></tr></thead><tbody class="text-stone-600"><tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-100"><td class="px-2 py-3 font-medium">{{ item.name }}</td><td class="px-2 py-3 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-3 text-right text-stone-800">${{ item.total }}</td></tr></tbody></table>
                 <div class="mt-4 pt-4 border-t border-stone-100 flex flex-col gap-3">
-                    <div class="flex gap-2">
-                        <button @click="exportToCSV('current')" class="flex-1 py-2 bg-green-500 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-green-600 flex items-center justify-center gap-1"><span class="material-icons-round text-sm">download</span> 匯出本頁</button>
-                        <button @click="exportToCSV('all')" class="flex-1 py-2 bg-stone-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-stone-700 flex items-center justify-center gap-1"><span class="material-icons-round text-sm">history</span> 匯出歷史</button>
-                    </div>
+                    <div class="flex gap-2"><button @click="exportToCSV('current')" class="flex-1 py-2 bg-green-500 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-green-600 flex items-center justify-center gap-1"><span class="material-icons-round text-sm">download</span> 匯出本頁</button><button @click="exportToCSV('all')" class="flex-1 py-2 bg-stone-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-stone-700 flex items-center justify-center gap-1"><span class="material-icons-round text-sm">history</span> 匯出歷史</button></div>
                     <button @click="deleteAllOrdersByDate" class="w-full py-3 mt-4 text-xs text-red-400 border border-red-100 bg-red-50 rounded-lg font-bold hover:bg-red-100 transition-colors">⚠️ 清除{{ isToday ? '今日' : formattedDateString }}所有訂單</button>
                 </div>
             </div>
@@ -235,14 +217,23 @@
             const showReport = ref(false);
             const selectedDate = ref('');
             const shopIsOpen = ref(false);
-            const currentTab = ref('pending'); // 預設分頁
+            const currentTab = ref('orders');
             const manualInput = ref('');
             const manualPrice = ref('');
             const manualQueue = ref({});
-            const isDesktop = ref(window.innerWidth >= 768); // 判斷螢幕寬度
+            const menuSettings = ref([]); // 🌟 菜單資料
+
+            // 預設菜單 (如果資料庫是空的，就用這個)
+            const defaultMenu = [
+                { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true },
+                { id: 2, name: '極品鴨肉油飯', price: 80, desc: '每日限量', active: true },
+                { id: 3, name: '養生素食油飯', price: 55, desc: '全素可食', active: true },
+                { id: 4, name: '古早味菜頭粿', price: 45, desc: '煎得恰恰', active: true },
+                { id: 5, name: '隨機小菜', price: 30, desc: '看老闆心情', active: true },
+                { id: 6, name: '古早味紅茶', price: 25, desc: '冰涼解渴', active: true },
+            ];
 
             onMounted(() => {
-                window.addEventListener('resize', () => { isDesktop.value = window.innerWidth >= 768; });
                 const now = new Date();
                 const yyyy = now.getFullYear();
                 const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -266,7 +257,32 @@
 
                 const manualRef = dbRef(db, 'manualQueue');
                 onValue(manualRef, (snapshot) => { manualQueue.value = snapshot.val() || {}; });
+
+                // 🌟 監聽菜單資料
+                const menuRef = dbRef(db, 'menu');
+                onValue(menuRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        menuSettings.value = data;
+                    } else {
+                        // 如果資料庫沒菜單，就用預設的
+                        menuSettings.value = JSON.parse(JSON.stringify(defaultMenu));
+                    }
+                });
             });
+
+            // 🌟 儲存菜單到 Firebase
+            const saveMenuToFirebase = () => {
+                const menuRef = dbRef(db, 'menu');
+                set(menuRef, menuSettings.value)
+                    .then(() => alert('菜單更新成功！前台已同步。'))
+                    .catch((err) => alert('更新失敗：' + err.message));
+            };
+
+            const addMenuItem = () => {
+                const newId = menuSettings.value.length ? Math.max(...menuSettings.value.map(i => i.id)) + 1 : 1;
+                menuSettings.value.push({ id: newId, name: '', price: 0, desc: '', active: true });
+            };
 
             const addToManualQueue = () => {
                 if(!manualInput.value) return;
@@ -373,6 +389,7 @@
             
             const realOrders = computed(() => validOrders.value.filter(o => o.total > 0));
             const completedOrdersCount = computed(() => realOrders.value.length);
+            
             const salesReport = computed(() => {
                 const report = {};
                 realOrders.value.forEach(order => {
@@ -392,7 +409,7 @@
                 pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport,
                 updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteAllOrdersByDate, exportToCSV,
                 currentTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue,
-                isDesktop // 🌟
+                menuSettings, saveMenuToFirebase, addMenuItem // 🌟
             };
         }
     }).mount('#app');
