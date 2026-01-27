@@ -6,6 +6,7 @@
     <title>叫號顯示屏</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
@@ -16,27 +17,32 @@
         .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
         .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
         [v-cloak] { display: none !important; }
-        /* 隱藏捲軸但保持功能 (Chrome/Safari) */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
 
-<div id="app" v-cloak class="h-full flex">
+<div id="app" v-cloak class="h-full flex relative">
+    
+    <audio id="dingSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
 
-    <div class="w-[60%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative bg-stone-900 z-10">
+    <button @click="isMuted = !isMuted" class="absolute top-4 left-4 z-50 p-2 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600">
+        <span class="material-icons-round text-xl">{{ isMuted ? 'volume_off' : 'volume_up' }}</span>
+    </button>
+
+    <div @click="completeCurrent" class="w-[60%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group">
         <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
         <p class="text-2xl mb-4 font-light tracking-widest text-stone-500">最新取餐</p>
         
-        <h1 :key="currentNumber" class="text-[15rem] leading-none font-bold serif text-brick number-pop" 
+        <h1 :key="currentNumber" class="text-[15rem] leading-none font-bold serif text-brick number-pop group-hover:scale-105 transition-transform" 
             style="text-shadow: 0 0 50px rgba(158,90,90,0.4);">
             {{ currentNumber || '--' }}
         </h1>
         
         <div class="mt-12">
-            <span v-if="currentNumber" class="text-3xl text-stone-200 bg-white/10 px-10 py-4 rounded-full backdrop-blur-md animate-pulse">
-                請至櫃台取餐
+            <span v-if="currentNumber" class="text-3xl text-stone-200 bg-white/10 px-10 py-4 rounded-full backdrop-blur-md animate-pulse flex items-center gap-3">
+                <span class="material-icons-round">touch_app</span> 點擊完成取餐
             </span>
             <span v-else class="text-2xl text-stone-600 tracking-wider">
                 美味準備中...
@@ -44,30 +50,27 @@
         </div>
     </div>
 
-    <div class="w-[40%] h-full bg-stone-950 flex flex-col min-h-0"> <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20 flex-shrink-0">
+    <div class="w-[40%] h-full bg-stone-950 flex flex-col min-h-0">
+        <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20 flex-shrink-0">
             <h2 class="text-3xl font-bold text-white tracking-wider flex items-center gap-3">
                 <span class="material-icons-round text-brick">restaurant_menu</span> 取餐區
             </h2>
-            <p class="text-xs text-stone-500 mt-2">以下號碼皆可取餐囉</p>
+            <p class="text-xs text-stone-500 mt-2">點擊卡片重叫</p>
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 relative no-scrollbar">
             <transition-group name="list" tag="div" class="grid grid-cols-1 gap-4">
                 <div v-for="order in recentDoneOrders" :key="order.key" 
-                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0">
+                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0"
+                    @click.stop="reCall(order.number)">
                     
-                    <div class="flex-1 flex items-center justify-between pr-4" @click="reCall(order.number)">
+                    <div class="flex-1 flex items-center justify-between px-2">
                         <span class="text-5xl font-bold text-stone-200 serif">#{{ order.number }}</span>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-stone-500 bg-stone-900 px-3 py-1 rounded-full border border-stone-800">{{ order.timeString }}</span>
                             <span class="material-icons-round text-stone-500 opacity-20 group-hover:opacity-100 group-hover:text-brick transition-opacity">campaign</span>
                         </div>
                     </div>
-
-                    <button @click.stop="finishOrder(order)" class="w-12 h-12 rounded-lg bg-stone-700/50 hover:bg-green-600 text-stone-400 hover:text-white flex items-center justify-center transition-colors z-10 border border-stone-600">
-                        <span class="material-icons-round text-2xl">check</span>
-                    </button>
-
                 </div>
             </transition-group>
             
@@ -78,16 +81,16 @@
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-[60%] bg-brick/10 py-2 z-20">
+    <div class="fixed bottom-0 left-0 w-[60%] bg-brick/10 py-2 z-20 pointer-events-none">
         <p class="text-stone-500 text-sm text-center animate-pulse">現點現做，請耐心等候 🥣</p>
     </div>
 
 </div>
 
 <script type="module">
-    import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
@@ -105,6 +108,7 @@
         setup() {
             const currentNumber = ref(null);
             const doneOrders = ref([]);
+            const isMuted = ref(true); // 🌟 預設靜音 (避免瀏覽器自動播放限制)
 
             onMounted(() => {
                 const callRef = dbRef(db, 'currentCallingNumber');
@@ -122,8 +126,6 @@
                             const order = data[key];
                             let isRecent = true;
                             if (order.createdAt) { isRecent = (nowTs - order.createdAt) < twelveHours; }
-                            // status: 'done' 表示已叫號但未取餐
-                            // status: 'archived' 表示已取餐 (不顯示但保留營收)
                             if (order.status === 'done' && isRecent) {
                                 list.push({ ...order, key: key });
                             }
@@ -134,23 +136,47 @@
                 });
             });
 
+            // 🌟 播放聲音邏輯：只有當 isMuted 為 false 時才叫
+            watch(currentNumber, (newVal) => {
+                if (newVal && !isMuted.value) {
+                    const audio = document.getElementById('dingSound');
+                    if(audio) {
+                        audio.play().catch(() => {}); // 忽略播放錯誤
+                    }
+                }
+            });
+
             const recentDoneOrders = computed(() => {
                 const filtered = doneOrders.value.filter(o => o.number != currentNumber.value);
-                // 🌟 這裡如果不想要限制數量，可以把 .slice(0, 6) 拿掉，現在既然可以滑動，顯示全部也沒關係
-                // 不過為了不讓列表太長，我還是保留 6 個，但如果妳想要更多，把下面這行改成 return filtered; 即可
                 return filtered; 
             });
 
             const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
 
-            const finishOrder = (order) => {
-                if(confirm(`確定 #${order.number} 已取餐？`)) {
-                    // 改成封存狀態，讓它從列表消失，但保留在資料庫
-                    set(dbRef(db, `orders/${order.key}/status`), 'archived');
+            // 🌟 點擊大畫面 -> 結案 (封存訂單 + 清空大螢幕)
+            const completeCurrent = () => {
+                if (!currentNumber.value) return;
+
+                // 1. 找到當前顯示號碼對應的訂單 (可能有重複號碼，找最新的)
+                // 這裡使用 filter 找出所有該號碼的訂單，然後把狀態都改成 archived
+                // 這樣比較保險，以免同一號碼有兩張單，結果只消掉一張
+                const targets = doneOrders.value.filter(o => o.number == currentNumber.value);
+                
+                if (targets.length > 0) {
+                    if(confirm(`確定 #${currentNumber.value} 已取餐？`)) {
+                        targets.forEach(order => {
+                            set(dbRef(db, `orders/${order.key}/status`), 'archived');
+                        });
+                        // 2. 清空大螢幕顯示
+                        set(dbRef(db, 'currentCallingNumber'), null);
+                    }
+                } else {
+                    // 如果找不到對應訂單(可能是純叫號測試)，直接清空螢幕
+                    set(dbRef(db, 'currentCallingNumber'), null);
                 }
             };
 
-            return { currentNumber, recentDoneOrders, reCall, finishOrder };
+            return { currentNumber, recentDoneOrders, reCall, completeCurrent, isMuted };
         }
     }).mount('#app');
 </script>
