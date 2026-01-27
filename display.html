@@ -6,7 +6,6 @@
     <title>叫號顯示屏</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
@@ -16,11 +15,15 @@
         .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
         .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
+        [v-cloak] { display: none !important; }
+        /* 隱藏捲軸但保持功能 (Chrome/Safari) */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
 
-<div id="app" class="h-full flex">
+<div id="app" v-cloak class="h-full flex">
 
     <div class="w-[60%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative bg-stone-900 z-10">
         <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
@@ -41,18 +44,17 @@
         </div>
     </div>
 
-    <div class="w-[40%] h-full bg-stone-950 flex flex-col">
-        <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20">
+    <div class="w-[40%] h-full bg-stone-950 flex flex-col min-h-0"> <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20 flex-shrink-0">
             <h2 class="text-3xl font-bold text-white tracking-wider flex items-center gap-3">
                 <span class="material-icons-round text-brick">restaurant_menu</span> 取餐區
             </h2>
-            <p class="text-xs text-stone-500 mt-2">點擊卡片重叫，點擊打勾完成</p>
+            <p class="text-xs text-stone-500 mt-2">以下號碼皆可取餐囉</p>
         </div>
 
-        <div class="flex-1 overflow-hidden p-6 relative">
+        <div class="flex-1 overflow-y-auto p-6 relative no-scrollbar">
             <transition-group name="list" tag="div" class="grid grid-cols-1 gap-4">
                 <div v-for="order in recentDoneOrders" :key="order.key" 
-                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden">
+                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0">
                     
                     <div class="flex-1 flex items-center justify-between pr-4" @click="reCall(order.number)">
                         <span class="text-5xl font-bold text-stone-200 serif">#{{ order.number }}</span>
@@ -72,6 +74,7 @@
             <div v-if="recentDoneOrders.length === 0" class="absolute inset-0 flex items-center justify-center text-stone-600">
                 <p>目前無待取餐號碼</p>
             </div>
+            <div class="h-20"></div>
         </div>
     </div>
 
@@ -119,6 +122,8 @@
                             const order = data[key];
                             let isRecent = true;
                             if (order.createdAt) { isRecent = (nowTs - order.createdAt) < twelveHours; }
+                            // status: 'done' 表示已叫號但未取餐
+                            // status: 'archived' 表示已取餐 (不顯示但保留營收)
                             if (order.status === 'done' && isRecent) {
                                 list.push({ ...order, key: key });
                             }
@@ -131,26 +136,16 @@
 
             const recentDoneOrders = computed(() => {
                 const filtered = doneOrders.value.filter(o => o.number != currentNumber.value);
-                return filtered.slice(0, 6);
+                // 🌟 這裡如果不想要限制數量，可以把 .slice(0, 6) 拿掉，現在既然可以滑動，顯示全部也沒關係
+                // 不過為了不讓列表太長，我還是保留 6 個，但如果妳想要更多，把下面這行改成 return filtered; 即可
+                return filtered; 
             });
 
-            // 🌟 重新叫號功能
-            const reCall = (number) => {
-                // 更新大螢幕顯示
-                set(dbRef(db, 'currentCallingNumber'), number);
-            };
+            const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
 
-            // 🌟 完成訂單 (取餐完畢，從資料庫移除)
             const finishOrder = (order) => {
-                if(confirm(`確定 #${order.number} 已取餐？(將從列表移除)`)) {
-                    // 這邊使用 remove 會把資料完全刪除。
-                    // 如果妳希望保留報表紀錄，但不要顯示在螢幕上，
-                    // 應該要把狀態改為 'archived' 而不是 remove。
-                    // 但為了維持現在系統簡單，我們先用 remove (刪除 = 結案)
-                    // ⚠️ 注意：刪除後，這筆單就不會出現在後台的「今日營收」了！
-                    // remove(dbRef(db, `orders/${order.key}`)); // 舊做法 (會刪除營收)
-                    
-                    // 新做法：改成 'archived' (封存)
+                if(confirm(`確定 #${order.number} 已取餐？`)) {
+                    // 改成封存狀態，讓它從列表消失，但保留在資料庫
                     set(dbRef(db, `orders/${order.key}/status`), 'archived');
                 }
             };

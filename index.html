@@ -8,8 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
-/* 🌟 隱形斗篷樣式：Vue 準備好之前，隱藏所有掛著 v-cloak 的東西 */
-[v-cloak] { display: none !important; }
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF7; }
         .serif { font-family: 'Noto Serif TC', serif; }
@@ -17,6 +15,7 @@
         .bg-brick { background-color: #9E5A5A; }
         .status-paid { background-color: #FDE68A; color: #92400E; }
         .status-done { background-color: #D1FAE5; color: #065F46; }
+        [v-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
@@ -72,10 +71,7 @@
                 <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-brick text-white flex items-center justify-center shadow-md shadow-red-100">+</button>
             </div>
         </div>
-        
-        <div v-if="menu.length === 0" class="text-center text-stone-300 py-10">
-            載入菜單中...
-        </div>
+        <div v-if="menu.length === 0" class="text-center text-stone-300 py-10">載入菜單中...</div>
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom">
@@ -84,7 +80,7 @@
                 <div><p class="text-xs text-stone-400">總金額</p><p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p></div>
                 <div class="text-right"><p class="text-xs text-stone-400">已選品項</p><p class="text-sm text-stone-800">{{ cartCount }} 份</p></div>
             </div>
-            <button @click="openConfirmation" :disabled="cartCount===0" class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">點餐明細</button>
+            <button @click="openConfirmation" :disabled="cartCount===0" class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">準備結帳</button>
         </div>
 
         <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-6 max-h-[60vh] overflow-y-auto">
@@ -99,9 +95,17 @@
                     <div class="flex justify-between text-base font-bold text-stone-800 pt-2 border-t border-stone-200 mt-2"><span>總計</span><span>${{ myOrder.total }}</span></div>
                 </div>
             </div>
-            <div v-if="myOrder.status === 'pending'" class="text-center p-2 bg-stone-100 rounded-lg text-stone-500 text-sm">請向櫃檯出示此畫面並付款</div>
+            
+            <div v-if="myOrder.status === 'pending'">
+                <p class="text-center text-xs text-stone-400 mb-3">請向櫃檯出示此畫面並付款</p>
+                <button @click="cancelOrder" class="w-full py-3 bg-stone-100 text-stone-400 rounded-xl font-bold text-xs hover:bg-stone-200 transition-colors">
+                    取消訂單 (重新點餐)
+                </button>
+            </div>
+
             <p v-if="myOrder.status === 'done'" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
-            <button @click="myOrder=null" v-if="myOrder.status==='done'" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉 (下一單)</button>
+            
+            <button @click="resetOrder" v-if="myOrder.status==='done' || myOrder.status==='archived'" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉 (下一單)</button>
         </div>
     </div>
 </div>
@@ -111,7 +115,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
@@ -127,7 +131,6 @@
 
     createApp({
         setup() {
-            // 🌟 菜單不再寫死，改為預設空陣列
             const menu = ref([]); 
             const defaultMenu = [
                 { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true },
@@ -156,18 +159,26 @@
                     shopIsOpen.value = (val === null) ? true : val;
                 });
 
-                // 🌟 監聽 Firebase 菜單
                 const menuRef = dbRef(db, 'menu');
                 onValue(menuRef, (snapshot) => {
                     const data = snapshot.val();
-                    if (data) {
-                        // 只顯示 active 為 true (販售中) 的品項
-                        menu.value = data.filter(item => item.active);
-                    } else {
-                        // 如果資料庫空的，先用預設擋著
-                        menu.value = defaultMenu;
-                    }
+                    if (data) { menu.value = data.filter(item => item.active); } 
+                    else { menu.value = defaultMenu; }
                 });
+
+                const savedOrderKey = localStorage.getItem('jiantou_order_key');
+                if (savedOrderKey) {
+                    const savedOrderRef = dbRef(db, `orders/${savedOrderKey}`);
+                    onValue(savedOrderRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data && data.status !== 'archived') {
+                            myOrder.value = { ...data, key: snapshot.key };
+                        } else {
+                            myOrder.value = null;
+                            localStorage.removeItem('jiantou_order_key');
+                        }
+                    });
+                }
             });
 
             const getItemCount = (id) => cart.value[id] || 0;
@@ -186,7 +197,6 @@
             const getMenuName = (id) => menu.value.find(i => i.id == id)?.name;
             const getMenuDesc = (id) => menu.value.find(i => i.id == id)?.desc;
             const getMenuPrice = (id) => menu.value.find(i => i.id == id)?.price;
-
             const openConfirmation = () => { if (cartCount.value > 0) isConfirming.value = true; };
 
             const submitOrder = () => {
@@ -210,6 +220,9 @@
                 const ordersRef = dbRef(db, 'orders');
                 const newRef = push(ordersRef, newOrderData);
                 const localOrder = { ...newOrderData, key: newRef.key };
+                
+                localStorage.setItem('jiantou_order_key', newRef.key);
+
                 myOrder.value = localOrder;
                 cart.value = {};
                 isConfirming.value = false;
@@ -222,16 +235,36 @@
                 });
             };
 
+            // 清除本機紀錄 (用於訂單完成後)
+            const resetOrder = () => {
+                myOrder.value = null;
+                localStorage.removeItem('jiantou_order_key');
+            };
+
+            // 🌟 刪除訂單 (用於反悔)
+            const cancelOrder = () => {
+                if(confirm('確定要取消這筆訂單嗎？')) {
+                    // 從資料庫刪除這筆單 (以免後台看到一堆廢單)
+                    if (myOrder.value && myOrder.value.key) {
+                        remove(dbRef(db, `orders/${myOrder.value.key}`));
+                    }
+                    // 清除本地紀錄
+                    resetOrder();
+                }
+            };
+
             const getStatusText = (status) => {
                 if (status === 'pending') return '等待付款';
                 if (status === 'paid') return '製作中';
-                return '可取餐';
+                if (status === 'done') return '可取餐';
+                return '已結案';
             };
 
             return { 
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
-                shopIsOpen, showDetails, isConfirming, openConfirmation, getMenuName, getMenuDesc, getMenuPrice
+                shopIsOpen, showDetails, isConfirming, openConfirmation, getMenuName, getMenuDesc, getMenuPrice,
+                resetOrder, cancelOrder // 🌟
             };
         }
     }).mount('#app');
