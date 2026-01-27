@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>控單後台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { font-family: sans-serif; background-color: #f5f5f4; }
+        .text-brick { color: #9E5A5A; }
+        .bg-brick { background-color: #9E5A5A; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-stone-700 select-none">
+
+<div id="app" class="flex-1 flex flex-col h-full relative">
+
+    <div v-if="!isLoggedIn" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
+            <h1 class="text-2xl font-bold text-stone-800 mb-2">後台管理系統</h1>
+            <input type="text" v-model="loginUser" placeholder="帳號 (admin)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
+            <input type="password" v-model="loginPass" placeholder="密碼 (8888)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
+            <button @click="checkLogin" class="w-full bg-stone-800 text-white font-bold py-3 rounded-lg hover:bg-black">登入</button>
+            <p v-if="loginError" class="text-red-500 text-xs mt-4">帳號或密碼錯誤</p>
+        </div>
+    </div>
+
+    <div v-else class="flex-1 flex flex-col h-full">
+        <div class="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm z-10">
+            <div>
+                <h1 class="font-bold text-lg text-stone-800">控單中心</h1>
+                <p class="text-xs text-stone-400">{{ currentDateDisplay }}</p> </div>
+            <div class="text-right">
+                <p class="text-xs text-stone-400 uppercase">今日營收</p>
+                <div class="flex items-center gap-2">
+                    <p class="text-xl font-bold text-brick">${{ dailyRevenue }}</p>
+                    <button @click="showReport=true" class="bg-stone-100 hover:bg-stone-200 rounded-full p-1"><span class="material-icons-round text-sm">poll</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 flex overflow-hidden p-2 gap-2">
+            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400">
+                <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2">
+                    <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div v-for="order in pendingOrders" :key="order.key" @click="updateStatus(order, 'paid')" class="p-3 border rounded-lg bg-white shadow-sm active:bg-gray-100 cursor-pointer relative">
+                        <div class="absolute top-2 right-2 text-[10px] text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</div>
+                        <div class="flex justify-between font-bold text-xl"><span>#{{ order.number }}</span><span>${{ order.total }}</span></div>
+                        <div class="text-xs text-stone-400 mt-1 line-clamp-2">{{ formatItems(order.items) }}</div>
+                        <div class="mt-2 text-center text-xs bg-gray-100 text-gray-500 py-1 rounded">點擊收款</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick">
+                <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2">
+                    <span>製作中</span><span class="bg-red-100 px-2 rounded-full text-xs">{{ processingOrders.length }}</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div v-for="order in processingOrders" :key="order.key" @click="updateStatus(order, 'done')" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm active:bg-red-50 cursor-pointer relative">
+                        <div class="absolute top-2 right-2 text-[10px] text-brick/50 bg-white/50 px-1 rounded">{{ order.timeString }}</div>
+                        <div class="flex justify-between font-bold text-xl text-brick"><span>#{{ order.number }}</span><span class="text-xs bg-brick text-white px-2 py-1 rounded">通知</span></div>
+                        <div class="text-xs text-stone-500 mt-1">{{ formatItems(order.items) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-2 border-t flex gap-2">
+            <button @click="logout" class="flex-1 py-3 text-sm text-stone-500 border border-stone-200 rounded-lg">登出</button>
+        </div>
+    </div>
+
+    <div v-if="showReport" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showReport=false">
+        <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="bg-stone-800 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold">{{ currentDateDisplay }} 銷售報表</h3>
+                <button @click="showReport=false">✕</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="flex justify-between items-end mb-6 pb-4 border-b border-dashed border-stone-200">
+                    <div class="text-stone-500 text-sm">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div>
+                    <div class="text-right"><p class="text-xs text-stone-400">總營業額</p><p class="text-2xl font-bold text-brick">${{ dailyRevenue }}</p></div>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-stone-400 uppercase bg-stone-50"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">額</th></tr></thead>
+                    <tbody class="text-stone-600">
+                        <tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-100"><td class="px-2 py-3 font-medium">{{ item.name }}</td><td class="px-2 py-3 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-3 text-right text-stone-800">${{ item.total }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-stone-50 border-t"><button @click="showReport=false" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-sm">關閉</button></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref as dbRef, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+        authDomain: "jiantou-000rlhad.firebaseapp.com",
+        databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+        projectId: "jiantou-000rlhad",
+        storageBucket: "jiantou-000rlhad.firebasestorage.app",
+        messagingSenderId: "435285773521",
+        appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    createApp({
+        setup() {
+            const isLoggedIn = ref(false);
+            const loginUser = ref('');
+            const loginPass = ref('');
+            const loginError = ref(false);
+            const orders = ref([]);
+            const showReport = ref(false);
+            const currentDateDisplay = ref('');
+
+            // 初始化：設定今天日期字串
+            onMounted(() => {
+                const now = new Date();
+                currentDateDisplay.value = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+                
+                // 監聽 Firebase 訂單
+                const ordersRef = dbRef(db, 'orders');
+                onValue(ordersRef, (snapshot) => {
+                    const data = snapshot.val();
+                    orders.value = [];
+                    if (data) {
+                        // 只抓今天的訂單顯示在面板上
+                        Object.keys(data).forEach(key => {
+                            const order = data[key];
+                            // 簡單過濾：只顯示今天的 (比對 dateString)
+                            if (order.dateString === currentDateDisplay.value) {
+                                orders.value.push({ ...order, key: key });
+                            }
+                        });
+                    }
+                });
+            });
+
+            const checkLogin = () => {
+                if (loginUser.value === 'admin' && loginPass.value === '8888') {
+                    isLoggedIn.value = true; loginError.value = false;
+                } else { loginError.value = true; }
+            };
+            const logout = () => { isLoggedIn.value = false; };
+
+            // 更新訂單狀態 (Firebase)
+            const updateStatus = (order, newStatus) => {
+                const updates = {};
+                updates[`/orders/${order.key}/status`] = newStatus;
+                update(dbRef(db), updates);
+                
+                if (newStatus === 'done') {
+                    // 同步更新叫號機
+                    set(dbRef(db, 'currentCallingNumber'), order.number);
+                }
+            };
+
+            const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
+            const processingOrders = computed(() => orders.value.filter(o => o.status === 'paid'));
+            const validOrders = computed(() => orders.value.filter(o => o.status === 'paid' || o.status === 'done'));
+            const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
+            const completedOrdersCount = computed(() => validOrders.value.length);
+            
+            const salesReport = computed(() => {
+                const report = {};
+                validOrders.value.forEach(order => {
+                    order.items.forEach(item => {
+                        if (!report[item.name]) report[item.name] = { name: item.name, count: 0, total: 0 };
+                        report[item.name].count += item.qty;
+                        report[item.name].total += (item.price * item.qty);
+                    });
+                });
+                return Object.values(report).sort((a, b) => b.total - a.total);
+            });
+
+            const formatItems = (items) => items.map(i => i.name + (i.qty > 1 ? ' x'+i.qty : '')).join(', ');
+
+            return { 
+                isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
+                orders, pendingOrders, processingOrders, dailyRevenue, completedOrdersCount, salesReport, showReport,
+                updateStatus, formatItems, currentDateDisplay
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

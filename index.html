@@ -3,243 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>點餐系統</title>
+    <title>傳統古早味 | 點餐</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-        
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF7; }
         .serif { font-family: 'Noto Serif TC', serif; }
-        
-        /* 莫蘭迪磚紅配色 */
         .text-brick { color: #9E5A5A; }
         .bg-brick { background-color: #9E5A5A; }
-        .border-brick { border-color: #9E5A5A; }
-        
-        /* 狀態標籤 */
         .status-paid { background-color: #FDE68A; color: #92400E; }
         .status-done { background-color: #D1FAE5; color: #065F46; }
-
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
 <body class="text-stone-600 h-screen flex flex-col overflow-hidden select-none">
 
 <div id="app" class="h-full flex flex-col relative">
-
-    <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex justify-between items-end">
-        <div>
-            <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif">傳統古早味</h1> 
-            <p class="text-xs text-brick mt-1 tracking-widest">TRADITIONAL TASTE</p>
-        </div>
-        <button v-if="isAdmin" @click="logout" class="text-xs text-stone-400 underline">登出系統</button>
+    
+    <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10">
+        <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif">傳統古早味</h1> 
+        <p class="text-xs text-brick mt-1 tracking-widest">TRADITIONAL TASTE</p>
     </div>
 
-    <div v-if="view === 'menu'" class="flex-1 flex flex-col h-full overflow-hidden">
-        
-        <div class="mx-6 mb-4 p-3 bg-white rounded-xl shadow-sm border border-stone-100 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <span class="material-icons-round text-brick">notifications_active</span>
-                <span class="text-sm font-medium text-stone-600">目前叫號</span>
-            </div>
-            <span class="text-2xl font-bold text-brick serif">#{{ currentCallingNumber || '--' }}</span>
+    <div class="mx-6 mb-4 p-3 bg-white rounded-xl shadow-sm border border-stone-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span class="material-icons-round text-brick">notifications_active</span>
+            <span class="text-sm font-medium text-stone-600">目前叫號</span>
         </div>
+        <span class="text-2xl font-bold text-brick serif">#{{ currentCallingNumber || '--' }}</span>
+    </div>
 
-        <div class="flex-1 overflow-y-auto px-6 pb-32 space-y-4">
-            <div v-for="item in activeMenu" :key="item.id" class="flex justify-between items-start bg-white p-4 rounded-xl shadow-sm border border-stone-50">
-                <div class="flex-1">
-                    <h3 class="text-lg font-medium text-stone-800 serif">{{ item.name }}</h3>
-                    <p class="text-xs text-stone-400 mt-1">{{ item.desc }}</p>
-                    <span class="text-brick font-bold mt-2 block">${{ item.price }}</span>
-                </div>
-                <div class="flex items-center gap-3 ml-4">
-                    <button v-if="getItemCount(item.id) > 0" @click="removeFromCart(item)" class="w-8 h-8 rounded-full border border-stone-200 text-stone-400 flex items-center justify-center">-</button>
-                    <span v-if="getItemCount(item.id) > 0" class="font-medium text-stone-800 w-4 text-center">{{ getItemCount(item.id) }}</span>
-                    <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-brick text-white flex items-center justify-center shadow-md shadow-red-100">+</button>
-                </div>
+    <div class="flex-1 overflow-y-auto px-6 pb-32 space-y-4">
+        <div v-for="item in menu" :key="item.id" class="flex justify-between items-start bg-white p-4 rounded-xl shadow-sm border border-stone-50">
+            <div class="flex-1">
+                <h3 class="text-lg font-medium text-stone-800 serif">{{ item.name }}</h3>
+                <p class="text-xs text-stone-400 mt-1">{{ item.desc }}</p>
+                <span class="text-brick font-bold mt-2 block">${{ item.price }}</span>
             </div>
-            <div class="h-12"></div>
-        </div>
-
-        <div class="fixed bottom-0 left-0 right-0 z-20">
-            <div v-if="!myOrder" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <p class="text-xs text-stone-400">總金額</p>
-                        <p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-stone-400">已選品項</p>
-                        <p class="text-sm text-stone-800">{{ cartCount }} 份</p>
-                    </div>
-                </div>
-                <button @click="submitOrder" :disabled="cartCount===0" 
-                    class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50">
-                    確認點餐
-                </button>
-            </div>
-
-            <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-10">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
-                        <h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder.number }}</h2>
-                    </div>
-                    <div class="text-right">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold"
-                            :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">
-                            {{ getStatusText(myOrder.status) }}
-                        </span>
-                    </div>
-                </div>
-                <p v-if="myOrder.status === 'pending'" class="text-center text-xs text-stone-400 mt-4">請向櫃檯出示此畫面付款</p>
-                <p v-if="myOrder.status === 'done'" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
-                <button @click="myOrder=null" v-if="myOrder.status==='done'" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉</button>
+            <div class="flex items-center gap-3 ml-4">
+                <button v-if="getItemCount(item.id) > 0" @click="removeFromCart(item)" class="w-8 h-8 rounded-full border border-stone-200 text-stone-400 flex items-center justify-center">-</button>
+                <span v-if="getItemCount(item.id) > 0" class="font-medium text-stone-800 w-4 text-center">{{ getItemCount(item.id) }}</span>
+                <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-brick text-white flex items-center justify-center shadow-md shadow-red-100">+</button>
             </div>
         </div>
     </div>
 
-    <div v-if="view === 'admin'" class="flex-1 bg-stone-100 flex flex-col overflow-hidden">
-        <div class="bg-white px-4 py-2 flex gap-2 border-b border-stone-200">
-            <button @click="adminTab='orders'" :class="adminTab==='orders' ? 'bg-stone-800 text-white' : 'bg-stone-100 text-stone-500'" class="flex-1 py-2 rounded-lg text-sm font-bold">控單櫃台</button>
-            <button @click="adminTab='menu'" :class="adminTab==='menu' ? 'bg-stone-800 text-white' : 'bg-stone-100 text-stone-500'" class="flex-1 py-2 rounded-lg text-sm font-bold">菜單/營收</button>
+    <div class="fixed bottom-0 left-0 right-0 z-20">
+        <div v-if="!myOrder" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <p class="text-xs text-stone-400">總金額</p>
+                    <p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-stone-400">已選品項</p>
+                    <p class="text-sm text-stone-800">{{ cartCount }} 份</p>
+                </div>
+            </div>
+            <button @click="submitOrder" :disabled="cartCount===0 || isSubmitting" 
+                class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all">
+                {{ isSubmitting ? '送出中...' : '確認點餐' }}
+            </button>
         </div>
 
-        <div v-if="adminTab === 'orders'" class="flex-1 flex overflow-hidden p-2 gap-2">
-            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col overflow-hidden border-t-4 border-gray-300">
-                <div class="p-3 bg-gray-50 border-b font-bold text-stone-500 text-sm">待結帳 ({{ pendingOrders.length }})</div>
-                <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in pendingOrders" :key="order.id" @click="markAsPaid(order)" class="p-3 border rounded-lg cursor-pointer hover:bg-stone-50">
-                        <div class="flex justify-between font-bold text-lg"><span>#{{ order.number }}</span><span>${{ order.total }}</span></div>
-                        <div class="text-xs text-stone-400 line-clamp-1">{{ order.items.map(i=>i.name).join(',') }}</div>
-                    </div>
+        <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-10">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
+                    <h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder.number }}</h2>
+                </div>
+                <div class="text-right">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold"
+                        :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">
+                        {{ getStatusText(myOrder.status) }}
+                    </span>
                 </div>
             </div>
-            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col overflow-hidden border-t-4 border-brick">
-                <div class="p-3 bg-red-50 border-b font-bold text-brick text-sm">製作中 ({{ processingOrders.length }})</div>
-                <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in processingOrders" :key="order.id" @click="markAsDone(order)" class="p-3 border border-red-100 bg-red-50/30 rounded-lg cursor-pointer hover:bg-red-50">
-                        <div class="flex justify-between font-bold text-lg text-brick"><span>#{{ order.number }}</span><span class="text-xs bg-brick text-white px-2 py-1 rounded">完成</span></div>
-                        <div class="text-xs text-stone-500 mt-1"><div v-for="i in order.items">{{i.name}} x{{i.qty}}</div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div v-if="adminTab === 'menu'" class="flex-1 overflow-y-auto p-4">
-            <div class="bg-stone-800 text-white rounded-2xl p-6 mb-6">
-                <p class="text-xs text-stone-400 uppercase">Today's Revenue</p>
-                <h2 class="text-4xl font-bold">${{ dailyRevenue }}</h2>
-            </div>
-            <div class="space-y-3 pb-20">
-                <div v-for="item in menu" :key="item.id" class="flex items-center gap-3 bg-white p-3 rounded-lg border border-stone-200">
-                    <input type="checkbox" v-model="item.active" class="w-5 h-5 accent-stone-800">
-                    <input v-model="item.name" class="flex-1 border-b border-stone-100 text-sm py-1 outline-none">
-                    <input v-model.number="item.price" type="number" class="w-12 text-center border-b border-stone-100 text-sm py-1 outline-none">
-                </div>
-                <button @click="addNewItem" class="w-full py-3 border border-dashed border-stone-300 rounded-lg text-stone-400 text-sm">+ 新增品項</button>
-            </div>
+            <p v-if="myOrder.status === 'pending'" class="text-center text-xs text-stone-400 mt-4">請向櫃檯出示此畫面付款</p>
+            <p v-if="myOrder.status === 'done'" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
+            <button @click="myOrder=null" v-if="myOrder.status==='done'" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉 (下一單)</button>
         </div>
     </div>
-
-    <div v-if="showLoginModal" class="fixed inset-0 bg-[#FDFBF7] z-50 flex items-center justify-center">
-        <div class="w-64 text-center">
-            <h3 class="font-bold text-stone-800 text-xl mb-1 serif">後台管理系統</h3>
-            <p class="text-xs text-stone-400 mb-8">Admin Dashboard</p>
-            
-            <input type="text" v-model="loginUser" placeholder="帳號 (admin)" class="w-full bg-white p-3 rounded-lg border border-stone-200 mb-3 text-sm focus:border-brick outline-none">
-            <input type="password" v-model="loginPass" placeholder="密碼 (8888)" class="w-full bg-white p-3 rounded-lg border border-stone-200 mb-6 text-sm focus:border-brick outline-none">
-            
-            <button @click="checkLogin" class="w-full py-3 bg-stone-800 text-white rounded-lg font-bold shadow-lg hover:bg-black transition-all">登入</button>
-            <button @click="cancelLogin" class="mt-4 text-xs text-stone-400 underline">回前台點餐</button>
-        </div>
-    </div>
-
 </div>
 
-<script>
-    const { createApp, ref, computed, onMounted } = Vue;
+<script type="module">
+    import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // 1. Firebase 設定
+    const firebaseConfig = {
+        apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+        authDomain: "jiantou-000rlhad.firebaseapp.com",
+        databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+        projectId: "jiantou-000rlhad",
+        storageBucket: "jiantou-000rlhad.firebasestorage.app",
+        messagingSenderId: "435285773521",
+        appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
     createApp({
         setup() {
-            // 核心變數
-            const view = ref('menu'); 
-            const adminTab = ref('orders');
-            const showLoginModal = ref(false);
-            const isAdmin = ref(false);
-            
-            // 登入資料
-            const loginUser = ref('');
-            const loginPass = ref('');
-
-            // 檢查網址，判斷是否進入後台
-// 監聽網址變化 (這樣就不用按重新整理了)
-            const handleHashChange = () => {
-                const hash = window.location.hash;
-                if (hash === '#admin') {
-                    showLoginModal.value = true;
-                } else if (hash === '#display') {
-                    view.value = 'display';
-                    showLoginModal.value = false; // 確保登入框關掉
-                } else {
-                    view.value = 'menu'; // 回到首頁
-                    showLoginModal.value = false;
-                }
-            };
-
-            onMounted(() => {
-                // 1. 網頁一打開先檢查一次
-                handleHashChange();
-                
-                // 2. 隨時監聽網址變化
-                window.addEventListener('hashchange', handleHashChange);
-            });
-
-            const checkLogin = () => {
-                // 這裡設定妳想要的帳號密碼
-                if (loginUser.value === 'admin' && loginPass.value === '554708') {
-                    isAdmin.value = true;
-                    view.value = 'admin';
-                    showLoginModal.value = false;
-                    // 清除網址的 hash，避免重新整理又跳登入
-                    history.pushState("", document.title, window.location.pathname);
-                } else {
-                    alert('帳號或密碼錯誤');
-                }
-            };
-
-            const cancelLogin = () => {
-                showLoginModal.value = false;
-                history.pushState("", document.title, window.location.pathname);
-                view.value = 'menu';
-            };
-
-            const logout = () => {
-                isAdmin.value = false;
-                view.value = 'menu';
-                loginUser.value = '';
-                loginPass.value = '';
-            };
-
-            // --- 以下為與之前相同的 POS 邏輯 ---
-            
+            // 菜單 (這裡可以自己改價格)
             const menu = ref([
-                { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true },
-                { id: 2, name: '極品鴨肉油飯', price: 80, desc: '每日限量', active: true },
-                { id: 3, name: '養生素食油飯', price: 55, desc: '全素可食', active: true },
-                { id: 4, name: '古早味菜頭粿', price: 45, desc: '煎得恰恰', active: true },
-                { id: 5, name: '隨機小菜', price: 30, desc: '看老闆心情', active: true },
-                { id: 6, name: '古早味紅茶', price: 25, desc: '冰涼解渴', active: true },
+                { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲' },
+                { id: 2, name: '極品鴨肉油飯', price: 80, desc: '每日限量' },
+                { id: 3, name: '養生素食油飯', price: 55, desc: '全素可食' },
+                { id: 4, name: '古早味菜頭粿', price: 45, desc: '煎得恰恰' },
+                { id: 5, name: '隨機小菜', price: 30, desc: '看老闆心情' },
+                { id: 6, name: '古早味紅茶', price: 25, desc: '冰涼解渴' },
             ]);
 
-            const activeMenu = computed(() => menu.value.filter(i => i.active));
             const cart = ref({});
-            const orders = ref([]); 
             const myOrder = ref(null);
+            const isSubmitting = ref(false);
             const currentCallingNumber = ref(null);
 
+            // 監聽雲端叫號
+            onMounted(() => {
+                const callRef = dbRef(db, 'currentCallingNumber');
+                onValue(callRef, (snapshot) => {
+                    currentCallingNumber.value = snapshot.val();
+                });
+            });
+
+            // 購物車功能
             const getItemCount = (id) => cart.value[id] || 0;
             const addToCart = (item) => { if (!cart.value[item.id]) cart.value[item.id] = 0; cart.value[item.id]++; };
             const removeFromCart = (item) => { if (cart.value[item.id] > 0) cart.value[item.id]--; if (cart.value[item.id] === 0) delete cart.value[item.id]; };
@@ -253,43 +146,64 @@
                 return total;
             });
 
+            // 送出訂單到 Firebase
             const submitOrder = () => {
+                if (isSubmitting.value) return;
+                isSubmitting.value = true;
+
                 const orderItems = [];
                 for (const [id, qty] of Object.entries(cart.value)) {
                     const item = menu.value.find(i => i.id == id);
                     orderItems.push({ ...item, qty });
                 }
-                const newOrder = {
-                    id: Date.now(),
-                    number: Math.floor(Math.random() * 99) + 1,
+
+                // 產生隨機取餐號 (1-99)
+                const orderNum = Math.floor(Math.random() * 99) + 1;
+                
+                // 抓取現在時間字串 (給後台看)
+                const now = new Date();
+                const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+
+                const newOrderData = {
+                    number: orderNum,
                     items: orderItems,
                     total: cartTotal.value,
-                    status: 'pending'
+                    status: 'pending',
+                    createdAt: serverTimestamp(), // 雲端標準時間
+                    timeString: timeString,       // 顯示用 (18:30)
+                    dateString: dateString        // 篩選用 (2026/01/27)
                 };
-                orders.value.push(newOrder);
-                myOrder.value = newOrder;
-                cart.value = {};
+
+                // 推送到雲端資料庫
+                const ordersRef = dbRef(db, 'orders');
+                const newRef = push(ordersRef, newOrderData);
+                
+                // 本地紀錄這筆訂單 ID 以便追蹤
+                const localOrder = { ...newOrderData, key: newRef.key };
+                myOrder.value = localOrder;
+                cart.value = {}; // 清空購物車
+                isSubmitting.value = false;
+
+                // 監聽這筆訂單的狀態變化 (變成 paid 或 done)
+                const thisOrderRef = dbRef(db, `orders/${newRef.key}`);
+                onValue(thisOrderRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        myOrder.value = { ...data, key: snapshot.key };
+                    }
+                });
             };
 
-            const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending'));
-            const processingOrders = computed(() => orders.value.filter(o => o.status === 'paid'));
-            const markAsPaid = (order) => { order.status = 'paid'; };
-            const markAsDone = (order) => { order.status = 'done'; currentCallingNumber.value = order.number; };
-            const dailyRevenue = computed(() => orders.value.filter(o => o.status === 'paid' || o.status === 'done').reduce((sum, o) => sum + o.total, 0));
-            const addNewItem = () => menu.value.push({ id: Date.now(), name: '新品項', price: 0, active: true });
-            
             const getStatusText = (status) => {
                 if (status === 'pending') return '等待付款';
                 if (status === 'paid') return '製作中';
                 return '可取餐';
             };
 
-            return {
-                view, adminTab, menu, activeMenu, cart, myOrder, orders,
-                showLoginModal, loginUser, loginPass, isAdmin, checkLogin, cancelLogin, logout,
-                getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder,
-                pendingOrders, processingOrders, markAsPaid, markAsDone,
-                dailyRevenue, addNewItem, getStatusText, currentCallingNumber
+            return { 
+                menu, cart, myOrder, isSubmitting, currentCallingNumber,
+                getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText 
             };
         }
     }).mount('#app');

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>叫號顯示屏</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .serif { font-family: 'Noto Serif TC', serif; }
+        .text-brick { color: #9E5A5A; }
+        .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-stone-900 h-screen flex flex-col items-center justify-center overflow-hidden text-stone-400 select-none">
+
+<div id="app" class="text-center w-full max-w-4xl relative">
+    <div class="absolute -top-32 left-0 right-0 text-center opacity-30 tracking-[0.5em] text-sm uppercase">Number Calling System</div>
+    <p class="text-xl mb-6 font-light tracking-widest text-stone-500">目前取餐號碼</p>
+    
+    <h1 :key="currentNumber" class="text-[12rem] sm:text-[15rem] leading-none font-bold serif text-brick number-pop" 
+        style="text-shadow: 0 0 50px rgba(158,90,90,0.4);">
+        {{ currentNumber || '--' }}
+    </h1>
+
+    <div class="mt-12">
+        <span v-if="currentNumber" class="text-2xl text-stone-200 bg-white/10 px-8 py-3 rounded-full backdrop-blur-md animate-pulse">餐點好囉！請至櫃台</span>
+        <span v-else class="text-xl text-stone-600 tracking-wider">美味準備中...</span>
+    </div>
+    <div class="fixed bottom-0 left-0 right-0 bg-brick/10 py-3"><p class="text-stone-500 text-sm animate-pulse">現點現做，請耐心等候 🥣 傳統古早味油飯</p></div>
+</div>
+
+<script type="module">
+    import { createApp, ref, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref as dbRef, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+        authDomain: "jiantou-000rlhad.firebaseapp.com",
+        databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+        projectId: "jiantou-000rlhad",
+        storageBucket: "jiantou-000rlhad.firebasestorage.app",
+        messagingSenderId: "435285773521",
+        appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    createApp({
+        setup() {
+            const currentNumber = ref(null);
+            onMounted(() => {
+                const callRef = dbRef(db, 'currentCallingNumber');
+                onValue(callRef, (snapshot) => {
+                    currentNumber.value = snapshot.val();
+                });
+            });
+            return { currentNumber };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
