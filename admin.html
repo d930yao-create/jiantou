@@ -11,28 +11,27 @@
         body { font-family: sans-serif; background-color: #f5f5f4; }
         .text-brick { color: #9E5A5A; }
         .bg-brick { background-color: #9E5A5A; }
-        /* 開關動畫 */
         .toggle-checkbox:checked { right: 0; border-color: #9E5A5A; }
         .toggle-checkbox:checked + .toggle-label { background-color: #9E5A5A; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden text-stone-700 select-none">
+<body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
 
 <div id="app" class="flex-1 flex flex-col h-full relative">
 
     <div v-if="!isLoggedIn" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
             <h1 class="text-2xl font-bold text-stone-800 mb-2">後台管理系統</h1>
-            <input type="text" v-model="loginUser" placeholder="帳號 (admin)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
-            <input type="password" v-model="loginPass" placeholder="密碼" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
+            <input type="text" v-model="loginUser" placeholder=" 帳號 " class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
+            <input type="password" v-model="loginPass" placeholder=" 密碼 " class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
             <button @click="checkLogin" class="w-full bg-stone-800 text-white font-bold py-3 rounded-lg hover:bg-black">登入</button>
             <p v-if="loginError" class="text-red-500 text-xs mt-4">帳號或密碼錯誤</p>
         </div>
     </div>
 
     <div v-else class="flex-1 flex flex-col h-full">
-        <div class="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm z-10">
+        <div class="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0">
             <div>
                 <button @click="toggleShopStatus" 
                     class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all"
@@ -40,7 +39,6 @@
                     <span class="material-icons-round text-sm">{{ shopIsOpen ? 'store' : 'storefront' }}</span>
                     {{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
-                
                 <div class="flex items-center gap-1 mt-2">
                     <span class="material-icons-round text-stone-400 text-sm">calendar_today</span>
                     <input type="date" v-model="selectedDate" class="text-xs text-stone-600 bg-transparent border-b border-stone-200 outline-none focus:border-brick font-medium">
@@ -55,40 +53,37 @@
             </div>
         </div>
 
-        <div class="flex-1 flex overflow-hidden p-2 gap-2">
-            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400">
-                <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2">
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden p-2 gap-2">
+            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden">
+                <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2 flex-shrink-0">
                     <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group hover:border-stone-300 transition-colors">
-                        
-                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group">
+                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
                             <span class="material-icons-round text-sm">close</span>
                         </button>
-
                         <div @click="updateStatus(order, 'paid')">
                             <div class="absolute top-2 right-2 text-[10px] text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</div>
                             <div class="flex justify-between font-bold text-xl"><span>#{{ order.number }}</span><span>${{ order.total }}</span></div>
                             <div class="text-xs text-stone-400 mt-1 line-clamp-2">{{ formatItems(order.items) }}</div>
-                            <div v-if="isToday" class="mt-2 text-center text-xs bg-gray-100 text-gray-500 py-1 rounded group-hover:bg-brick group-hover:text-white transition-colors">點擊收款</div>
+                            <div v-if="isToday" class="mt-2 text-center text-xs bg-gray-100 text-gray-500 py-1 rounded">點擊收款</div>
                         </div>
                     </div>
+                    <div v-if="pendingOrders.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
                 </div>
             </div>
 
-            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick">
-                <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2">
+            <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden">
+                <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2 flex-shrink-0">
                     <span>{{ isToday ? '製作中' : '已完成' }}</span>
                     <span class="bg-red-100 px-2 rounded-full text-xs">{{ displayRightColumn.length }}</span>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
                     <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group">
-                        
-                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
                             <span class="material-icons-round text-sm">close</span>
                         </button>
-
                         <div @click="isToday ? updateStatus(order, 'done') : null">
                             <div class="absolute top-2 right-2 text-[10px] text-brick/50 bg-white/50 px-1 rounded">{{ order.timeString }}</div>
                             <div class="flex justify-between font-bold text-xl text-brick">
@@ -99,21 +94,19 @@
                             <div class="text-xs text-stone-500 mt-1">{{ formatItems(order.items) }}</div>
                         </div>
                     </div>
+                    <div v-if="displayRightColumn.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-2 border-t flex gap-2">
-            <button @click="deleteAllOrdersByDate" class="flex-1 py-3 text-sm text-red-500 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 font-bold">
-                清除{{ isToday ? '今日' : formattedDateString }}所有訂單
-            </button>
-            <button @click="logout" class="flex-1 py-3 text-sm text-stone-500 border border-stone-200 rounded-lg">登出</button>
+        <div class="bg-white p-2 border-t flex justify-center flex-shrink-0 safe-area-bottom">
+            <button @click="logout" class="text-xs text-stone-400 underline py-2">登出系統</button>
         </div>
     </div>
 
     <div v-if="showReport" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showReport=false">
         <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="bg-stone-800 p-4 text-white flex justify-between items-center">
+            <div class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0">
                 <h3 class="font-bold">{{ formattedDateString }} 銷售報表</h3>
                 <button @click="showReport=false">✕</button>
             </div>
@@ -122,14 +115,32 @@
                     <div class="text-stone-500 text-sm">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div>
                     <div class="text-right"><p class="text-xs text-stone-400">總營業額</p><p class="text-2xl font-bold text-brick">${{ dailyRevenue }}</p></div>
                 </div>
-                <table class="w-full text-sm text-left">
+                <table class="w-full text-sm text-left mb-8">
                     <thead class="text-xs text-stone-400 uppercase bg-stone-50"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">額</th></tr></thead>
                     <tbody class="text-stone-600">
                         <tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-100"><td class="px-2 py-3 font-medium">{{ item.name }}</td><td class="px-2 py-3 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-3 text-right text-stone-800">${{ item.total }}</td></tr>
                     </tbody>
                 </table>
+                
+                <div class="mt-4 pt-4 border-t border-stone-100 flex flex-col gap-3">
+                    
+                    <div class="flex gap-2">
+                        <button @click="exportToCSV('current')" class="flex-1 py-2 bg-green-500 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-green-600 flex items-center justify-center gap-1">
+                            <span class="material-icons-round text-sm">download</span> 匯出本頁報表
+                        </button>
+                        <button @click="exportToCSV('all')" class="flex-1 py-2 bg-stone-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-stone-700 flex items-center justify-center gap-1">
+                            <span class="material-icons-round text-sm">history</span> 匯出所有歷史
+                        </button>
+                    </div>
+
+                    <button @click="deleteAllOrdersByDate" class="w-full py-3 mt-4 text-xs text-red-400 border border-red-100 bg-red-50 rounded-lg font-bold hover:bg-red-100 transition-colors">
+                        ⚠️ 清除{{ isToday ? '今日' : formattedDateString }}所有訂單
+                    </button>
+                </div>
             </div>
-            <div class="p-4 bg-stone-50 border-t"><button @click="showReport=false" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-sm">關閉</button></div>
+            <div class="p-4 bg-stone-50 border-t flex-shrink-0">
+                <button @click="showReport=false" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-sm">關閉</button>
+            </div>
         </div>
     </div>
 </div>
@@ -222,30 +233,74 @@
                 if (newStatus === 'done') set(dbRef(db, 'currentCallingNumber'), order.number);
             };
 
-            // 🗑️ 刪除單筆訂單
             const deleteOrder = (order) => {
-                if(confirm(`確定要刪除訂單 #${order.number} 嗎？此操作無法復原！`)) {
+                if(confirm(`確定要刪除訂單 #${order.number} 嗎？`)) {
                     remove(dbRef(db, `orders/${order.key}`));
                 }
             };
 
-            // 🗑️ 刪除選定日期的所有訂單
             const deleteAllOrdersByDate = () => {
-                const targetDate = formattedDateString.value; // e.g., 2026/01/27
+                const targetDate = formattedDateString.value;
                 const count = filteredOrders.value.length;
-                
-                if (count === 0) {
-                    alert('這一天沒有訂單可以刪除。');
+                if (count === 0) { alert('無訂單可刪除'); return; }
+                if(confirm(`確定清空「${targetDate}」共 ${count} 筆訂單？刪除後無法復原！`)) {
+                    filteredOrders.value.forEach(order => { remove(dbRef(db, `orders/${order.key}`)); });
+                    alert('已清空。');
+                    showReport.value = false;
+                }
+            };
+
+            // 🌟 匯出 CSV 核心功能 🌟
+            const exportToCSV = (mode) => {
+                // 1. 決定要匯出的資料範圍
+                let dataToExport = [];
+                let fileName = '';
+
+                if (mode === 'current') {
+                    // 匯出當前選擇日期的訂單
+                    dataToExport = filteredOrders.value;
+                    fileName = `銷售報表_${formattedDateString.value.replace(/\//g, '-')}.csv`;
+                } else {
+                    // 匯出全部歷史
+                    dataToExport = allOrders.value;
+                    fileName = `完整歷史銷售記錄_${new Date().toISOString().split('T')[0]}.csv`;
+                }
+
+                if (dataToExport.length === 0) {
+                    alert('沒有資料可以匯出喔！');
                     return;
                 }
 
-                if(confirm(`⚠️ 危險操作 ⚠️\n\n確定要刪除「${targetDate}」的全部 ${count} 筆訂單嗎？\n\n刪除後營收將歸零且無法復原！`)) {
-                    // 這裡的邏輯是逐筆刪除符合日期的訂單
-                    filteredOrders.value.forEach(order => {
-                        remove(dbRef(db, `orders/${order.key}`));
-                    });
-                    alert('已清空該日訂單。');
-                }
+                // 2. 製作 CSV 內容 (加上 BOM \uFEFF 讓 Excel 顯示中文正常)
+                let csvContent = "\uFEFF";
+                csvContent += "日期,時間,訂單編號,狀態,總金額,訂單內容\n"; // 標題列
+
+                dataToExport.forEach(order => {
+                    // 把訂單內容轉成字串，並把逗號換成空格以免 CSV 錯亂
+                    const itemsStr = order.items.map(i => `${i.name} x${i.qty}`).join('; ');
+                    const statusStr = order.status === 'done' ? '已完成' : (order.status === 'paid' ? '製作中' : '待結帳');
+                    
+                    const row = [
+                        order.dateString,
+                        order.timeString,
+                        `#${order.number}`,
+                        statusStr,
+                        order.total,
+                        `"${itemsStr}"` // 用引號包起來
+                    ];
+                    csvContent += row.join(",") + "\n";
+                });
+
+                // 3. 觸發下載
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             };
 
             const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending'));
@@ -270,9 +325,8 @@
                 isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
                 selectedDate, isToday, formattedDateString,
                 pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport,
-                updateStatus, formatItems,
-                shopIsOpen, toggleShopStatus,
-                deleteOrder, deleteAllOrdersByDate // 🌟 匯出刪除功能
+                updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteAllOrdersByDate,
+                exportToCSV // 🌟
             };
         }
     }).mount('#app');
