@@ -25,7 +25,7 @@
         <div class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
             <h1 class="text-2xl font-bold text-stone-800 mb-2">後台管理系統</h1>
             <input type="text" v-model="loginUser" placeholder="帳號 (admin)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
-            <input type="password" v-model="loginPass" placeholder="密碼 (8888)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
+            <input type="password" v-model="loginPass" placeholder="密碼" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
             <button @click="checkLogin" class="w-full bg-stone-800 text-white font-bold py-3 rounded-lg hover:bg-black">登入</button>
             <p v-if="loginError" class="text-red-500 text-xs mt-4">帳號或密碼錯誤</p>
         </div>
@@ -61,11 +61,18 @@
                     <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in pendingOrders" :key="order.key" @click="updateStatus(order, 'paid')" class="p-3 border rounded-lg bg-white shadow-sm active:bg-gray-100 cursor-pointer relative">
-                        <div class="absolute top-2 right-2 text-[10px] text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</div>
-                        <div class="flex justify-between font-bold text-xl"><span>#{{ order.number }}</span><span>${{ order.total }}</span></div>
-                        <div class="text-xs text-stone-400 mt-1 line-clamp-2">{{ formatItems(order.items) }}</div>
-                        <div v-if="isToday" class="mt-2 text-center text-xs bg-gray-100 text-gray-500 py-1 rounded">點擊收款</div>
+                    <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group hover:border-stone-300 transition-colors">
+                        
+                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <span class="material-icons-round text-sm">close</span>
+                        </button>
+
+                        <div @click="updateStatus(order, 'paid')">
+                            <div class="absolute top-2 right-2 text-[10px] text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</div>
+                            <div class="flex justify-between font-bold text-xl"><span>#{{ order.number }}</span><span>${{ order.total }}</span></div>
+                            <div class="text-xs text-stone-400 mt-1 line-clamp-2">{{ formatItems(order.items) }}</div>
+                            <div v-if="isToday" class="mt-2 text-center text-xs bg-gray-100 text-gray-500 py-1 rounded group-hover:bg-brick group-hover:text-white transition-colors">點擊收款</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -76,9 +83,199 @@
                     <span class="bg-red-100 px-2 rounded-full text-xs">{{ displayRightColumn.length }}</span>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in displayRightColumn" :key="order.key" @click="isToday ? updateStatus(order, 'done') : null" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative">
-                        <div class="absolute top-2 right-2 text-[10px] text-brick/50 bg-white/50 px-1 rounded">{{ order.timeString }}</div>
-                        <div class="flex justify-between font-bold text-xl text-brick">
-                            <span>#{{ order.number }}</span>
-                            <span v-if="isToday" class="text-xs bg-brick text-white px-2 py-1 rounded">通知</span>
-                            <span v-else class="text-xs bg-stone-200 text-stone-500 px-2 py-
+                    <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group">
+                        
+                        <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <span class="material-icons-round text-sm">close</span>
+                        </button>
+
+                        <div @click="isToday ? updateStatus(order, 'done') : null">
+                            <div class="absolute top-2 right-2 text-[10px] text-brick/50 bg-white/50 px-1 rounded">{{ order.timeString }}</div>
+                            <div class="flex justify-between font-bold text-xl text-brick">
+                                <span>#{{ order.number }}</span>
+                                <span v-if="isToday" class="text-xs bg-brick text-white px-2 py-1 rounded">通知</span>
+                                <span v-else class="text-xs bg-stone-200 text-stone-500 px-2 py-1 rounded">完結</span>
+                            </div>
+                            <div class="text-xs text-stone-500 mt-1">{{ formatItems(order.items) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-2 border-t flex gap-2">
+            <button @click="deleteAllOrdersByDate" class="flex-1 py-3 text-sm text-red-500 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 font-bold">
+                清除{{ isToday ? '今日' : formattedDateString }}所有訂單
+            </button>
+            <button @click="logout" class="flex-1 py-3 text-sm text-stone-500 border border-stone-200 rounded-lg">登出</button>
+        </div>
+    </div>
+
+    <div v-if="showReport" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showReport=false">
+        <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="bg-stone-800 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold">{{ formattedDateString }} 銷售報表</h3>
+                <button @click="showReport=false">✕</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="flex justify-between items-end mb-6 pb-4 border-b border-dashed border-stone-200">
+                    <div class="text-stone-500 text-sm">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div>
+                    <div class="text-right"><p class="text-xs text-stone-400">總營業額</p><p class="text-2xl font-bold text-brick">${{ dailyRevenue }}</p></div>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-stone-400 uppercase bg-stone-50"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">額</th></tr></thead>
+                    <tbody class="text-stone-600">
+                        <tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-100"><td class="px-2 py-3 font-medium">{{ item.name }}</td><td class="px-2 py-3 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-3 text-right text-stone-800">${{ item.total }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-stone-50 border-t"><button @click="showReport=false" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-sm">關閉</button></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref as dbRef, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+        authDomain: "jiantou-000rlhad.firebaseapp.com",
+        databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+        projectId: "jiantou-000rlhad",
+        storageBucket: "jiantou-000rlhad.firebasestorage.app",
+        messagingSenderId: "435285773521",
+        appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    createApp({
+        setup() {
+            const isLoggedIn = ref(false);
+            const loginUser = ref('');
+            const loginPass = ref('');
+            const loginError = ref(false);
+            const allOrders = ref([]);
+            const filteredOrders = ref([]);
+            const showReport = ref(false);
+            const selectedDate = ref('');
+            const shopIsOpen = ref(false);
+
+            onMounted(() => {
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                selectedDate.value = `${yyyy}-${mm}-${dd}`;
+
+                const ordersRef = dbRef(db, 'orders');
+                onValue(ordersRef, (snapshot) => {
+                    const data = snapshot.val();
+                    allOrders.value = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            allOrders.value.push({ ...data[key], key: key });
+                        });
+                    }
+                    filterOrdersByDate();
+                });
+
+                const shopStatusRef = dbRef(db, 'shopStatus');
+                onValue(shopStatusRef, (snapshot) => {
+                    shopIsOpen.value = snapshot.val() === true;
+                });
+            });
+
+            const toggleShopStatus = () => {
+                const newStatus = !shopIsOpen.value;
+                set(dbRef(db, 'shopStatus'), newStatus);
+            };
+
+            watch(selectedDate, () => { filterOrdersByDate(); });
+
+            const filterOrdersByDate = () => {
+                const targetDateString = selectedDate.value.replace(/-/g, '/');
+                filteredOrders.value = allOrders.value.filter(order => order.dateString === targetDateString);
+            };
+
+            const isToday = computed(() => {
+                const now = new Date();
+                const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                return selectedDate.value === todayStr;
+            });
+
+            const formattedDateString = computed(() => selectedDate.value.replace(/-/g, '/'));
+            const checkLogin = () => {
+                if (loginUser.value === 'admin' && loginPass.value === '8888') {
+                    isLoggedIn.value = true; loginError.value = false;
+                } else { loginError.value = true; }
+            };
+            const logout = () => { isLoggedIn.value = false; };
+            
+            const updateStatus = (order, newStatus) => {
+                if (!isToday.value) return;
+                const updates = {};
+                updates[`/orders/${order.key}/status`] = newStatus;
+                update(dbRef(db), updates);
+                if (newStatus === 'done') set(dbRef(db, 'currentCallingNumber'), order.number);
+            };
+
+            // 🗑️ 刪除單筆訂單
+            const deleteOrder = (order) => {
+                if(confirm(`確定要刪除訂單 #${order.number} 嗎？此操作無法復原！`)) {
+                    remove(dbRef(db, `orders/${order.key}`));
+                }
+            };
+
+            // 🗑️ 刪除選定日期的所有訂單
+            const deleteAllOrdersByDate = () => {
+                const targetDate = formattedDateString.value; // e.g., 2026/01/27
+                const count = filteredOrders.value.length;
+                
+                if (count === 0) {
+                    alert('這一天沒有訂單可以刪除。');
+                    return;
+                }
+
+                if(confirm(`⚠️ 危險操作 ⚠️\n\n確定要刪除「${targetDate}」的全部 ${count} 筆訂單嗎？\n\n刪除後營收將歸零且無法復原！`)) {
+                    // 這裡的邏輯是逐筆刪除符合日期的訂單
+                    filteredOrders.value.forEach(order => {
+                        remove(dbRef(db, `orders/${order.key}`));
+                    });
+                    alert('已清空該日訂單。');
+                }
+            };
+
+            const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending'));
+            const displayRightColumn = computed(() => isToday.value ? filteredOrders.value.filter(o => o.status === 'paid') : filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done'));
+            const validOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done'));
+            const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
+            const completedOrdersCount = computed(() => validOrders.value.length);
+            const salesReport = computed(() => {
+                const report = {};
+                validOrders.value.forEach(order => {
+                    order.items.forEach(item => {
+                        if (!report[item.name]) report[item.name] = { name: item.name, count: 0, total: 0 };
+                        report[item.name].count += item.qty;
+                        report[item.name].total += (item.price * item.qty);
+                    });
+                });
+                return Object.values(report).sort((a, b) => b.total - a.total);
+            });
+            const formatItems = (items) => items.map(i => i.name + (i.qty > 1 ? ' x'+i.qty : '')).join(', ');
+
+            return { 
+                isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
+                selectedDate, isToday, formattedDateString,
+                pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport,
+                updateStatus, formatItems,
+                shopIsOpen, toggleShopStatus,
+                deleteOrder, deleteAllOrdersByDate // 🌟 匯出刪除功能
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
