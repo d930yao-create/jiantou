@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
+/* 🌟 隱形斗篷樣式：Vue 準備好之前，隱藏所有掛著 v-cloak 的東西 */
+[v-cloak] { display: none !important; }
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF7; }
         .serif { font-family: 'Noto Serif TC', serif; }
@@ -20,7 +22,7 @@
 </head>
 <body class="text-stone-600 h-[100dvh] flex flex-col overflow-hidden select-none">
 
-<div id="app" class="h-full flex flex-col relative">
+<div id="app" v-cloak class="h-full flex flex-col relative">
     
     <div v-if="!shopIsOpen" class="fixed inset-0 bg-stone-900/90 z-50 flex flex-col items-center justify-center text-white backdrop-blur-sm p-8 text-center">
         <div class="bg-stone-800 p-6 rounded-full mb-6 shadow-xl border border-stone-600">
@@ -38,30 +40,16 @@
     <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false">
         <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
             <h3 class="text-xl font-bold text-stone-800 mb-4 serif text-center border-b border-stone-100 pb-3">確認餐點內容</h3>
-            
             <div class="space-y-3 max-h-[50vh] overflow-y-auto mb-4 px-1">
                 <div v-for="(qty, id) in cart" :key="id" class="flex justify-between items-center text-sm">
-                    <div class="flex flex-col">
-                        <span class="font-bold text-stone-700">{{ getMenuName(id) }}</span>
-                        <span class="text-xs text-stone-400">{{ getMenuDesc(id) }}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-stone-500">x{{ qty }}</span>
-                        <span class="font-medium w-12 text-right">${{ getMenuPrice(id) * qty }}</span>
-                    </div>
+                    <div class="flex flex-col"><span class="font-bold text-stone-700">{{ getMenuName(id) }}</span><span class="text-xs text-stone-400">{{ getMenuDesc(id) }}</span></div>
+                    <div class="flex items-center gap-3"><span class="text-stone-500">x{{ qty }}</span><span class="font-medium w-12 text-right">${{ getMenuPrice(id) * qty }}</span></div>
                 </div>
             </div>
-
-            <div class="flex justify-between items-center border-t border-dashed border-stone-300 pt-4 mb-6">
-                <span class="text-stone-500 font-bold">總計金額</span>
-                <span class="text-3xl font-bold text-brick serif">${{ cartTotal }}</span>
-            </div>
-
+            <div class="flex justify-between items-center border-t border-dashed border-stone-300 pt-4 mb-6"><span class="text-stone-500 font-bold">總計金額</span><span class="text-3xl font-bold text-brick serif">${{ cartTotal }}</span></div>
             <div class="flex gap-3">
                 <button @click="isConfirming=false" class="flex-1 py-3 bg-stone-100 text-stone-500 rounded-xl font-bold">返回修改</button>
-                <button @click="submitOrder" :disabled="isSubmitting" class="flex-1 py-3 bg-brick text-white rounded-xl font-bold shadow-lg shadow-red-100 disabled:opacity-50">
-                    {{ isSubmitting ? '傳送中...' : '確認送單' }}
-                </button>
+                <button @click="submitOrder" :disabled="isSubmitting" class="flex-1 py-3 bg-brick text-white rounded-xl font-bold shadow-lg shadow-red-100 disabled:opacity-50">{{ isSubmitting ? '傳送中...' : '確認送單' }}</button>
             </div>
         </div>
     </div>
@@ -69,14 +57,6 @@
     <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0">
         <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif">傳統古早味</h1> 
         <p class="text-xs text-brick mt-1 tracking-widest">TRADITIONAL TASTE</p>
-    </div>
-
-    <div class="mx-6 mb-2 p-3 bg-white rounded-xl shadow-sm border border-stone-100 flex items-center justify-between flex-shrink-0">
-        <div class="flex items-center gap-2">
-            <span class="material-icons-round text-brick">notifications_active</span>
-            <span class="text-sm font-medium text-stone-600">目前叫號</span>
-        </div>
-        <span class="text-2xl font-bold text-brick serif">#{{ currentCallingNumber || '--' }}</span>
     </div>
 
     <div class="flex-1 overflow-y-auto px-6 pb-40 space-y-4">
@@ -92,71 +72,41 @@
                 <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-brick text-white flex items-center justify-center shadow-md shadow-red-100">+</button>
             </div>
         </div>
+        
+        <div v-if="menu.length === 0" class="text-center text-stone-300 py-10">
+            載入菜單中...
+        </div>
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom">
-        
         <div v-if="!myOrder" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
             <div class="flex justify-between items-center mb-4">
-                <div>
-                    <p class="text-xs text-stone-400">總金額</p>
-                    <p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-stone-400">已選品項</p>
-                    <p class="text-sm text-stone-800">{{ cartCount }} 份</p>
-                </div>
+                <div><p class="text-xs text-stone-400">總金額</p><p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p></div>
+                <div class="text-right"><p class="text-xs text-stone-400">已選品項</p><p class="text-sm text-stone-800">{{ cartCount }} 份</p></div>
             </div>
-            <button @click="openConfirmation" :disabled="cartCount===0" 
-                class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">
-                餐點確認
-            </button>
+            <button @click="openConfirmation" :disabled="cartCount===0" class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">點餐明細</button>
         </div>
 
         <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-6 max-h-[60vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-4">
-                <div>
-                    <p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
-                    <h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder.number }}</h2>
-                </div>
-                <div class="text-right">
-                    <span class="px-3 py-1 rounded-full text-xs font-bold"
-                        :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">
-                        {{ getStatusText(myOrder.status) }}
-                    </span>
-                </div>
+                <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p><h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder.number }}</h2></div>
+                <div class="text-right"><span class="px-3 py-1 rounded-full text-xs font-bold" :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">{{ getStatusText(myOrder.status) }}</span></div>
             </div>
-
             <div class="bg-stone-50 rounded-xl p-4 mb-4 border border-stone-100">
-                <div class="flex justify-between items-center mb-2 cursor-pointer" @click="showDetails = !showDetails">
-                    <span class="text-xs font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span>
-                    <span class="material-icons-round text-stone-400 text-sm transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span>
-                </div>
+                <div class="flex justify-between items-center mb-2 cursor-pointer" @click="showDetails = !showDetails"><span class="text-xs font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span><span class="material-icons-round text-stone-400 text-sm transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span></div>
                 <div v-if="showDetails" class="space-y-2 border-t border-stone-200 pt-2 mt-2">
-                    <div v-for="(item, index) in myOrder.items" :key="index" class="flex justify-between text-sm text-stone-600">
-                        <span>{{ item.name }} x{{ item.qty }}</span>
-                        <span class="font-medium">${{ item.price * item.qty }}</span>
-                    </div>
-                    <div class="flex justify-between text-base font-bold text-stone-800 pt-2 border-t border-stone-200 mt-2">
-                        <span>總計</span>
-                        <span>${{ myOrder.total }}</span>
-                    </div>
+                    <div v-for="(item, index) in myOrder.items" :key="index" class="flex justify-between text-sm text-stone-600"><span>{{ item.name }} x{{ item.qty }}</span><span class="font-medium">${{ item.price * item.qty }}</span></div>
+                    <div class="flex justify-between text-base font-bold text-stone-800 pt-2 border-t border-stone-200 mt-2"><span>總計</span><span>${{ myOrder.total }}</span></div>
                 </div>
             </div>
-
-            <div v-if="myOrder.status === 'pending'" class="text-center p-2 bg-stone-100 rounded-lg text-stone-500 text-sm">
-                請向櫃檯出示此畫面並付款
-            </div>
-
+            <div v-if="myOrder.status === 'pending'" class="text-center p-2 bg-stone-100 rounded-lg text-stone-500 text-sm">請向櫃檯出示此畫面並付款</div>
             <p v-if="myOrder.status === 'done'" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
             <button @click="myOrder=null" v-if="myOrder.status==='done'" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉 (下一單)</button>
         </div>
     </div>
 </div>
 
-<style>
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-</style>
+<style> @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } </style>
 
 <script type="module">
     import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
@@ -177,14 +127,16 @@
 
     createApp({
         setup() {
-            const menu = ref([
-                { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲' },
-                { id: 2, name: '極品鴨肉油飯', price: 80, desc: '每日限量' },
-                { id: 3, name: '養生素食油飯', price: 55, desc: '全素可食' },
-                { id: 4, name: '古早味菜頭粿', price: 45, desc: '煎得恰恰' },
-                { id: 5, name: '隨機小菜', price: 30, desc: '看老闆心情' },
-                { id: 6, name: '古早味紅茶', price: 25, desc: '冰涼解渴' },
-            ]);
+            // 🌟 菜單不再寫死，改為預設空陣列
+            const menu = ref([]); 
+            const defaultMenu = [
+                { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true },
+                { id: 2, name: '極品鴨肉油飯', price: 80, desc: '每日限量', active: true },
+                { id: 3, name: '養生素食油飯', price: 55, desc: '全素可食', active: true },
+                { id: 4, name: '古早味菜頭粿', price: 45, desc: '煎得恰恰', active: true },
+                { id: 5, name: '隨機小菜', price: 30, desc: '看老闆心情', active: true },
+                { id: 6, name: '古早味紅茶', price: 25, desc: '冰涼解渴', active: true },
+            ];
 
             const cart = ref({});
             const myOrder = ref(null);
@@ -192,7 +144,7 @@
             const currentCallingNumber = ref(null);
             const shopIsOpen = ref(true);
             const showDetails = ref(true);
-            const isConfirming = ref(false); // 🌟 新增：確認視窗狀態
+            const isConfirming = ref(false);
 
             onMounted(() => {
                 const callRef = dbRef(db, 'currentCallingNumber');
@@ -202,6 +154,19 @@
                 onValue(shopStatusRef, (snapshot) => {
                     const val = snapshot.val();
                     shopIsOpen.value = (val === null) ? true : val;
+                });
+
+                // 🌟 監聽 Firebase 菜單
+                const menuRef = dbRef(db, 'menu');
+                onValue(menuRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        // 只顯示 active 為 true (販售中) 的品項
+                        menu.value = data.filter(item => item.active);
+                    } else {
+                        // 如果資料庫空的，先用預設擋著
+                        menu.value = defaultMenu;
+                    }
                 });
             });
 
@@ -218,28 +183,20 @@
                 return total;
             });
 
-            // 🌟 輔助函式：為了在確認視窗顯示資料
             const getMenuName = (id) => menu.value.find(i => i.id == id)?.name;
             const getMenuDesc = (id) => menu.value.find(i => i.id == id)?.desc;
             const getMenuPrice = (id) => menu.value.find(i => i.id == id)?.price;
 
-            // 🌟 打開確認視窗
-            const openConfirmation = () => {
-                if (cartCount.value > 0) {
-                    isConfirming.value = true;
-                }
-            };
+            const openConfirmation = () => { if (cartCount.value > 0) isConfirming.value = true; };
 
             const submitOrder = () => {
                 if (isSubmitting.value) return;
                 isSubmitting.value = true;
-                
                 const orderItems = [];
                 for (const [id, qty] of Object.entries(cart.value)) {
                     const item = menu.value.find(i => i.id == id);
                     orderItems.push({ ...item, qty });
                 }
-                
                 const orderNum = Math.floor(Math.random() * 99) + 1;
                 const now = new Date();
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
@@ -253,11 +210,9 @@
                 const ordersRef = dbRef(db, 'orders');
                 const newRef = push(ordersRef, newOrderData);
                 const localOrder = { ...newOrderData, key: newRef.key };
-                
-                // 成功後清空狀態
                 myOrder.value = localOrder;
                 cart.value = {};
-                isConfirming.value = false; // 🌟 關閉確認視窗
+                isConfirming.value = false;
                 isSubmitting.value = false;
 
                 const thisOrderRef = dbRef(db, `orders/${newRef.key}`);
@@ -276,8 +231,7 @@
             return { 
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
-                shopIsOpen, showDetails, isConfirming, openConfirmation, // 🌟
-                getMenuName, getMenuDesc, getMenuPrice // 🌟
+                shopIsOpen, showDetails, isConfirming, openConfirmation, getMenuName, getMenuDesc, getMenuPrice
             };
         }
     }).mount('#app');
