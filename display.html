@@ -7,34 +7,67 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
         .serif { font-family: 'Noto Serif TC', serif; }
         .text-brick { color: #9E5A5A; }
-        .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        /* 叫號動畫 */
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     </style>
 </head>
-<body class="bg-stone-900 h-screen flex flex-col items-center justify-center overflow-hidden text-stone-400 select-none">
+<body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
 
-<div id="app" class="text-center w-full max-w-4xl relative">
-    <div class="absolute -top-32 left-0 right-0 text-center opacity-30 tracking-[0.5em] text-sm uppercase">Number Calling System</div>
-    <p class="text-xl mb-6 font-light tracking-widest text-stone-500">目前取餐號碼</p>
-    
-    <h1 :key="currentNumber" class="text-[12rem] sm:text-[15rem] leading-none font-bold serif text-brick number-pop" 
-        style="text-shadow: 0 0 50px rgba(158,90,90,0.4);">
-        {{ currentNumber || '--' }}
-    </h1>
+<div id="app" class="h-full flex">
 
-    <div class="mt-12">
-        <span v-if="currentNumber" class="text-2xl text-stone-200 bg-white/10 px-8 py-3 rounded-full backdrop-blur-md animate-pulse">餐點好囉！請至櫃台</span>
-        <span v-else class="text-xl text-stone-600 tracking-wider">美味準備中...</span>
+    <div class="w-[60%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative">
+        <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
+        <p class="text-2xl mb-4 font-light tracking-widest text-stone-500">最新取餐</p>
+        
+        <h1 :key="currentNumber" class="text-[15rem] leading-none font-bold serif text-brick number-pop" 
+            style="text-shadow: 0 0 50px rgba(158,90,90,0.4);">
+            {{ currentNumber || '--' }}
+        </h1>
+        
+        <div class="mt-12">
+            <span v-if="currentNumber" class="text-3xl text-stone-200 bg-white/10 px-10 py-4 rounded-full backdrop-blur-md animate-pulse">
+                請至櫃台取餐
+            </span>
+            <span v-else class="text-2xl text-stone-600 tracking-wider">
+                美味準備中...
+            </span>
+        </div>
     </div>
-    <div class="fixed bottom-0 left-0 right-0 bg-brick/10 py-3"><p class="text-stone-500 text-sm animate-pulse">現點現做，請耐心等候 🥣 傳統古早味油飯</p></div>
+
+    <div class="w-[40%] h-full bg-stone-900 flex flex-col">
+        <div class="p-6 bg-stone-800 border-b border-stone-700 shadow-md z-10">
+            <h2 class="text-3xl font-bold text-white tracking-wider flex items-center gap-3">
+                <span class="material-icons-round text-brick">restaurant_menu</span> 取餐區
+            </h2>
+            <p class="text-sm text-stone-400 mt-2">Ready for Pickup</p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 content-start grid grid-cols-1 gap-4">
+            <div v-for="order in recentDoneOrders" :key="order.key" 
+                class="bg-stone-800/50 border border-stone-700 rounded-xl p-4 flex items-center justify-between animate-[fadeIn_0.5s_ease-out]">
+                <span class="text-5xl font-bold text-stone-200 serif">#{{ order.number }}</span>
+                <span class="text-xs text-stone-500 bg-stone-900 px-2 py-1 rounded">{{ order.timeString }}</span>
+            </div>
+            
+            <div v-if="recentDoneOrders.length === 0" class="text-center text-stone-600 mt-20">
+                <p>目前無待取餐號碼</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 w-[60%] bg-brick/10 py-2">
+        <p class="text-stone-500 text-sm text-center">現點現做，請耐心等候 🥣</p>
+    </div>
+
 </div>
 
 <script type="module">
-    import { createApp, ref, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref as dbRef, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -53,13 +86,44 @@
     createApp({
         setup() {
             const currentNumber = ref(null);
+            const doneOrders = ref([]);
+
             onMounted(() => {
+                // 1. 監聽最新叫號
                 const callRef = dbRef(db, 'currentCallingNumber');
                 onValue(callRef, (snapshot) => {
                     currentNumber.value = snapshot.val();
                 });
+
+                // 2. 監聽所有訂單，篩選出「今天」且「已完成」的
+                const ordersRef = dbRef(db, 'orders');
+                onValue(ordersRef, (snapshot) => {
+                    const data = snapshot.val();
+                    const now = new Date();
+                    const todayStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+                    
+                    const list = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            const order = data[key];
+                            // 篩選條件：今天的單 + 狀態是 done
+                            if (order.dateString === todayStr && order.status === 'done') {
+                                list.push({ ...order, key: key });
+                            }
+                        });
+                    }
+                    // 排序：最新的時間在上面
+                    // 這裡簡單用 key (Firebase key 其實是按時間排序的) 反轉即可
+                    doneOrders.value = list.reverse();
+                });
             });
-            return { currentNumber };
+
+            // 🌟 過濾列表：把「正在大螢幕顯示」的那個號碼，從右邊列表中拿掉 (避免重複)
+            const recentDoneOrders = computed(() => {
+                return doneOrders.value.filter(o => o.number != currentNumber.value);
+            });
+
+            return { currentNumber, recentDoneOrders };
         }
     }).mount('#app');
 </script>

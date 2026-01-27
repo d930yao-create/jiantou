@@ -23,8 +23,8 @@
     <div v-if="!isLoggedIn" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
             <h1 class="text-2xl font-bold text-stone-800 mb-2">後台管理系統</h1>
-            <input type="text" v-model="loginUser" placeholder="帳號" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
-            <input type="password" v-model="loginPass" placeholder="密碼" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
+            <input type="text" v-model="loginUser" placeholder="帳號 (admin)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-brick">
+            <input type="password" v-model="loginPass" placeholder="密碼 (8888)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-brick">
             <button @click="checkLogin" class="w-full bg-stone-800 text-white font-bold py-3 rounded-lg hover:bg-black">登入</button>
             <p v-if="loginError" class="text-red-500 text-xs mt-4">帳號或密碼錯誤</p>
         </div>
@@ -39,6 +39,10 @@
                     <span class="material-icons-round text-sm">{{ shopIsOpen ? 'store' : 'storefront' }}</span>
                     {{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
+                <div class="flex items-center gap-1 mt-2">
+                    <span class="material-icons-round text-stone-400 text-sm">calendar_today</span>
+                    <input type="date" v-model="selectedDate" class="text-xs text-stone-600 bg-transparent border-b border-stone-200 outline-none focus:border-brick font-medium">
+                </div>
             </div>
             <div class="text-right">
                 <p class="text-xs text-stone-400 uppercase">{{ isToday ? '今日營收' : '歷史營收' }}</p>
@@ -61,7 +65,7 @@
         <div class="flex-1 overflow-hidden relative">
             
             <div v-if="currentTab === 'orders'" class="flex flex-col md:flex-row h-full p-2 gap-2">
-                 <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden">
+                <div class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden">
                     <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2 flex-shrink-0">
                         <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
                     </div>
@@ -125,7 +129,7 @@
                         <div v-for="(num, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
                             <span class="text-2xl font-bold text-stone-700 w-16 text-center">#{{ num }}</span>
                             <div class="flex gap-2">
-                                <button @click="callManualNumber(num)" class="bg-brick text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-800 transition-colors flex items-center gap-1">
+                                <button @click="callManualNumber(num, key)" class="bg-brick text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-800 transition-colors flex items-center gap-1">
                                     <span class="material-icons-round text-sm">campaign</span> 叫號
                                 </button>
                                 <button @click="removeManualNumber(key)" class="bg-stone-200 text-stone-500 px-3 py-2 rounded-lg hover:bg-stone-300">
@@ -167,12 +171,8 @@
                 </table>
                 <div class="mt-4 pt-4 border-t border-stone-100 flex flex-col gap-3">
                     <div class="flex gap-2">
-                        <button @click="exportToCSV('current')" class="flex-1 py-2 bg-green-500 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-green-600 flex items-center justify-center gap-1">
-                            <span class="material-icons-round text-sm">download</span> 匯出本頁
-                        </button>
-                        <button @click="exportToCSV('all')" class="flex-1 py-2 bg-stone-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-stone-700 flex items-center justify-center gap-1">
-                            <span class="material-icons-round text-sm">history</span> 匯出歷史
-                        </button>
+                        <button @click="exportToCSV('current')" class="flex-1 py-2 bg-green-500 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-green-600 flex items-center justify-center gap-1"><span class="material-icons-round text-sm">download</span> 匯出本頁</button>
+                        <button @click="exportToCSV('all')" class="flex-1 py-2 bg-stone-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-stone-700 flex items-center justify-center gap-1"><span class="material-icons-round text-sm">history</span> 匯出歷史</button>
                     </div>
                     <button @click="deleteAllOrdersByDate" class="w-full py-3 mt-4 text-xs text-red-400 border border-red-100 bg-red-50 rounded-lg font-bold hover:bg-red-100 transition-colors">⚠️ 清除{{ isToday ? '今日' : formattedDateString }}所有訂單</button>
                 </div>
@@ -185,7 +185,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue, update, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, onValue, update, set, remove, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
@@ -210,9 +210,9 @@
             const showReport = ref(false);
             const selectedDate = ref('');
             const shopIsOpen = ref(false);
-            const currentTab = ref('orders'); // 🌟 控制分頁: orders 或 manual
+            const currentTab = ref('orders');
             const manualInput = ref('');
-            const manualQueue = ref({}); // 🌟 存手動排隊的號碼
+            const manualQueue = ref({});
 
             onMounted(() => {
                 const now = new Date();
@@ -236,41 +236,47 @@
                 const shopStatusRef = dbRef(db, 'shopStatus');
                 onValue(shopStatusRef, (snapshot) => { shopIsOpen.value = snapshot.val() === true; });
 
-                // 🌟 監聽手動排隊列表
                 const manualRef = dbRef(db, 'manualQueue');
-                onValue(manualRef, (snapshot) => {
-                    manualQueue.value = snapshot.val() || {};
-                });
+                onValue(manualRef, (snapshot) => { manualQueue.value = snapshot.val() || {}; });
             });
 
-            // 🌟 手動叫號邏輯
             const addToManualQueue = () => {
                 if(!manualInput.value) return;
                 const queueRef = dbRef(db, 'manualQueue');
-                push(queueRef, manualInput.value); // 推送到 Firebase
+                push(queueRef, manualInput.value);
                 manualInput.value = '';
             };
 
-            const callManualNumber = (num) => {
-                set(dbRef(db, 'currentCallingNumber'), num); // 更新大螢幕
-                // 這裡看妳要不要順便刪除？目前邏輯是：叫號歸叫號，刪除要手動按垃圾桶
-                // 如果想要叫號後自動刪除，可以加上 removeManualNumber(key);
-            };
+            // 🌟 核心修改：叫號時，直接建立一筆「完成」的訂單
+            const callManualNumber = (num, key) => {
+                const now = new Date();
+                const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
 
-            const removeManualNumber = (key) => {
+                const newOrderData = {
+                    number: num,
+                    items: [{name: '現場叫號', qty: 1, price: 0}], // 假的品項
+                    total: 0,
+                    status: 'done', // 直接是完成狀態
+                    createdAt: serverTimestamp(),
+                    timeString: timeString,
+                    dateString: dateString
+                };
+
+                const ordersRef = dbRef(db, 'orders');
+                push(ordersRef, newOrderData); // 推送到正式訂單列表
+                
+                // 更新大螢幕
+                set(dbRef(db, 'currentCallingNumber'), num);
+                
+                // 從手動排隊清單移除
                 remove(dbRef(db, `manualQueue/${key}`));
             };
-            
-            const clearManualQueue = () => {
-                if(confirm('確定清空手動排隊列表？')) {
-                    remove(dbRef(db, 'manualQueue'));
-                }
-            };
 
-            const toggleShopStatus = () => {
-                const newStatus = !shopIsOpen.value;
-                set(dbRef(db, 'shopStatus'), newStatus);
-            };
+            const removeManualNumber = (key) => { remove(dbRef(db, `manualQueue/${key}`)); };
+            const clearManualQueue = () => { if(confirm('確定清空手動排隊列表？')) { remove(dbRef(db, 'manualQueue')); } };
+
+            const toggleShopStatus = () => { const newStatus = !shopIsOpen.value; set(dbRef(db, 'shopStatus'), newStatus); };
 
             watch(selectedDate, () => { filterOrdersByDate(); });
             const filterOrdersByDate = () => {
@@ -360,7 +366,7 @@
                 selectedDate, isToday, formattedDateString,
                 pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport,
                 updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteAllOrdersByDate, exportToCSV,
-                currentTab, manualInput, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue // 🌟 新增的變數
+                currentTab, manualInput, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue
             };
         }
     }).mount('#app');
