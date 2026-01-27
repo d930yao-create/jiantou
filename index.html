@@ -175,11 +175,26 @@
             const loginPass = ref('');
 
             // 檢查網址，判斷是否進入後台
-            onMounted(() => {
-                // 如果網址後面有 #admin，就顯示登入畫面
-                if (window.location.hash === '#admin') {
+// 監聽網址變化 (這樣就不用按重新整理了)
+            const handleHashChange = () => {
+                const hash = window.location.hash;
+                if (hash === '#admin') {
                     showLoginModal.value = true;
+                } else if (hash === '#display') {
+                    view.value = 'display';
+                    showLoginModal.value = false; // 確保登入框關掉
+                } else {
+                    view.value = 'menu'; // 回到首頁
+                    showLoginModal.value = false;
                 }
+            };
+
+            onMounted(() => {
+                // 1. 網頁一打開先檢查一次
+                handleHashChange();
+                
+                // 2. 隨時監聽網址變化
+                window.addEventListener('hashchange', handleHashChange);
             });
 
             const checkLogin = () => {
