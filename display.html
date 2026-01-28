@@ -35,14 +35,14 @@
         <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
         <p class="text-2xl mb-4 font-light tracking-widest text-stone-500">最新取餐</p>
         
-<h1 :key="currentNumber" class="text-[15rem] leading-none font-bold serif text-yellow-400 number-pop group-hover:scale-105 transition-transform" 
-    style="text-shadow: 0 0 50px rgba(250, 204, 21, 0.6);">
-    {{ currentNumber || '--' }}
-</h1>
+        <h1 :key="currentNumber" class="text-[15rem] leading-none font-bold serif text-yellow-400 number-pop group-hover:scale-105 transition-transform" 
+            style="text-shadow: 0 0 50px rgba(250, 204, 21, 0.6);">
+            {{ currentNumber || '--' }}
+        </h1>
         
         <div class="mt-12">
             <span v-if="currentNumber" class="text-3xl text-stone-200 bg-white/10 px-10 py-4 rounded-full backdrop-blur-md animate-pulse flex items-center gap-3">
-                <span class="material-icons-round">lightbulb</span>請至櫃台取餐
+                <span class="material-icons-round text-yellow-400">lightbulb</span>請至櫃台取餐
             </span>
             <span v-else class="text-2xl text-stone-600 tracking-wider">
                 美味準備中...
@@ -52,27 +52,31 @@
 
     <div class="w-[40%] h-full bg-stone-950 flex flex-col min-h-0">
         <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20 flex-shrink-0">
-            <h2 class="text-3xl font-bold text-white tracking-wider flex items-center gap-3">
-                <span class="material-icons-round text-brick">restaurant_menu</span>以下號碼已皆可取餐！
+            <h2 class="text-xl font-bold text-white tracking-wider flex items-center gap-3">
+                <span class="material-icons-round text-brick">restaurant_menu</span>以下號碼皆可取餐
             </h2>
-            <h2 class="text-3xl font-bold text-white tracking-wider flex items-center gap-3">
-也可至點餐畫面確認唷</h2>
+             <h2 class="text-xl font-bold text-white tracking-wider flex items-center gap-3"> 也可至點餐畫面確認
+            </h2>
 
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 relative no-scrollbar">
             <transition-group name="list" tag="div" class="grid grid-cols-1 gap-4">
                 <div v-for="order in recentDoneOrders" :key="order.key" 
-                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0"
-                    @click.stop="reCall(order.number)">
+                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0">
                     
-                    <div class="flex-1 flex items-center justify-between px-2">
+                    <div class="flex-1 flex items-center justify-between px-2 pr-4 border-r border-stone-700" @click.stop="reCall(order.number)">
                         <span class="text-5xl font-bold text-stone-200 serif">#{{ order.number }}</span>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-stone-500 bg-stone-900 px-3 py-1 rounded-full border border-stone-800">{{ order.timeString }}</span>
                             <span class="material-icons-round text-stone-500 opacity-20 group-hover:opacity-100 group-hover:text-brick transition-opacity">campaign</span>
                         </div>
                     </div>
+
+                    <button @click.stop="finishOrder(order)" class="pl-4 pr-2 hover:text-green-400 transition-colors text-stone-600 flex items-center justify-center">
+                        <span class="material-icons-round text-4xl">check_circle</span>
+                    </button>
+
                 </div>
             </transition-group>
             
@@ -84,7 +88,7 @@
     </div>
 
     <div class="fixed bottom-0 left-0 w-[60%] bg-brick/10 py-2 z-20 pointer-events-none">
-        <p class="text-stone-500 text-sm text-center animate-pulse">現點現做，請耐心等候 🥣</p>
+        <p class="text-center">現點現做，請耐心等候 🥣</p>
     </div>
 
 </div>
@@ -110,7 +114,7 @@
         setup() {
             const currentNumber = ref(null);
             const doneOrders = ref([]);
-            const isMuted = ref(true); // 🌟 預設靜音 (避免瀏覽器自動播放限制)
+            const isMuted = ref(true);
 
             onMounted(() => {
                 const callRef = dbRef(db, 'currentCallingNumber');
@@ -138,12 +142,11 @@
                 });
             });
 
-            // 🌟 播放聲音邏輯：只有當 isMuted 為 false 時才叫
             watch(currentNumber, (newVal) => {
                 if (newVal && !isMuted.value) {
                     const audio = document.getElementById('dingSound');
                     if(audio) {
-                        audio.play().catch(() => {}); // 忽略播放錯誤
+                        audio.play().catch(() => {});
                     }
                 }
             });
@@ -155,30 +158,27 @@
 
             const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
 
-            // 🌟 點擊大畫面 -> 結案 (封存訂單 + 清空大螢幕)
             const completeCurrent = () => {
                 if (!currentNumber.value) return;
-
-                // 1. 找到當前顯示號碼對應的訂單 (可能有重複號碼，找最新的)
-                // 這裡使用 filter 找出所有該號碼的訂單，然後把狀態都改成 archived
-                // 這樣比較保險，以免同一號碼有兩張單，結果只消掉一張
                 const targets = doneOrders.value.filter(o => o.number == currentNumber.value);
-                
                 if (targets.length > 0) {
                     if(confirm(`確定 #${currentNumber.value} 已取餐？`)) {
-                        targets.forEach(order => {
-                            set(dbRef(db, `orders/${order.key}/status`), 'archived');
-                        });
-                        // 2. 清空大螢幕顯示
+                        targets.forEach(order => { set(dbRef(db, `orders/${order.key}/status`), 'archived'); });
                         set(dbRef(db, 'currentCallingNumber'), null);
                     }
                 } else {
-                    // 如果找不到對應訂單(可能是純叫號測試)，直接清空螢幕
                     set(dbRef(db, 'currentCallingNumber'), null);
                 }
             };
 
-            return { currentNumber, recentDoneOrders, reCall, completeCurrent, isMuted };
+            // 🌟 新增：右邊列表直接消除的功能
+            const finishOrder = (order) => {
+                if(confirm(`確定 #${order.number} 已取餐？`)) {
+                    set(dbRef(db, `orders/${order.key}/status`), 'archived');
+                }
+            };
+
+            return { currentNumber, recentDoneOrders, reCall, completeCurrent, isMuted, finishOrder };
         }
     }).mount('#app');
 </script>
