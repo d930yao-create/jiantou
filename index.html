@@ -19,6 +19,7 @@
         ::-webkit-scrollbar { width: 0px; background: transparent; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } 
     </style>
 </head>
 <body class="text-stone-600 h-[100dvh] flex flex-col overflow-hidden select-none">
@@ -27,6 +28,124 @@
     
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
+    <div v-if="!hasEnteredShop" class="flex-1 flex flex-col items-center justify-center p-6 bg-[#FDFBF7] relative">
+        
+        <div class="text-center mb-12 animate-[fadeIn_0.5s_ease-out]">
+            <div class="w-24 h-24 bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border-4 border-stone-100">
+                <span class="material-icons-round text-5xl text-white">restaurant_menu</span>
+            </div>
+            <h1 class="text-3xl font-bold text-stone-800 tracking-wide serif mb-2">傳統古早味</h1>
+            <p class="text-sm text-brick tracking-[0.3em] font-bold">TRADITIONAL TASTE</p>
+            <div class="mt-4">
+                <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">● 營業中</span>
+                <span v-else class="bg-stone-200 text-stone-500 px-3 py-1 rounded-full text-xs font-bold border border-stone-300">● 休息中</span>
+            </div>
+        </div>
+
+        <div class="w-full max-w-xs space-y-4 mb-12 animate-[slideUp_0.5s_ease-out]">
+            
+            <button @click="enterShop" 
+                :disabled="!shopIsOpen && !myOrder"
+                class="w-full py-5 rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95"
+                :class="(!shopIsOpen && !myOrder) ? 'bg-stone-200 text-stone-400 cursor-not-allowed' : 'bg-brick text-white hover:bg-red-900 shadow-red-100'">
+                <span class="material-icons-round">{{ myOrder ? 'receipt_long' : 'flatware' }}</span>
+                {{ myOrder ? '查看我的訂單' : (shopIsOpen ? '開始點餐' : '本店休息中') }}
+            </button>
+
+            <button @click="isTrackingMode=true" class="w-full py-5 bg-white border-2 border-stone-100 text-stone-600 rounded-2xl font-bold text-xl shadow-sm flex items-center justify-center gap-3 active:scale-95 transition-transform hover:bg-stone-50 hover:border-stone-200">
+                <span class="material-icons-round text-yellow-500">search</span>
+                單號追蹤
+            </button>
+
+        </div>
+
+        <div class="absolute bottom-10 left-0 right-0 text-center">
+            <p class="text-xs text-stone-400 mb-2 tracking-[0.2em] uppercase">Current Call</p>
+            <p class="text-5xl font-bold text-stone-300 serif">#{{ currentCallingNumber || '--' }}</p>
+        </div>
+    </div>
+
+
+    <div v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]">
+        
+        <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0 flex justify-between items-center">
+            <div @click="hasEnteredShop=false" class="cursor-pointer"> <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif flex items-center gap-2">
+                    <span class="material-icons-round text-stone-400 text-xl">arrow_back_ios</span>
+                    傳統古早味
+                </h1> 
+                <p class="text-xs text-brick mt-1 tracking-widest pl-6">TRADITIONAL TASTE</p>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-6 pb-40 space-y-4">
+            <div v-for="item in menu" :key="item.id" class="flex justify-between items-start bg-white p-4 rounded-xl shadow-sm border border-stone-50">
+                <div class="flex-1">
+                    <h3 class="text-lg font-medium text-stone-800 serif">{{ item.name }}</h3>
+                    <p class="text-xs text-stone-400 mt-1">{{ item.desc }}</p>
+                    <span class="text-brick font-bold mt-2 block">${{ item.price }}</span>
+                </div>
+                <div class="flex items-center gap-3 ml-4">
+                    <button v-if="getItemCount(item.id) > 0" @click="removeFromCart(item)" class="w-8 h-8 rounded-full border border-stone-200 text-stone-400 flex items-center justify-center">-</button>
+                    <span v-if="getItemCount(item.id) > 0" class="font-medium text-stone-800 w-4 text-center">{{ getItemCount(item.id) }}</span>
+                    <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-brick text-white flex items-center justify-center shadow-md shadow-red-100" :disabled="!shopIsOpen && !myOrder">+</button>
+                </div>
+            </div>
+            <div v-if="!shopIsOpen && !myOrder" class="text-center py-10">
+                <p class="text-stone-400 font-bold mb-2">本店休息中</p>
+                <p class="text-xs text-stone-300">暫停點餐，僅供查詢訂單</p>
+            </div>
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom">
+            
+            <div v-if="!myOrder && !trackedNumber" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div><p class="text-xs text-stone-400">總金額</p><p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p></div>
+                    <div class="text-right"><p class="text-xs text-stone-400">已選品項</p><p class="text-sm text-stone-800">{{ cartCount }} 份</p></div>
+                </div>
+                <button @click="openConfirmation" :disabled="cartCount===0" class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">準備結帳</button>
+            </div>
+
+            <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-6 max-h-[60vh] overflow-y-auto">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
+                        <h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder?.number || trackedNumber }}</h2>
+                    </div>
+                    <div class="text-right">
+                        <span v-if="trackedNumber" class="px-3 py-1 rounded-full text-xs font-bold" :class="isTrackedNumberCalled ? 'status-done animate-pulse' : 'bg-gray-200 text-gray-600'">{{ isTrackedNumberCalled ? '可取餐' : '等待叫號' }}</span>
+                        <span v-else class="px-3 py-1 rounded-full text-xs font-bold" :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">{{ getStatusText(myOrder.status) }}</span>
+                    </div>
+                </div>
+
+                <div v-if="myOrder" class="bg-stone-50 rounded-xl p-4 mb-4 border border-stone-100">
+                    <div class="flex justify-between items-center mb-2 cursor-pointer" @click="showDetails = !showDetails"><span class="text-xs font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span><span class="material-icons-round text-stone-400 text-sm transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span></div>
+                    <div v-if="showDetails" class="space-y-2 border-t border-stone-200 pt-2 mt-2">
+                        <div v-for="(item, index) in myOrder.items" :key="index" class="flex justify-between text-sm text-stone-600"><span>{{ item.name }} x{{ item.qty }}</span><span class="font-medium">${{ item.price * item.qty }}</span></div>
+                        <div class="flex justify-between text-base font-bold text-stone-800 pt-2 border-t border-stone-200 mt-2"><span>總計</span><span>${{ myOrder.total }}</span></div>
+                    </div>
+                </div>
+                
+                <div v-if="trackedNumber && !isTrackedNumberCalled" class="text-center p-4 bg-stone-50 rounded-lg text-stone-500 text-sm mb-4">
+                    <p>正在追蹤叫號機...</p>
+                    <p class="text-xs mt-1">請保持網頁開啟，叫號時會通知您</p>
+                </div>
+
+                <div v-if="myOrder?.status === 'pending'" class="text-center p-2 bg-stone-100 rounded-lg text-stone-500 text-sm">
+                    請向櫃檯出示此畫面並付款<br>
+                    <button @click="cancelOrder" class="mt-2 text-xs text-stone-400 underline">取消訂單 (重新點餐)</button>
+                </div>
+
+                <p v-if="myOrder?.status === 'done' || isTrackedNumberCalled" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
+                
+                <button @click="resetOrder" v-if="myOrder?.status==='done' || myOrder?.status==='archived' || isTrackedNumberCalled" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉 (下一單)</button>
+                
+                <button @click="stopTracking" v-if="trackedNumber && !isTrackedNumberCalled" class="w-full mt-4 text-xs text-stone-400 underline">停止追蹤</button>
+            </div>
+        </div>
+    </div>
+
+
     <div v-if="showPickupModal" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-6 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
         <div class="bg-white w-full max-w-sm rounded-2xl p-8 text-center relative shadow-2xl border-4 border-green-400">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-[bounce_1s_infinite]">
@@ -34,7 +153,7 @@
             </div>
             <h2 class="text-2xl font-bold text-stone-800 mb-2">餐點好囉！</h2>
             <p class="text-stone-500 mb-6">呼叫號碼</p>
-            <div class="text-6xl font-bold text-brick serif mb-8">#{{ myOrder?.number || trackedNumber }}</div>
+            <div class="text-7xl font-bold text-brick serif mb-8">#{{ myOrder?.number || trackedNumber }}</div>
             <button @click="closePickupModal" class="w-full py-4 bg-stone-800 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
                 我知道了，馬上去拿！
             </button>
@@ -45,55 +164,11 @@
         <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2"><span class="material-icons-round text-3xl">close</span></button>
         <h2 class="text-2xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
         <p class="text-stone-400 text-sm mb-8">櫃台點餐的客人，請輸入單據上的號碼</p>
-        <input type="number" v-model="tempTrackInput" placeholder="88" class="w-full text-center text-6xl font-bold text-brick border-b-2 border-stone-200 focus:border-brick outline-none py-4 mb-8 bg-transparent serif placeholder-stone-200">
-        <button @click="startTracking" :disabled="!tempTrackInput" class="w-full max-w-xs py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50">
+        <input type="number" v-model="tempTrackInput" placeholder="88" 
+            class="w-full text-center text-7xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-10 bg-transparent serif placeholder-stone-200 h-32">
+        <button @click="startTracking" :disabled="!tempTrackInput" class="w-full max-w-xs py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
             開始追蹤
         </button>
-    </div>
-
-    <div v-if="!shopIsOpen" class="fixed inset-0 bg-stone-900 z-50 flex flex-col items-center justify-center text-white p-6 text-center overflow-y-auto">
-        
-        <div class="mb-8 mt-10">
-            <div class="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-stone-700 shadow-xl">
-                <span class="material-icons-round text-4xl text-stone-500">storefront</span>
-            </div>
-            <h2 class="text-2xl font-bold serif tracking-wider">本店休息中</h2>
-            <p class="text-stone-500 text-xs mt-1 tracking-widest">目前暫停線上點餐</p>
-        </div>
-
-        <div class="w-full max-w-xs bg-stone-800/50 p-6 rounded-2xl border border-stone-700 mb-8 backdrop-blur-sm">
-            
-            <div v-if="!trackedNumber && !myOrder">
-                <p class="text-stone-400 text-sm font-bold mb-4 flex items-center justify-center gap-2">
-                    <span class="material-icons-round text-yellow-500">search</span> 查詢訂單進度
-                </p>
-                <div class="flex gap-2">
-                    <input type="number" v-model="tempTrackInput" placeholder="號碼" class="flex-1 bg-stone-900 border border-stone-600 rounded-xl px-4 py-3 text-center text-xl font-bold text-white outline-none focus:border-brick">
-                    <button @click="startTracking" :disabled="!tempTrackInput" class="bg-brick text-white px-6 rounded-xl font-bold shadow-lg disabled:opacity-50 active:scale-95 transition-transform">
-                        追蹤
-                    </button>
-                </div>
-            </div>
-
-            <div v-else>
-                <p class="text-stone-400 text-xs mb-2 uppercase tracking-wider">TRACKING</p>
-                <div class="text-5xl font-bold text-yellow-400 serif mb-2">#{{ myOrder?.number || trackedNumber }}</div>
-                <p class="text-sm" :class="isTrackedNumberCalled || myOrder?.status === 'done' ? 'text-green-400 font-bold animate-pulse' : 'text-stone-500'">
-                    {{ (isTrackedNumberCalled || myOrder?.status === 'done') ? '餐點已好！' : '等待叫號中...' }}
-                </p>
-                <button @click="stopTrackingAndClear" class="mt-4 text-xs text-stone-600 underline hover:text-stone-400">
-                    停止追蹤
-                </button>
-            </div>
-        </div>
-
-        <div class="w-full max-w-xs border-t border-stone-800 pt-8">
-            <p class="text-xs text-stone-600 mb-2 tracking-[0.2em] uppercase">Current Call</p>
-            <p class="text-6xl font-bold text-stone-200 serif" style="text-shadow: 0 0 30px rgba(255,255,255,0.1);">
-                #{{ currentCallingNumber || '--' }}
-            </p>
-        </div>
-
     </div>
 
     <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false">
@@ -113,85 +188,7 @@
         </div>
     </div>
 
-    <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0 flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif">傳統古早味</h1> 
-            <p class="text-xs text-brick mt-1 tracking-widest">TRADITIONAL TASTE</p>
-        </div>
-        <button v-if="!myOrder && !trackedNumber" @click="isTrackingMode=true" class="text-xs font-bold text-stone-400 border border-stone-200 px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-stone-50">
-            <span class="material-icons-round text-sm">search</span> 追蹤號碼
-        </button>
-    </div>
-
-    <div class="flex-1 overflow-y-auto px-6 pb-40 space-y-4">
-        <div v-for="item in menu" :key="item.id" class="flex justify-between items-start bg-white p-4 rounded-xl shadow-sm border border-stone-50">
-            <div class="flex-1">
-                <h3 class="text-lg font-medium text-stone-800 serif">{{ item.name }}</h3>
-                <p class="text-xs text-stone-400 mt-1">{{ item.desc }}</p>
-                <span class="text-brick font-bold mt-2 block">${{ item.price }}</span>
-            </div>
-            <div class="flex items-center gap-3 ml-4">
-                <button v-if="getItemCount(item.id) > 0" @click="removeFromCart(item)" class="w-8 h-8 rounded-full border border-stone-200 text-stone-400 flex items-center justify-center">-</button>
-                <span v-if="getItemCount(item.id) > 0" class="font-medium text-stone-800 w-4 text-center">{{ getItemCount(item.id) }}</span>
-                <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-brick text-white flex items-center justify-center shadow-md shadow-red-100">+</button>
-            </div>
-        </div>
-        <div v-if="menu.length === 0" class="text-center text-stone-300 py-10">載入菜單中...</div>
-    </div>
-
-    <div class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom">
-        
-        <div v-if="!myOrder && !trackedNumber" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
-            <div class="flex justify-between items-center mb-4">
-                <div><p class="text-xs text-stone-400">總金額</p><p class="text-2xl font-bold text-stone-800">${{ cartTotal }}</p></div>
-                <div class="text-right"><p class="text-xs text-stone-400">已選品項</p><p class="text-sm text-stone-800">{{ cartCount }} 份</p></div>
-            </div>
-            <button @click="openConfirmation" :disabled="cartCount===0" class="w-full py-3.5 rounded-xl font-medium tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">確認明細</button>
-        </div>
-
-        <div v-else class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-6 max-h-[60vh] overflow-y-auto">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <p class="text-xs text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
-                    <h2 class="text-5xl font-bold text-stone-800 serif">#{{ myOrder?.number || trackedNumber }}</h2>
-                </div>
-                <div class="text-right">
-                    <span v-if="trackedNumber" class="px-3 py-1 rounded-full text-xs font-bold" :class="isTrackedNumberCalled ? 'status-done animate-pulse' : 'bg-gray-200 text-gray-600'">{{ isTrackedNumberCalled ? '可取餐' : '等待叫號' }}</span>
-                    <span v-else class="px-3 py-1 rounded-full text-xs font-bold" :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">{{ getStatusText(myOrder.status) }}</span>
-                </div>
-            </div>
-
-            <div v-if="myOrder" class="bg-stone-50 rounded-xl p-4 mb-4 border border-stone-100">
-                <div class="flex justify-between items-center mb-2 cursor-pointer" @click="showDetails = !showDetails"><span class="text-xs font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span><span class="material-icons-round text-stone-400 text-sm transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span></div>
-                <div v-if="showDetails" class="space-y-2 border-t border-stone-200 pt-2 mt-2">
-                    <div v-for="(item, index) in myOrder.items" :key="index" class="flex justify-between text-sm text-stone-600"><span>{{ item.name }} x{{ item.qty }}</span><span class="font-medium">${{ item.price * item.qty }}</span></div>
-                    <div class="flex justify-between text-base font-bold text-stone-800 pt-2 border-t border-stone-200 mt-2"><span>總計</span><span>${{ myOrder.total }}</span></div>
-                </div>
-            </div>
-            
-            <div v-if="trackedNumber && !isTrackedNumberCalled" class="text-center p-4 bg-stone-50 rounded-lg text-stone-500 text-sm mb-4">
-                <p>正在追蹤叫號機...</p>
-                <p class="text-xs mt-1">請保持網頁開啟，叫號時會通知您</p>
-            </div>
-
-            <div v-if="myOrder?.status === 'pending'" class="text-center p-2 bg-stone-100 rounded-lg text-stone-500 text-sm">
-                請向櫃檯出示此畫面並付款<br>
-                <button @click="cancelOrder" class="mt-2 text-xs text-stone-400 underline">取消訂單 (重新點餐)</button>
-            </div>
-
-            <p v-if="myOrder?.status === 'done' || isTrackedNumberCalled" class="text-center text-sm font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
-            
-            <button @click="resetOrder" v-if="myOrder?.status==='done' || myOrder?.status==='archived' || isTrackedNumberCalled" class="w-full mt-4 py-2 border border-stone-200 rounded-lg text-sm text-stone-400">關閉</button>
-            
-            <button @click="stopTracking" v-if="trackedNumber && !isTrackedNumberCalled" class="w-full mt-4 text-xs text-stone-400 underline">停止追蹤</button>
-        </div>
-    </div>
 </div>
-
-<style> 
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } 
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-</style>
 
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
@@ -212,6 +209,9 @@
 
     createApp({
         setup() {
+            // 🌟 新增：控制是否進入商店
+            const hasEnteredShop = ref(false);
+
             const menu = ref([]); 
             const defaultMenu = [
                 { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true },
@@ -259,6 +259,8 @@
                         const data = snapshot.val();
                         if (data && data.status !== 'archived') {
                             myOrder.value = { ...data, key: snapshot.key };
+                            // 🌟 如果客人本來就有訂單，直接讓他進入商店，不用停在首頁
+                            hasEnteredShop.value = true;
                         } else {
                             myOrder.value = null;
                             localStorage.removeItem('jiantou_order_key');
@@ -269,8 +271,17 @@
                 const savedTrack = localStorage.getItem('jiantou_tracked_number');
                 if (savedTrack) {
                     trackedNumber.value = parseInt(savedTrack);
+                    // 🌟 如果客人正在追蹤，也直接進入商店(顯示下方狀態卡)
+                    hasEnteredShop.value = true;
                 }
             });
+
+            // 🌟 進入商店 (開始點餐按鈕)
+            const enterShop = () => {
+                if (shopIsOpen.value || myOrder.value) {
+                    hasEnteredShop.value = true;
+                }
+            };
 
             watch(() => myOrder.value?.status, (newStatus, oldStatus) => {
                 if (newStatus === 'done' && oldStatus !== 'done') {
@@ -364,6 +375,8 @@
                 isTrackedNumberCalled.value = false;
                 localStorage.removeItem('jiantou_order_key');
                 localStorage.removeItem('jiantou_tracked_number');
+                // 🌟 訂單結束後，可以選擇回到首頁 (或留在商店看菜單)
+                // 這裡選擇不強制踢回首頁，讓客人自己按返回
             };
 
             const cancelOrder = () => {
@@ -375,7 +388,6 @@
                 }
             };
 
-            // 🌟 啟動追蹤功能
             const startTracking = () => {
                 if (tempTrackInput.value) {
                     const audio = document.getElementById('pickupSound');
@@ -388,6 +400,9 @@
                     localStorage.setItem('jiantou_tracked_number', trackedNumber.value);
                     isTrackingMode.value = false;
                     tempTrackInput.value = '';
+                    
+                    // 🌟 追蹤成功後，直接帶入商店畫面
+                    hasEnteredShop.value = true;
                 }
             };
 
@@ -397,7 +412,6 @@
                 localStorage.removeItem('jiantou_tracked_number');
             };
 
-            // 🌟 如果是在休息畫面中按停止追蹤，要同時清除輸入框
             const stopTrackingAndClear = () => {
                 stopTracking();
                 tempTrackInput.value = '';
@@ -419,7 +433,8 @@
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
                 shopIsOpen, showDetails, isConfirming, openConfirmation, getMenuName, getMenuDesc, getMenuPrice,
                 resetOrder, cancelOrder, showPickupModal, closePickupModal,
-                isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking, stopTrackingAndClear // 🌟
+                isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking, stopTrackingAndClear,
+                hasEnteredShop, enterShop // 🌟
             };
         }
     }).mount('#app');
