@@ -30,23 +30,21 @@
     
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
-<div v-if="!hasEnteredShop" class="flex-1 flex flex-col items-center relative bg-[#FDFBF7] overflow-y-auto">
+<div v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto">
+    <div class="min-h-full flex flex-col items-center justify-center py-12 px-4">
         
-    <div class="flex flex-col items-center justify-center w-full max-w-xs py-16 my-auto min-h-max">
+        <div class="w-full max-w-xs flex flex-col items-center">
             
-            <div class="text-center mb-8 animate-[fadeIn_0.5s_ease-out]"><div class="w-24 h-24 flex items-center justify-center mx-auto mb-2">
-    <img src="https://github.com/d930yao-create/jiantou/blob/main/image/jt2.png?raw=true" alt="尖頭油飯" class="w-full h-full object-contain">
-</div>
-
-
-                
-                <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2">尖頭油飯</h1>
-                <p class="text-sm text-brick tracking-[0.3em] font-bold">TRADITIONAL TASTE</p>
-                
-                <div class="mt-4">
-                    <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
-                    <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
-                </div>
+            <div class="w-24 h-24 flex items-center justify-center mx-auto mb-2 animate-[fadeIn_0.5s_ease-out]">
+                <img src="https://github.com/d930yao-create/jiantou/blob/main/image/jt2.png?raw=true" alt="尖頭油飯" class="w-full h-full object-contain">
+            </div>
+            
+            <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
+            <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
+            
+            <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out]">
+                <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
+                <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
             </div>
 
             <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
@@ -65,12 +63,13 @@
             </div>
         </div>
 
-        <div class="absolute bottom-12 left-0 right-0 text-center pb-safe">
+        <div class="mt-16 text-center animate-[slideUp_0.5s_ease-out]">
             <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
             <p class="text-7xl font-bold text-stone-300 serif">#{{ currentCallingNumber || '--' }}</p>
         </div>
+        
     </div>
-
+</div>
 
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]">
         
@@ -183,8 +182,11 @@
         <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2"><span class="material-icons-round text-4xl">close</span></button>
         <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
         <p class="text-stone-400 text-base mb-8">櫃台點餐的客人，請輸入取餐號碼</p>
-        <input type="number" v-model="tempTrackInput" placeholder="88" 
-            class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-10 bg-transparent serif placeholder-stone-200 h-40">
+<input type="number" v-model="tempTrackInput" @input="trackError=''" placeholder="88" 
+    class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40">
+
+<p v-if="trackError" class="text-brick font-bold mb-6 h-6 animate-[fadeIn_0.3s_ease-out]">{{ trackError }}</p>
+<div v-else class="h-6 mb-6"></div>
         <button @click="startTracking" :disabled="!tempTrackInput" class="w-full max-w-xs py-5 bg-brick text-white rounded-xl font-bold text-2xl shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
             開始追蹤
         </button>
@@ -212,8 +214,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
+import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
         authDomain: "jiantou-000rlhad.firebaseapp.com",
@@ -250,6 +251,7 @@
             const isTrackingMode = ref(false);
             const trackedNumber = ref(null);
             const tempTrackInput = ref('');
+const trackError = ref('');
             const isTrackedNumberCalled = ref(false);
 
             onMounted(() => {
@@ -400,21 +402,52 @@
                 }
             };
 
-            const startTracking = () => {
-                if (tempTrackInput.value) {
-                    const audio = document.getElementById('pickupSound');
-                    if (audio) {
-                        audio.volume = 0; 
-                        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+const startTracking = async () => {
+    if (tempTrackInput.value) {
+        trackError.value = '';
+        const inputNum = parseInt(tempTrackInput.value);
+        
+        // 默默去資料庫比對現有單號
+        const ordersRef = dbRef(db, 'orders');
+        const q = query(ordersRef, orderByChild('number'), equalTo(inputNum));
+        
+        try {
+            const snapshot = await get(q);
+            let isValidOrder = false;
+            
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const order = child.val();
+                    // 只要狀態不是已結案(done)或封存(archived)，就算有效
+                    if (order.status !== 'done' && order.status !== 'archived') {
+                        isValidOrder = true;
                     }
+                });
+            }
+            
+            if (!isValidOrder) {
+                trackError.value = '目前沒有這個號碼喔，是不是記錯了呢';
+                return;
+            }
+            
+            // 配對成功，執行原本的追蹤動作
+            const audio = document.getElementById('pickupSound');
+            if (audio) {
+                audio.volume = 0; 
+                audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+            }
 
-                    trackedNumber.value = parseInt(tempTrackInput.value);
-                    localStorage.setItem('jiantou_tracked_number', trackedNumber.value);
-                    isTrackingMode.value = false;
-                    tempTrackInput.value = '';
-                    hasEnteredShop.value = true;
-                }
-            };
+            trackedNumber.value = inputNum;
+            localStorage.setItem('jiantou_tracked_number', trackedNumber.value);
+            isTrackingMode.value = false;
+            tempTrackInput.value = '';
+            hasEnteredShop.value = true;
+            
+        } catch (error) {
+            trackError.value = '網路有點小塞車，請再試一次';
+        }
+    }
+};
 
             const stopTracking = () => {
                 trackedNumber.value = null;
@@ -438,13 +471,13 @@
                 return '已結案';
             };
 
-            return { 
+return { 
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
                 shopIsOpen, showDetails, isConfirming, openConfirmation, getMenuName, getMenuDesc, getMenuPrice,
                 resetOrder, cancelOrder, showPickupModal, closePickupModal,
                 isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking, stopTrackingAndClear,
-                hasEnteredShop, enterShop
+                hasEnteredShop, enterShop, trackError
             };
         }
     }).mount('#app');
