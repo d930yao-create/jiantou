@@ -142,12 +142,26 @@
                 });
             });
 
-            watch(currentNumber, (newVal) => {
+watch(currentNumber, (newVal) => {
                 if (newVal && !isMuted.value) {
+                    // 1. 先播放叮咚聲
                     const audio = document.getElementById('dingSound');
                     if(audio) {
                         audio.play().catch(() => {});
                     }
+
+                    // 2. 延遲 1 秒後，讓系統開口唸出號碼 (等叮咚聲快結束)
+                    setTimeout(() => {
+                        const speechText = `${newVal}號，請至櫃檯取餐`;
+                        const utterance = new SpeechSynthesisUtterance(speechText);
+                        
+                        // 設定語言為台灣中文，語速稍微放慢一點
+                        utterance.lang = 'zh-TW';
+                        utterance.rate = 0.85; 
+                        
+                        // 讓設備唸出來
+                        window.speechSynthesis.speak(utterance);
+                    }, 1000); 
                 }
             });
 
