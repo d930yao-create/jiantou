@@ -265,6 +265,9 @@
 
     createApp({
         setup() {
+            // 🌟 這是妳專屬的安全版本號，未來如果改密碼，只要把這裡改成 admin_v2，舊手機就會全部被登出
+            const adminTokenVersion = 'admin_v1';
+
             const isLoggedIn = ref(false);
             const loginUser = ref('');
             const loginPass = ref('');
@@ -291,6 +294,12 @@
             ];
 
             onMounted(() => {
+                // 🌟 檢查有沒有攜帶正確版本的通關小卡
+                const savedToken = localStorage.getItem('jiantou_admin_token');
+                if (savedToken === adminTokenVersion) {
+                    isLoggedIn.value = true;
+                }
+
                 window.addEventListener('resize', () => { isDesktop.value = window.innerWidth >= 768; });
                 const now = new Date();
                 const yyyy = now.getFullYear();
@@ -327,7 +336,6 @@
                 });
             });
 
-            // 🌟 菜單上移功能
             const moveMenuUp = (index) => {
                 if (index > 0) {
                     const temp = menuSettings.value[index];
@@ -336,7 +344,6 @@
                 }
             };
 
-            // 🌟 菜單下移功能
             const moveMenuDown = (index) => {
                 if (index < menuSettings.value.length - 1) {
                     const temp = menuSettings.value[index];
@@ -401,12 +408,24 @@
                 return selectedDate.value === todayStr;
             });
             const formattedDateString = computed(() => selectedDate.value.replace(/-/g, '/'));
+            
+            // 🌟 登入時發放通關小卡
             const checkLogin = () => {
                 if (loginUser.value === 'admin_jt' && loginPass.value === '554708') {
-                    isLoggedIn.value = true; loginError.value = false;
-                } else { loginError.value = true; }
+                    isLoggedIn.value = true; 
+                    loginError.value = false;
+                    localStorage.setItem('jiantou_admin_token', adminTokenVersion);
+                } else { 
+                    loginError.value = true; 
+                }
             };
-            const logout = () => { isLoggedIn.value = false; };
+            
+            // 🌟 登出時銷毀通關小卡
+            const logout = () => { 
+                isLoggedIn.value = false; 
+                localStorage.removeItem('jiantou_admin_token');
+            };
+
             const updateStatus = (order, newStatus) => {
                 if (!isToday.value) return;
                 const updates = {};
@@ -494,7 +513,7 @@
                 updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteAllOrdersByDate, exportToCSV,
                 currentTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue,
                 isDesktop, menuSettings, saveMenuToFirebase, addMenuItem,
-                moveMenuUp, moveMenuDown // 🌟 加入這兩個功能
+                moveMenuUp, moveMenuDown
             };
         }
     }).mount('#app');
