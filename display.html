@@ -125,13 +125,16 @@
 const toggleMute = () => {
                 isMuted.value = !isMuted.value;
                 if (!isMuted.value) {
-                    // 1. 喚醒叮咚音效
                     const audio = document.getElementById('dingSound');
                     if (audio) {
-                        audio.volume = 0; 
-                        audio.play().then(() => { audio.pause(); audio.volume = 1; audio.currentTime = 0; }).catch(() => {});
+                        // 讓音效保持有聲音(不要設成0)，但立刻暫停
+                        audio.volume = 1;
+                        audio.play().then(() => {
+                            audio.pause();
+                            audio.currentTime = 0;
+                        }).catch(e => console.log('解鎖音效失敗', e));
                     }
-                    // 2. 喚醒語音功能，唸一段無聲的空白
+                    
                     const unlockSpeech = new SpeechSynthesisUtterance(' ');
                     window.speechSynthesis.speak(unlockSpeech);
                 }
