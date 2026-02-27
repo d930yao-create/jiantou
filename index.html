@@ -107,7 +107,7 @@
             <div v-if="(!myOrder && !trackedNumber) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
                 <div class="flex justify-between items-center mb-5">
                     <div>
-                        <p class="text-sm text-stone-400 mb-1">{{ isAppending ? '本次加點金額' : '總金額' }}</p>
+                        <p class="text-sm text-stone-400 mb-1">{{ isAppending ? '加點總金額' : '總金額' }}</p>
                         <p class="text-4xl font-bold text-stone-800 serif">${{ cartTotal }}</p>
                     </div>
                     <div class="text-right">
@@ -133,7 +133,7 @@
                     </div>
                 </div>
 
-                <div v-if="myOrder" class="bg-stone-50 rounded-xl p-5 mb-5 border border-stone-100">
+                <div v-if="myOrder" class="bg-stone-50 rounded-xl p-5 mb-4 border border-stone-100">
                     <div class="flex justify-between items-center mb-3 cursor-pointer" @click="showDetails = !showDetails">
                         <span class="text-sm font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span>
                         <span class="material-icons-round text-stone-400 text-lg transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span>
@@ -150,31 +150,42 @@
                     </div>
                 </div>
                 
+                <div v-if="myAddonOrder && myAddonOrder.status === 'pending'" class="mb-4 p-4 bg-orange-50 rounded-xl border border-orange-100 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-16 h-16 bg-orange-100 rounded-bl-full opacity-50"></div>
+                    <div class="relative z-10">
+                        <p class="font-bold text-orange-700 mb-1 flex items-center gap-1">
+                            <span class="material-icons-round text-sm">notifications_active</span> 加點項目待結帳
+                        </p>
+                        <p class="text-sm text-orange-600 mb-3">請至櫃檯現場支付加點金額 <span class="font-bold text-brick text-base">${{ myAddonOrder.total }}</span></p>
+                        <button @click="cancelAddon" class="px-4 py-2 bg-white text-orange-500 rounded-lg text-xs font-bold shadow-sm border border-orange-100 active:scale-95 transition-transform">取消加點</button>
+                    </div>
+                </div>
+
                 <div v-if="trackedNumber && !isTrackedNumberCalled" class="text-center p-6 bg-stone-50 rounded-xl text-stone-500 text-base mb-4">
                     <p class="font-bold mb-1">🔍 正在追蹤叫號機...</p>
                     <p class="text-sm mt-1">請保持網頁開啟，叫號時會通知您</p>
                 </div>
 
-                <div v-if="myOrder?.status === 'pending'" class="text-center p-4 bg-stone-100 rounded-xl text-stone-500 text-base">
+                <div v-if="myOrder?.status === 'pending'" class="text-center p-4 bg-stone-100 rounded-xl text-stone-500 text-base mb-4">
                     請至攤位現場付款<br>
                     完成後開始製作餐點<br>
                     <button @click="cancelOrder" class="mt-3 text-sm text-stone-400 underline p-2">取消訂單 (重新點餐)</button>
                 </div>
 
-                <div v-if="myOrder && !isTrackedNumberCalled && myOrder.status !== 'done'" class="mt-4 p-4 bg-orange-50/50 rounded-xl border border-orange-100 flex items-start gap-3">
-                    <span class="material-icons-round text-brick text-xl opacity-80 mt-0.5">info</span>
-                    <div class="text-sm text-stone-600 leading-relaxed text-left">
-                        <p class="font-bold text-brick mb-1 tracking-wide">出餐小提醒</p>
+                <div v-if="myOrder && !isTrackedNumberCalled && myOrder.status !== 'done'" class="p-4 bg-stone-50 rounded-xl border border-stone-200 flex items-start gap-3">
+                    <span class="material-icons-round text-stone-400 text-xl opacity-80 mt-0.5">info</span>
+                    <div class="text-sm text-stone-500 leading-relaxed text-left">
+                        <p class="font-bold text-stone-600 mb-1 tracking-wide">出餐小提醒</p>
                         <p>蘿蔔糕為現點現煎，需稍作等待</p>
                         <p>若訂單內僅有油飯，會優先出餐</p>
-                        <p>出餐順序如有不同造成不便敬請見諒</p>
+                        <p>出餐訊息若有不同造成不便敬請見諒🙇🏻‍♀️</p>
                     </div>
                 </div>
 
                 <p v-if="myOrder?.status === 'done' || isTrackedNumberCalled" class="text-center text-lg font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
 
-                <button @click="startAppend" v-if="myOrder && myOrder.status === 'paid'" class="w-full mt-4 py-3 bg-stone-100 text-stone-600 rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-2">
-                    <span class="material-icons-round text-lg">add_circle_outline</span> 我想加點 (併入原單)
+                <button @click="startAppend" v-if="myOrder && myOrder.status === 'paid' && (!myAddonOrder || myAddonOrder.status !== 'pending')" class="w-full mt-4 py-3 bg-stone-100 text-stone-600 rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <span class="material-icons-round text-lg">add_circle_outline</span> 我想加點
                 </button>
                 
                 <button @click="resetOrder" v-if="myOrder?.status==='done' || myOrder?.status==='archived' || isTrackedNumberCalled" class="w-full mt-4 py-3 border-2 border-stone-200 rounded-xl text-base font-bold text-stone-400">關閉</button>
@@ -262,13 +273,13 @@
             </div>
             
             <div v-if="!isAppending" class="mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100">
-                <label class="block text-sm font-bold text-stone-600 mb-2 text-center">取餐用手機末三碼</label>
+                <label class="block text-sm font-bold text-stone-600 mb-2 text-center">請輸入手機末三碼 取餐用</label>
                 <input type="tel" maxlength="3" v-model="phoneSuffix" placeholder="點擊輸入" class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick">
             </div>
 
             <div class="flex gap-3 mt-2">
                 <button @click="isConfirming=false" class="flex-1 py-4 bg-stone-100 text-stone-500 rounded-xl font-bold text-lg">返回修改</button>
-                <button @click="submitOrder" :disabled="isSubmitting" class="flex-1 py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50">{{ isSubmitting ? '傳送中...' : (isAppending ? '確認加點' : '確認送單') }}</button>
+                <button @click="submitOrder" :disabled="isSubmitting" class="flex-1 py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50">{{ isSubmitting ? '傳送中...' : (isAppending ? '送出加點單' : '確認送單') }}</button>
             </div>
         </div>
     </div>
@@ -278,8 +289,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    // 🌟 這裡偷偷幫妳加上了 update 這個重要的魔法指令
-    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
@@ -306,6 +316,7 @@
             const selectedOptionsArr = ref([]);
             
             const myOrder = ref(null);
+            const myAddonOrder = ref(null); // 🌟 專門用來追蹤客人的加點單
             const isSubmitting = ref(false);
             const currentCallingNumber = ref(null);
             const shopIsOpen = ref(true);
@@ -320,8 +331,6 @@
             const isTrackedNumberCalled = ref(false);
 
             const phoneSuffix = ref('');
-            
-            // 🌟 啟動加點模式的鑰匙
             const isAppending = ref(false);
 
             onMounted(() => {
@@ -341,6 +350,7 @@
                     else { menu.value = defaultMenu; }
                 });
 
+                // 追蹤主訂單
                 const savedOrderKey = localStorage.getItem('jiantou_order_key');
                 if (savedOrderKey) {
                     const savedOrderRef = dbRef(db, `orders/${savedOrderKey}`);
@@ -352,6 +362,20 @@
                         } else {
                             myOrder.value = null;
                             localStorage.removeItem('jiantou_order_key');
+                        }
+                    });
+                }
+                
+                // 🌟 追蹤加點專屬訂單
+                const savedAddonKey = localStorage.getItem('jiantou_addon_key');
+                if (savedAddonKey) {
+                    onValue(dbRef(db, `orders/${savedAddonKey}`), (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            myAddonOrder.value = { ...data, key: snapshot.key };
+                        } else {
+                            myAddonOrder.value = null;
+                            localStorage.removeItem('jiantou_addon_key');
                         }
                     });
                 }
@@ -451,14 +475,23 @@
 
             const openConfirmation = () => { if (cartCount.value > 0) isConfirming.value = true; };
 
-            // 🌟 將畫面溫柔切換到加點模式
             const startAppend = () => {
                 isAppending.value = true;
                 cart.value = {}; 
             };
 
+            // 🌟 加點取消魔法
+            const cancelAddon = () => {
+                if(confirm('確定要取消這次的加點嗎？')) {
+                    if (myAddonOrder.value && myAddonOrder.value.key) {
+                        remove(dbRef(db, `orders/${myAddonOrder.value.key}`));
+                    }
+                    myAddonOrder.value = null;
+                    localStorage.removeItem('jiantou_addon_key');
+                }
+            };
+
             const submitOrder = async () => {
-                // 如果是新訂單，才需要檢查末三碼
                 if (!isAppending.value) {
                     if (!phoneSuffix.value || phoneSuffix.value.length !== 3) {
                         alert('為了方便取餐，請輸入完整的手機末三碼喔！');
@@ -490,38 +523,48 @@
                     });
                 }
                 
-                // 🌟 加點專屬的秘密通道
-                if (isAppending.value && myOrder.value && myOrder.value.key) {
-                    const existingItems = myOrder.value.items || [];
-                    // 把新點的餐點直接接到原本的清單後面
-                    const mergedItems = [...existingItems, ...newCartItems];
-                    const newTotal = myOrder.value.total + cartTotal.value;
-
-                    const updates = {};
-                    updates[`orders/${myOrder.value.key}/items`] = mergedItems;
-                    updates[`orders/${myOrder.value.key}/total`] = newTotal;
-
-                    try {
-                        await update(dbRef(db), updates);
-                        isAppending.value = false;
-                        cart.value = {};
-                        isConfirming.value = false;
-                        isSubmitting.value = false;
-                        alert('加點成功！已經幫您併入原單囉。廚房馬上為您準備。');
-                    } catch (error) {
-                        alert('加點遇到一點小問題，請再試一次');
-                        isSubmitting.value = false;
-                    }
-                    return; // 走完專屬通道就結束
-                }
-
-                // 以下是原本的新訂單流程
                 const now = new Date();
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
                 const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
 
                 const ordersRef = dbRef(db, 'orders');
+
+                // 🌟 加點單專屬的傳送通道 (改為送出一張待結帳的獨立單)
+                if (isAppending.value && myOrder.value && myOrder.value.key) {
+                    const addonData = {
+                        number: myOrder.value.number,
+                        parentKey: myOrder.value.key,
+                        isAddon: true, // 告訴後台這是一張加點單
+                        items: newCartItems,
+                        total: cartTotal.value,
+                        status: 'pending',
+                        createdAt: serverTimestamp(),
+                        timeString: timeString,
+                        dateString: dateString
+                    };
+                    
+                    const newRef = push(ordersRef, addonData);
+                    localStorage.setItem('jiantou_addon_key', newRef.key);
+                    
+                    // 開始追蹤這張加點單
+                    onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            myAddonOrder.value = { ...data, key: snapshot.key };
+                        } else {
+                            myAddonOrder.value = null;
+                            localStorage.removeItem('jiantou_addon_key');
+                        }
+                    });
+
+                    isAppending.value = false;
+                    cart.value = {};
+                    isConfirming.value = false;
+                    isSubmitting.value = false;
+                    return; 
+                }
                 
+                // 一般正常訂單通道
                 const newOrderData = {
                     number: phoneSuffix.value, 
                     items: newCartItems, 
@@ -586,7 +629,7 @@
                         if (snapshot.exists()) {
                             snapshot.forEach((child) => {
                                 const order = child.val();
-                                if (order.status !== 'done' && order.status !== 'archived') {
+                                if (order.status !== 'done' && order.status !== 'archived' && !order.isAddon) {
                                     isValidOrder = true;
                                 }
                             });
@@ -646,7 +689,7 @@
                 hasEnteredShop, enterShop, trackError,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
                 phoneSuffix,
-                isAppending, startAppend // 🌟 記得釋放出加點模式的新魔法
+                isAppending, startAppend, myAddonOrder, cancelAddon
             };
         }
     }).mount('#app');
