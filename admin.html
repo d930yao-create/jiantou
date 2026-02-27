@@ -11,12 +11,16 @@
         body { font-family: sans-serif; background-color: #f5f5f4; }
         .text-brick { color: #9E5A5A; }
         .bg-brick { background-color: #9E5A5A; }
+        .toggle-checkbox:checked { right: 0; border-color: #9E5A5A; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #9E5A5A; }
         [v-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
+
 <div id="app" v-cloak class="flex-1 flex flex-col h-full relative">
+
     <div v-if="!isLoggedIn" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
             <h1 class="text-2xl font-bold text-stone-800 mb-2">後台管理系統</h1>
@@ -28,10 +32,12 @@
     </div>
 
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden">
-        <!-- 頂部導覽列 -->
+        
         <div class="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0">
             <div>
-                <button @click="toggleShopStatus" class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all" :class="shopIsOpen ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-stone-200 text-stone-500 border border-stone-300'">
+                <button @click="toggleShopStatus" 
+                    class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all"
+                    :class="shopIsOpen ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-stone-200 text-stone-500 border border-stone-300'">
                     <span class="material-icons-round text-sm">{{ shopIsOpen ? 'store' : 'storefront' }}</span>
                     {{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
@@ -49,22 +55,26 @@
             </div>
         </div>
 
-        <!-- 手機 Tab 切換 -->
         <div class="flex md:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0">
-            <button @click="currentTab='pending'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">待結帳 ({{ pendingOrders.length }})</button>
-            <button @click="currentTab='processing'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">製作中 ({{ displayRightColumn.length }})</button>
-            <button @click="currentTab='manual'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'">現場叫號</button>
+            <button @click="currentTab='pending'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
+                待結帳 ({{ pendingOrders.length }})
+            </button>
+            <button @click="currentTab='processing'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">
+                製作中 ({{ displayRightColumn.length }})
+            </button>
+            <button @click="currentTab='manual'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'">
+                現場叫號
+            </button>
         </div>
 
-        <!-- 主內容區 -->
         <div class="flex-1 overflow-hidden relative flex flex-col md:flex-row p-2 gap-2 min-h-0">
-            <!-- 待結帳 -->
+            
             <div v-show="currentTab === 'pending' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0 md:flex">
                 <div class="p-2 bg-gray-100 font-bold text-stone-500 text-sm text-center flex justify-between px-2 flex-shrink-0">
                     <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-xs">{{ pendingOrders.length }}</span>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm relative group">
+                    <div v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg bg-white shadow-sm cursor-pointer relative group">
                         <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10 hover:bg-red-600 transition-colors">
                             <span class="material-icons-round text-sm">close</span>
                         </button>
@@ -77,6 +87,7 @@
                                 <span class="text-xs text-stone-400">總金額</span>
                                 <span class="text-2xl font-bold text-brick">${{ order.total }}</span>
                             </div>
+                            
                             <div class="mt-2 space-y-1.5">
                                 <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center bg-stone-50 p-2 rounded-lg border border-stone-100">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2">
@@ -91,84 +102,119 @@
                                     </div>
                                 </div>
                             </div>
-                            <div v-if="isToday" class="mt-3 text-center text-xs bg-gray-100 text-gray-500 py-2 rounded font-bold hover:bg-stone-200 transition-colors cursor-pointer">點擊收款</div>
+                            
+                            <div v-if="isToday" class="mt-3 text-center text-xs bg-gray-100 text-gray-500 py-2 rounded font-bold hover:bg-stone-200 transition-colors">點擊收款</div>
                         </div>
                     </div>
                     <div v-if="pendingOrders.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無新訂單</div>
                 </div>
             </div>
 
-            <!-- 製作中 -->
             <div v-show="currentTab === 'processing' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden min-h-0 md:flex">
                 <div class="p-2 bg-red-50 font-bold text-brick text-sm text-center flex justify-between px-2 flex-shrink-0">
                     <span>{{ isToday ? '製作中' : '已完成' }}</span>
                     <span class="bg-red-100 px-2 rounded-full text-xs">{{ displayRightColumn.length }}</span>
                 </div>
-
-                <!-- 待製作總覽 -->
+                
                 <div v-if="isToday && kitchenStatsArray.length > 0" class="bg-stone-50 border-b border-stone-200 p-2 flex-shrink-0">
                     <div class="text-[10px] text-stone-400 font-bold mb-1 flex items-center gap-1">
                         <span class="material-icons-round text-sm text-orange-500">local_fire_department</span> 待製作總計
                     </div>
                     <div class="flex flex-wrap gap-1.5">
-                        <span v-for="stat in kitchenStatsArray" :key="stat.name" 
-                              class="px-2 py-0.5 rounded text-xs font-bold shadow-sm"
-                              :class="stat.count >= 5 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-white border border-stone-200 text-stone-600'">
-                            {{ stat.name }} <span class="ml-0.5">{{ stat.count }}</span>
+                        <span v-for="stat in kitchenStatsArray" :key="stat.name" class="bg-white border border-stone-200 text-stone-600 px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+                            {{ stat.name }} <span class="text-brick ml-0.5">{{ stat.count }}</span>
                         </span>
                     </div>
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm relative group transition-colors hover:bg-red-50">
+                    <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group transition-colors hover:bg-red-50">
                         <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10 hover:bg-red-600 transition-colors">
                             <span class="material-icons-round text-sm">close</span>
                         </button>
-
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
-                            <span class="font-bold text-xl text-brick">#{{ order.number }}</span>
-                        </div>
-
-                        <div class="mt-2 space-y-1.5">
-                            <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center bg-white/80 p-2 rounded-lg border border-red-100/50">
-                                <div class="flex items-center gap-3 flex-1 min-w-0">
-                                    <input type="checkbox" :checked="item.ready" @change="toggleItemReady(order, idx)" class="w-5 h-5 accent-green-600 rounded" />
-                                    <div class="flex flex-col min-w-0 flex-1" :class="item.ready ? 'line-through text-stone-400' : ''">
-                                        <span class="text-sm font-bold text-stone-700 truncate leading-tight">{{ item.name }}</span>
+                        
+                        <div @click="isToday ? updateStatus(order, 'done') : null">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
+                                <span class="font-bold text-xl text-brick">#{{ order.number }}</span>
+                            </div>
+                            
+                            <div class="mt-2 space-y-1.5">
+                                <div v-for="(item, idx) in order.items" :key="idx" 
+                                     @click.stop="toggleItemReady(order, idx)"
+                                     class="flex justify-between items-center bg-white/80 p-2 rounded-lg border border-red-100/50 cursor-pointer hover:border-red-200 transition-all"
+                                     :class="item.ready ? 'opacity-40 bg-stone-100 border-transparent' : ''">
+                                     
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2" :class="item.ready ? 'line-through text-stone-400' : ''">
+                                        <span class="text-sm font-bold text-stone-700 truncate leading-tight transition-colors">{{ item.name }}</span>
                                         <span v-if="item.options && item.options.length" class="text-[10px] text-brick mt-0.5">{{ item.options.join(', ') }}</span>
                                     </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-stone-500 w-6 text-right" :class="item.ready ? 'line-through' : ''">x{{ item.qty }}</span>
-                                    <button @click.stop="deleteOrderItem(order, idx)" class="w-6 h-6 flex items-center justify-center rounded-md bg-white border border-stone-200 text-stone-300 hover:text-red-400 hover:border-red-200 transition-colors shadow-sm active:scale-95" title="移除此品項">
-                                        <span class="material-icons-round text-xs">close</span>
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-stone-500 w-6 text-right transition-colors" :class="item.ready ? 'line-through' : ''">x{{ item.qty }}</span>
+                                        <button @click.stop="deleteOrderItem(order, idx)" class="w-6 h-6 flex items-center justify-center rounded-md bg-white border border-stone-200 text-stone-300 hover:text-red-400 hover:border-red-200 transition-colors shadow-sm active:scale-95" title="移除此品項">
+                                            <span class="material-icons-round text-xs">close</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div v-if="isToday" class="mt-3 flex justify-end">
-                            <button 
-                                @click="updateStatus(order, 'done')" 
-                                :disabled="!allItemsReady(order)"
-                                class="text-xs px-4 py-1.5 rounded-full font-bold shadow-sm transition-colors"
-                                :class="allItemsReady(order) 
-                                    ? 'bg-green-600 text-white hover:bg-green-700' 
-                                    : 'bg-stone-300 text-stone-500 cursor-not-allowed'">
-                                {{ allItemsReady(order) ? '✓ 全部完成 / 叫號' : '等待完成' }}
-                            </button>
+                            
+                            <div v-if="isToday" class="mt-2 flex justify-end">
+                                <span class="text-xs bg-brick text-white px-3 py-1 rounded-full font-bold shadow-sm mt-2">通知取餐</span>
+                            </div>
                         </div>
                     </div>
                     <div v-if="displayRightColumn.length === 0" class="flex items-center justify-center h-full text-xs text-stone-300">無資料</div>
                 </div>
             </div>
 
-            <!-- 現場叫號（略，保持原樣） -->
-            <!-- ... 你的 manual 區塊程式碼 ... -->
+            <div v-show="currentTab === 'manual' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-600 overflow-hidden min-h-0 md:flex">
+                <div class="p-2 bg-stone-100 font-bold text-stone-600 text-sm text-center flex-shrink-0">
+                    現場叫號 / 記帳
+                </div>
+                
+                <div class="p-3 bg-white border-b border-stone-100 flex-shrink-0">
+                    <div class="flex gap-2 mb-2">
+                        <div class="flex-1">
+                            <label class="text-[10px] text-stone-400 pl-1">號碼</label>
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualInput" placeholder="66" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick transition-colors">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[10px] text-stone-400 pl-1">金額 (選填)</label>
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" v-model="manualPrice" placeholder="0" class="w-full bg-stone-50 text-center text-xl font-bold py-2 rounded-xl border border-stone-200 outline-none focus:border-brick text-brick transition-colors">
+                        </div>
+                    </div>
+                    <button @click="addToManualQueue" :disabled="!manualInput" class="w-full bg-stone-700 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-50">
+                        加入列表
+                    </button>
+                </div>
+
+                <div class="flex justify-between items-end px-3 py-2 bg-stone-50 border-b border-stone-100 flex-shrink-0">
+                    <h3 class="text-xs font-bold text-stone-500">等待叫號 ({{ Object.keys(manualQueue).length }})</h3>
+                    <button @click="clearManualQueue" class="text-[10px] text-stone-400 underline hover:text-stone-600">清空</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50">
+                    <div v-for="(item, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-white rounded-xl border border-stone-200 shadow-sm">
+                        <div class="flex flex-col">
+                            <span class="text-2xl font-bold text-stone-700">#{{ item.n }}</span>
+                            <span v-if="item.p > 0" class="text-xs text-brick font-bold">${{ item.p }}</span>
+                            <span v-else class="text-[10px] text-stone-400">純叫號</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="callManualNumber(item, key)" class="bg-brick text-white px-3 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-800 flex items-center gap-1 transition-colors">
+                                <span class="material-icons-round text-sm">campaign</span>
+                            </button>
+                            <button @click="removeManualNumber(key)" class="bg-stone-200 text-stone-500 px-2 py-2 rounded-lg hover:bg-stone-300 transition-colors">
+                                <span class="material-icons-round text-sm">close</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="h-10"></div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- 底部導覽 -->
         <div class="bg-white p-2 border-t flex justify-center flex-shrink-0 safe-area-bottom">
             <div class="flex gap-4">
                 <button @click="currentTab='menu'" class="text-xs text-stone-400 hover:text-brick flex items-center gap-1 transition-colors">
@@ -179,25 +225,227 @@
         </div>
     </div>
 
-    <!-- 菜單管理與報表區塊（保持原樣，略） -->
-    <!-- ... 你的 menu 和 showReport 部分 ... -->
+    <div v-if="currentTab === 'menu'" class="fixed inset-0 bg-white z-50 flex flex-col animate-[slideUp_0.3s_ease-out]">
+        <div class="bg-stone-800 text-white p-4 flex justify-between items-center shadow-md flex-shrink-0">
+            <h2 class="text-lg font-bold">菜單管理</h2>
+            <button @click="currentTab='pending'" class="text-stone-300 font-bold hover:text-white transition-colors">✕ 關閉</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 pb-24 bg-stone-50">
+            <div class="max-w-md mx-auto space-y-3">
+                <div v-for="(item, index) in menuSettings" :key="index" class="bg-white p-3 rounded-xl shadow-sm border border-stone-200 flex gap-3 items-start">
+                    
+                    <div class="flex flex-col gap-1 border-r border-stone-100 pr-2 items-center justify-center self-stretch">
+                        <button @click="moveMenuUp(index)" :disabled="index === 0" class="text-stone-400 hover:text-brick disabled:opacity-20 transition-colors p-1" title="上移">
+                            <span class="material-icons-round text-xl">expand_less</span>
+                        </button>
+                        <button @click="moveMenuDown(index)" :disabled="index === menuSettings.length - 1" class="text-stone-400 hover:text-brick disabled:opacity-20 transition-colors p-1" title="下移">
+                            <span class="material-icons-round text-xl">expand_more</span>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 space-y-2 pb-1">
+                        <div class="flex gap-2">
+                            <input type="text" v-model="item.name" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm font-bold focus:border-brick outline-none transition-colors" placeholder="品名">
+                            <input type="number" inputmode="numeric" v-model="item.price" class="w-20 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm font-bold text-center focus:border-brick outline-none transition-colors" placeholder="價格">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" v-model="item.desc" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs text-stone-500 focus:border-brick outline-none transition-colors" placeholder="描述(可空白)">
+                        </div>
+                        
+                        <div class="mt-3 pt-3 border-t border-stone-100 border-dashed">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold text-stone-400">客製化選項 / 加價購</span>
+                                <button @click="addOption(item)" class="text-[10px] bg-stone-100 text-stone-500 px-2 py-1 rounded hover:bg-stone-200 transition-colors">
+                                    + 新增選項
+                                </button>
+                            </div>
+                            <div v-for="(opt, optIndex) in item.options" :key="optIndex" class="flex gap-2 mb-2 items-center">
+                                <input type="text" v-model="opt.name" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs font-bold focus:border-brick outline-none transition-colors" placeholder="名稱(如:加辣)">
+                                <span class="text-xs text-stone-400">+ $</span>
+                                <input type="number" inputmode="numeric" v-model="opt.price" class="w-16 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs font-bold text-center focus:border-brick outline-none transition-colors" placeholder="0">
+                                <button @click="removeOption(item, optIndex)" class="text-stone-300 hover:text-red-400 p-1 flex items-center justify-center transition-colors">
+                                    <span class="material-icons-round text-sm">close</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center gap-2 pt-1">
+                        <button @click="item.active = !item.active" class="w-10 h-6 rounded-full flex items-center transition-colors p-1" :class="item.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                        </button>
+                        <span class="text-[10px] font-bold" :class="item.active ? 'text-green-500' : 'text-stone-400'">{{ item.active ? '販售中' : '停售' }}</span>
+                    </div>
+                </div>
+                
+                <button @click="addMenuItem" class="w-full py-4 border-2 border-dashed border-stone-300 text-stone-400 rounded-xl font-bold hover:bg-stone-100 transition-colors flex items-center justify-center gap-1">
+                    <span class="material-icons-round">add</span> 新增品項
+                </button>
+            </div>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-stone-100 flex justify-center shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+            <button @click="saveMenuToFirebase" class="w-full max-w-md bg-brick text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform text-lg">儲存變更並更新排序</button>
+        </div>
+    </div>
+
+    <div v-if="showReport" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" @click.self="showReport=false">
+        <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-[slideUp_0.2s_ease-out]">
+            <div class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0">
+                <h3 class="font-bold">{{ formattedDateString }} 銷售報表</h3>
+                <button @click="showReport=false" class="text-stone-300 hover:text-white transition-colors">✕</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-5 space-y-6">
+                <div class="flex justify-between items-end pb-4 border-b border-dashed border-stone-200">
+                    <div class="text-stone-500 text-sm">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div>
+                    <div class="text-right">
+                        <p class="text-xs text-stone-400 mb-1">總營業額</p>
+                        <p class="text-3xl font-bold text-brick">${{ dailyRevenue }}</p>
+                    </div>
+                </div>
+                
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-stone-400 uppercase bg-stone-50 border-b border-stone-100">
+                        <tr>
+                            <th class="px-3 py-2 rounded-tl-lg">品項</th>
+                            <th class="px-3 py-2 text-center">數量</th>
+                            <th class="px-3 py-2 text-right rounded-tr-lg">金額</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-stone-600">
+                        <tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-50 last:border-0">
+                            <td class="px-3 py-3 font-medium">{{ item.name }}</td>
+                            <td class="px-3 py-3 text-center bg-stone-50/50 font-bold">{{ item.count }}</td>
+                            <td class="px-3 py-3 text-right text-stone-800 font-bold">${{ item.total }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="pt-2 border-t border-stone-100">
+                    <button @click="showHistoryDetails = !showHistoryDetails" class="w-full flex justify-between items-center py-3 px-2 text-stone-500 hover:bg-stone-50 rounded-xl transition-colors">
+                        <span class="text-sm font-bold flex items-center gap-1">
+                            <span class="material-icons-round text-lg">receipt_long</span> 展開歷史訂單明細
+                        </span>
+                        <span class="material-icons-round transform transition-transform" :class="showHistoryDetails ? 'rotate-180' : ''">expand_more</span>
+                    </button>
+
+                    <div v-if="showHistoryDetails" class="mt-3 space-y-4 max-h-72 overflow-y-auto pr-1">
+                        <div v-for="order in filteredOrders" :key="order.key" class="p-3 bg-stone-50 rounded-xl border border-stone-200 shadow-sm">
+                            
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-stone-200/60">
+                                <div class="flex items-baseline gap-2">
+                                    <span class="font-bold text-stone-700 text-lg">#{{ order.number }}</span>
+                                    <span class="text-[10px] text-stone-400 bg-white px-1.5 py-0.5 rounded shadow-sm">{{ order.timeString }}</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-brick">${{ order.total }}</span>
+                                    <button @click="deleteOrder(order)" class="text-stone-300 hover:text-red-400 transition-colors p-1" title="刪除整筆訂單">
+                                        <span class="material-icons-round text-sm">delete_sweep</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center bg-white p-2 rounded-lg border border-stone-100">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-bold text-stone-600 truncate">{{ item.name }}</div>
+                                        <div v-if="item.options && item.options.length" class="text-[10px] text-brick">{{ item.options.join(', ') }}</div>
+                                    </div>
+                                    <div class="flex items-center gap-3 ml-2">
+                                        <span class="text-xs text-stone-400 font-bold">x{{ item.qty }}</span>
+                                        <span class="text-sm font-bold text-stone-600 w-10 text-right">${{ item.price * item.qty }}</span>
+                                        <button @click="deleteOrderItem(order, idx)" class="text-stone-300 hover:text-red-400 p-1 flex items-center justify-center transition-colors" title="移除此品項">
+                                            <span class="material-icons-round text-sm">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <div v-if="filteredOrders.length === 0" class="text-center text-xs text-stone-300 py-4 font-bold">目前沒有訂單紀錄喔</div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-stone-100 flex flex-col gap-3">
+                    <div class="flex gap-2">
+                        <button @click="exportToCSV('current')" class="flex-1 py-3 bg-stone-100 text-stone-600 text-xs font-bold rounded-xl hover:bg-stone-200 flex items-center justify-center gap-1 transition-colors"><span class="material-icons-round text-sm">download</span> 匯出本頁</button>
+                        <button @click="exportToCSV('all')" class="flex-1 py-3 bg-stone-100 text-stone-600 text-xs font-bold rounded-xl hover:bg-stone-200 flex items-center justify-center gap-1 transition-colors"><span class="material-icons-round text-sm">history</span> 匯出歷史</button>
+                    </div>
+                    <button @click="deleteAllOrdersByDate" class="w-full py-3 mt-2 text-xs text-red-400 bg-transparent border border-red-100 rounded-xl font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-1">
+                        <span class="material-icons-round text-sm">warning</span> 清空{{ isToday ? '今日' : formattedDateString }}所有訂單
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-white border-t border-stone-100 flex-shrink-0">
+                <button @click="showReport=false" class="w-full py-3.5 bg-stone-800 text-white rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-transform">關閉報表</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style> @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } </style>
 
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref as dbRef, onValue, update, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = { /* 你的 config */ };
+    const firebaseConfig = {
+        apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+        authDomain: "jiantou-000rlhad.firebaseapp.com",
+        databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+        projectId: "jiantou-000rlhad",
+        storageBucket: "jiantou-000rlhad.firebasestorage.app",
+        messagingSenderId: "435285773521",
+        appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+    };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
     createApp({
         setup() {
-            // ... 你的原有變數 ...
+            const adminTokenVersion = 'admin_v1';
+
+            const isLoggedIn = ref(false);
+            const loginUser = ref('');
+            const loginPass = ref('');
+            const loginError = ref(false);
+            const allOrders = ref([]);
+            const filteredOrders = ref([]);
+            const showReport = ref(false);
+            const selectedDate = ref('');
+            const shopIsOpen = ref(false);
+            const currentTab = ref('pending'); 
+            const manualInput = ref('');
+            const manualPrice = ref('');
+            const manualQueue = ref({});
+            const isDesktop = ref(window.innerWidth >= 768);
+            const menuSettings = ref([]); 
+
+            const showHistoryDetails = ref(false);
+
+            const defaultMenu = [
+                { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true, options: [] },
+                { id: 2, name: '極品鴨肉油飯', price: 80, desc: '每日限量', active: true, options: [] },
+                { id: 3, name: '養生素食油飯', price: 55, desc: '全素可食', active: true, options: [] },
+                { id: 4, name: '古早味菜頭粿', price: 45, desc: '煎得恰恰', active: true, options: [] },
+                { id: 5, name: '隨機小菜', price: 30, desc: '看老闆心情', active: true, options: [] },
+                { id: 6, name: '古早味紅茶', price: 25, desc: '冰涼解渴', active: true, options: [] },
+            ];
 
             onMounted(() => {
-                // ... 原有 onMounted 內容 ...
+                const savedToken = localStorage.getItem('jiantou_admin_token');
+                if (savedToken === adminTokenVersion) {
+                    isLoggedIn.value = true;
+                }
+
+                window.addEventListener('resize', () => { isDesktop.value = window.innerWidth >= 768; });
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                selectedDate.value = `${yyyy}-${mm}-${dd}`;
 
                 const ordersRef = dbRef(db, 'orders');
                 onValue(ordersRef, (snapshot) => {
@@ -205,34 +453,283 @@
                     allOrders.value = [];
                     if (data) {
                         Object.keys(data).forEach(key => {
-                            const orderData = data[key];
-                            // 強制為每個 item 補 ready: false
-                            if (orderData.items) {
-                                orderData.items = orderData.items.map(item => ({
-                                    ...item,
-                                    ready: item.ready ?? false
-                                }));
-                            }
-                            allOrders.value.push({ ...orderData, key, showDetails: false });
+                            allOrders.value.push({ ...data[key], key: key });
                         });
                     }
                     filterOrdersByDate();
                 });
-                // ... 其他 onValue ...
+
+                const shopStatusRef = dbRef(db, 'shopStatus');
+                onValue(shopStatusRef, (snapshot) => { shopIsOpen.value = snapshot.val() === true; });
+
+                const manualRef = dbRef(db, 'manualQueue');
+                onValue(manualRef, (snapshot) => { manualQueue.value = snapshot.val() || {}; });
+
+                const menuRef = dbRef(db, 'menu');
+                onValue(menuRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        menuSettings.value = data.map(item => ({...item, options: item.options || []}));
+                    } else {
+                        menuSettings.value = JSON.parse(JSON.stringify(defaultMenu));
+                    }
+                });
             });
 
-            // 檢查訂單是否所有品項都 ready
-            const allItemsReady = (order) => {
-                if (!order.items || order.items.length === 0) return true;
-                return order.items.every(item => item.ready === true);
+            const addOption = (item) => {
+                if (!item.options) item.options = [];
+                item.options.push({ name: '', price: 0 });
             };
 
-            // ... 其他原有函數 ...
+            const removeOption = (item, optIndex) => {
+                item.options.splice(optIndex, 1);
+            };
 
-            return {
-                // ... 所有 return 變數 ...
-                allItemsReady,
-                // ... 其他 ...
+            const moveMenuUp = (index) => {
+                if (index > 0) {
+                    const temp = menuSettings.value[index];
+                    menuSettings.value[index] = menuSettings.value[index - 1];
+                    menuSettings.value[index - 1] = temp;
+                }
+            };
+
+            const moveMenuDown = (index) => {
+                if (index < menuSettings.value.length - 1) {
+                    const temp = menuSettings.value[index];
+                    menuSettings.value[index] = menuSettings.value[index + 1];
+                    menuSettings.value[index + 1] = temp;
+                }
+            };
+
+            const saveMenuToFirebase = () => {
+                const menuRef = dbRef(db, 'menu');
+                set(menuRef, menuSettings.value)
+                    .then(() => { alert('菜單儲存與排序更新成功！'); currentTab.value = 'pending'; })
+                    .catch((err) => alert('更新失敗：' + err.message));
+            };
+
+            const addMenuItem = () => {
+                const newId = menuSettings.value.length ? Math.max(...menuSettings.value.map(i => i.id)) + 1 : 1;
+                menuSettings.value.push({ id: newId, name: '', price: 0, desc: '', active: true, options: [] });
+            };
+
+            const addToManualQueue = () => {
+                if(!manualInput.value) return;
+                const price = manualPrice.value ? parseInt(manualPrice.value) : 0;
+                const queueRef = dbRef(db, 'manualQueue');
+                push(queueRef, { n: manualInput.value, p: price });
+                manualInput.value = '';
+                manualPrice.value = '';
+            };
+
+            const callManualNumber = (item, key) => {
+                const now = new Date();
+                const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+
+                const newOrderData = {
+                    number: item.n,
+                    items: [{name: '現場叫號', qty: 1, price: item.p, ready: true}], 
+                    total: item.p,
+                    status: 'done',
+                    createdAt: Date.now(),
+                    timeString: timeString,
+                    dateString: dateString
+                };
+
+                const ordersRef = dbRef(db, 'orders');
+                push(ordersRef, newOrderData);
+                set(dbRef(db, 'currentCallingNumber'), item.n);
+                remove(dbRef(db, `manualQueue/${key}`));
+            };
+
+            const removeManualNumber = (key) => { remove(dbRef(db, `manualQueue/${key}`)); };
+            const clearManualQueue = () => { if(confirm('確定清空手動排隊列表？')) { remove(dbRef(db, 'manualQueue')); } };
+            const toggleShopStatus = () => { const newStatus = !shopIsOpen.value; set(dbRef(db, 'shopStatus'), newStatus); };
+            watch(selectedDate, () => { filterOrdersByDate(); });
+            const filterOrdersByDate = () => {
+                const targetDateString = selectedDate.value.replace(/-/g, '/');
+                filteredOrders.value = allOrders.value.filter(order => order.dateString === targetDateString);
+            };
+            const isToday = computed(() => {
+                const now = new Date();
+                const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                return selectedDate.value === todayStr;
+            });
+            const formattedDateString = computed(() => selectedDate.value.replace(/-/g, '/'));
+            
+            const checkLogin = () => {
+                if (loginUser.value === 'admin_jt' && loginPass.value === '554708') {
+                    isLoggedIn.value = true; 
+                    loginError.value = false;
+                    localStorage.setItem('jiantou_admin_token', adminTokenVersion);
+                } else { 
+                    loginError.value = true; 
+                }
+            };
+            
+            const logout = () => { 
+                isLoggedIn.value = false; 
+                localStorage.removeItem('jiantou_admin_token');
+            };
+
+            const updateStatus = (order, newStatus) => {
+                if (!isToday.value) return;
+                const updates = {};
+                updates[`/orders/${order.key}/status`] = newStatus;
+                update(dbRef(db), updates);
+                if (newStatus === 'done') set(dbRef(db, 'currentCallingNumber'), order.number);
+            };
+            
+            const deleteOrder = (order) => {
+                if(confirm(`確定要輕輕刪除訂單 #${order.number} 嗎？\n這筆金額將會從營收中被移除喔。`)) { 
+                    remove(dbRef(db, `orders/${order.key}`)); 
+                }
+            };
+
+            const deleteOrderItem = (order, itemIndex) => {
+                if(confirm('確定要悄悄移除這個品項嗎？金額會自動重新計算喔。')) {
+                    const newItems = [...order.items];
+                    newItems.splice(itemIndex, 1);
+
+                    if (newItems.length === 0) {
+                        remove(dbRef(db, `orders/${order.key}`));
+                    } else {
+                        const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                        const updates = {};
+                        updates[`orders/${order.key}/items`] = newItems;
+                        updates[`orders/${order.key}/total`] = newTotal;
+                        update(dbRef(db), updates);
+                    }
+                }
+            };
+
+            // 🌟 點擊切換品項準備狀態的魔法
+            const toggleItemReady = (order, itemIndex) => {
+                const newItems = [...order.items];
+                // 如果沒有 ready 屬性，就預設為 false 再切換成 true
+                newItems[itemIndex].ready = !newItems[itemIndex].ready;
+                update(dbRef(db), { [`orders/${order.key}/items`]: newItems });
+            };
+            
+            const deleteAllOrdersByDate = async () => {
+                const targetDate = formattedDateString.value;
+                const count = filteredOrders.value.length;
+                if (count === 0) { alert('目前沒有訂單可以刪除喔'); return; }
+                
+                if(confirm(`確定清空「${targetDate}」共 ${count} 筆訂單？\n刪除後就無法復原了喔！`)) {
+                    const updates = {};
+                    filteredOrders.value.forEach(order => {
+                        updates[`orders/${order.key}`] = null;
+                    });
+                    
+                    try {
+                        await update(dbRef(db), updates);
+                        alert('已經溫柔地為你全部清空了。'); 
+                        showReport.value = false;
+                    } catch (error) {
+                        alert('稍微卡住了，請再試一次：' + error.message);
+                    }
+                }
+            };
+            
+            const exportToCSV = (mode) => {
+                let dataToExport = [];
+                let fileName = '';
+                if (mode === 'current') {
+                    dataToExport = filteredOrders.value;
+                    fileName = `銷售報表_${formattedDateString.value.replace(/\//g, '-')}.csv`;
+                } else {
+                    dataToExport = allOrders.value;
+                    fileName = `完整歷史銷售記錄_${new Date().toISOString().split('T')[0]}.csv`;
+                }
+                if (dataToExport.length === 0) { alert('沒有資料可以匯出喔！'); return; }
+                let csvContent = "\uFEFF日期,時間,訂單編號,狀態,總金額,訂單內容\n";
+                dataToExport.forEach(order => {
+                    const itemsStr = order.items.map(i => {
+                        const opts = i.options ? ` (${i.options.join(', ')})` : '';
+                        return i.name + opts + (i.qty > 1 ? ' x'+i.qty : '');
+                    }).join('; ');
+                    const statusStr = order.status === 'done' ? '已完成' : (order.status === 'paid' ? '製作中' : '待結帳');
+                    const row = [order.dateString, order.timeString, `#${order.number}`, statusStr, order.total, `"${itemsStr}"`];
+                    csvContent += row.join(",") + "\n";
+                });
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const sortByTimeAsc = (a, b) => (a.createdAt || 0) - (b.createdAt || 0);
+
+            const pendingOrders = computed(() => {
+                return filteredOrders.value
+                    .filter(o => o.status === 'pending')
+                    .sort(sortByTimeAsc); 
+            });
+
+            const displayRightColumn = computed(() => {
+                const list = isToday.value 
+                    ? filteredOrders.value.filter(o => o.status === 'paid') 
+                    : filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done');
+                return list.sort(sortByTimeAsc); 
+            });
+
+            // 🌟 精準計算「尚未劃線準備好」的廚房戰情統計
+            const kitchenStatsArray = computed(() => {
+                const statsMap = {};
+                // 只統計在「製作中」(paid) 的訂單
+                filteredOrders.value.filter(o => o.status === 'paid').forEach(order => {
+                    order.items.forEach(item => {
+                        // 只有「還沒被劃線(ready不為true)」的才統計進去
+                        if (!item.ready) {
+                            const itemNameWithOpts = item.name + (item.options && item.options.length ? ` (${item.options.join(', ')})` : '');
+                            statsMap[itemNameWithOpts] = (statsMap[itemNameWithOpts] || 0) + item.qty;
+                        }
+                    });
+                });
+                return Object.keys(statsMap).map(key => ({
+                    name: key,
+                    count: statsMap[key]
+                })).sort((a, b) => b.count - a.count); // 數量多的排前面
+            });
+
+            const validOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done'));
+            const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
+            const realOrders = computed(() => validOrders.value.filter(o => o.total > 0));
+            const completedOrdersCount = computed(() => realOrders.value.length);
+            const salesReport = computed(() => {
+                const report = {};
+                realOrders.value.forEach(order => {
+                    order.items.forEach(item => {
+                        const itemNameWithOpts = item.name + (item.options ? ` (${item.options.join(', ')})` : '');
+                        if (!report[itemNameWithOpts]) report[itemNameWithOpts] = { name: itemNameWithOpts, count: 0, total: 0 };
+                        report[itemNameWithOpts].count += item.qty;
+                        report[itemNameWithOpts].total += (item.price * item.qty);
+                    });
+                });
+                return Object.values(report).sort((a, b) => b.total - a.total);
+            });
+            
+            const formatItems = (items) => items.map(i => {
+                const opts = i.options ? ` (${i.options.join(', ')})` : '';
+                return i.name + opts + (i.qty > 1 ? ' x'+i.qty : '');
+            }).join(', ');
+
+            return { 
+                isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
+                selectedDate, isToday, formattedDateString,
+                pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport,
+                updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteOrderItem, toggleItemReady, deleteAllOrdersByDate, exportToCSV,
+                currentTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue,
+                isDesktop, menuSettings, saveMenuToFirebase, addMenuItem,
+                moveMenuUp, moveMenuDown, addOption, removeOption, filteredOrders,
+                showHistoryDetails, kitchenStatsArray
             };
         }
     }).mount('#app');
