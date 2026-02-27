@@ -15,6 +15,8 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #9E5A5A; }
         [v-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } 
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
@@ -80,7 +82,7 @@
                         </button>
                         <div @click="updateStatus(order, 'paid')">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] text-stone-400 bg-white/60 px-1 rounded shadow-sm">{{ order.timeString }}</span>
+                                <span class="text-[10px] text-stone-400 bg-white/60 px-1 rounded">{{ order.timeString }}</span>
                                 <span class="font-bold text-xl text-stone-800 flex items-center">
                                     #{{ order.number }}
                                     <span v-if="order.isAddon" class="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">加點</span>
@@ -107,7 +109,6 @@
                             <div v-if="isToday" class="mt-3 text-center text-xs bg-stone-100 text-stone-600 py-2 rounded font-bold hover:bg-stone-200 transition-colors">{{ order.isAddon ? '收加點費並併單' : '點擊收款' }}</div>
                         </div>
                     </div>
-                    <div v-if="pendingOrders.length === 0" class="flex items-center justify-center h-full text-[10px] text-stone-300">無新訂單</div>
                 </div>
             </div>
 
@@ -117,18 +118,6 @@
                     <span class="bg-red-100 px-2 rounded-full text-[10px]">{{ displayRightColumn.length }}</span>
                 </div>
                 
-                <div v-if="isToday && kitchenStatsArray.length > 0" class="bg-stone-50 border-b border-stone-200 p-3 flex-shrink-0">
-                    <div class="text-[10px] text-stone-400 font-bold mb-2 flex items-center gap-1 uppercase tracking-widest">
-                        <span class="material-icons-round text-sm text-orange-500">local_fire_department</span> 備料清單
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div v-for="stat in kitchenStatsArray" :key="stat.name" class="bg-white border border-stone-200 p-2 rounded-lg shadow-sm flex justify-between items-center">
-                            <span class="text-sm font-bold text-stone-600 truncate mr-1">{{ stat.name }}</span>
-                            <span class="text-brick font-bold text-lg leading-none">{{ stat.count }}</span>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
                     <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group transition-colors hover:bg-red-50">
                         <button @click.stop="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10 hover:bg-red-600 transition-colors">
@@ -201,11 +190,45 @@
             </div>
         </div>
 
+        <button v-if="isToday && kitchenStatsArray.length > 0 && currentTab === 'processing'" 
+            @click="showKitchenStatsModal = true" 
+            class="fixed bottom-20 right-6 z-40 bg-brick text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center animate-bounce">
+            <span class="material-icons-round text-3xl">local_fire_department</span>
+            <div class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] w-6 h-6 rounded-full border-2 border-white flex items-center justify-center font-bold">
+                {{ kitchenStatsArray.length }}
+            </div>
+        </button>
+
         <div class="bg-white p-2 border-t flex justify-center flex-shrink-0 safe-area-bottom">
             <div class="flex gap-4">
                 <button @click="currentTab='menu'" class="text-xs text-stone-400 hover:text-brick flex items-center gap-1 transition-colors"><span class="material-icons-round text-sm">edit_note</span> 菜單管理</button>
                 <button @click="logout" class="text-xs text-stone-400 underline hover:text-stone-600">登出</button>
             </div>
+        </div>
+    </div>
+
+    <div v-if="showKitchenStatsModal" class="fixed inset-0 z-50 bg-stone-900/90 backdrop-blur-md flex flex-col p-6 animate-[fadeIn_0.3s_ease-out]" @click.self="showKitchenStatsModal = false">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2 text-white">
+                <span class="material-icons-round text-brick text-3xl">local_fire_department</span>
+                <h2 class="text-2xl font-bold tracking-widest">目前待製作總計</h2>
+            </div>
+            <button @click="showKitchenStatsModal = false" class="text-stone-400 hover:text-white">
+                <span class="material-icons-round text-4xl">close</span>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div v-for="stat in kitchenStatsArray" :key="stat.name" class="bg-white/10 border border-white/20 p-5 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <span class="text-stone-400 text-sm mb-2 font-medium tracking-wider">{{ stat.name }}</span>
+                    <span class="text-white text-6xl font-black">{{ stat.count }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <p class="text-stone-500 text-xs italic tracking-widest">加油！辛苦了！尖頭油飯正在熱騰騰製作中</p>
         </div>
     </div>
 
@@ -264,35 +287,12 @@
                     <div class="text-stone-500 text-xs">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div>
                     <div class="text-right"><p class="text-[10px] text-stone-400 mb-0.5">總營業額</p><p class="text-2xl font-bold text-brick">${{ dailyRevenue }}</p></div>
                 </div>
-                
-                <table class="w-full text-xs text-left">
-                    <thead class="text-stone-400 uppercase bg-stone-50 border-b border-stone-100">
-                        <tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">金額</th></tr>
-                    </thead>
-                    <tbody class="text-stone-600">
-                        <tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-50 last:border-0"><td class="px-2 py-2.5 font-medium">{{ item.name }}</td><td class="px-2 py-2.5 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-2.5 text-right text-stone-800 font-bold">${{ item.total }}</td></tr>
-                    </tbody>
+                <table class="w-full text-xs text-left"><thead class="text-stone-400 uppercase bg-stone-50 border-b border-stone-100"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">金額</th></tr></thead>
+                    <tbody class="text-stone-600"><tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-50 last:border-0"><td class="px-2 py-2.5 font-medium">{{ item.name }}</td><td class="px-2 py-2.5 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-2.5 text-right text-stone-800 font-bold">${{ item.total }}</td></tr></tbody>
                 </table>
-
                 <div class="pt-2 border-t border-stone-100">
-                    <button @click="showHistoryDetails = !showHistoryDetails" class="w-full flex justify-between items-center py-2 px-1 text-stone-500 hover:bg-stone-50 rounded-lg transition-colors">
-                        <span class="text-xs font-bold flex items-center gap-1"><span class="material-icons-round text-base">receipt_long</span> 展開歷史訂單明細</span>
-                        <span class="material-icons-round transform transition-transform text-base" :class="showHistoryDetails ? 'rotate-180' : ''">expand_more</span>
-                    </button>
-                    <div v-if="showHistoryDetails" class="mt-3 space-y-3 max-h-64 overflow-y-auto pr-1">
-                        <div v-for="order in filteredOrders" :key="order.key" class="p-2.5 bg-stone-50 rounded-lg border border-stone-200 shadow-sm text-xs">
-                            <div class="flex justify-between items-center mb-2 pb-1 border-b border-stone-200/50">
-                                <div class="flex items-baseline gap-2"><span class="font-bold text-stone-700 text-sm">#{{ order.number }}</span><span class="text-[9px] text-stone-400">{{ order.timeString }}</span></div>
-                                <div class="flex items-center gap-2"><span class="font-bold text-brick">${{ order.total }}</span><button @click="deleteOrder(order)" class="text-stone-300 hover:text-red-400 transition-colors"><span class="material-icons-round text-base">delete_sweep</span></button></div>
-                            </div>
-                            <div class="space-y-1">
-                                <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center bg-white/70 p-1.5 rounded border border-stone-100">
-                                    <span class="flex-1 font-medium">{{ item.name }}</span>
-                                    <div class="flex items-center gap-2"><span class="text-stone-400">x{{ item.qty }}</span><span class="w-8 text-right font-bold">${{ item.price * item.qty }}</span><button @click="deleteOrderItem(order, idx)" class="text-stone-300 hover:text-red-400"><span class="material-icons-round text-sm">close</span></button></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <button @click="showHistoryDetails = !showHistoryDetails" class="w-full flex justify-between items-center py-2 px-1 text-stone-500 hover:bg-stone-50 rounded-lg transition-colors"><span class="text-xs font-bold flex items-center gap-1"><span class="material-icons-round text-base">receipt_long</span> 展開歷史訂單明細</span><span class="material-icons-round transform transition-transform text-base" :class="showHistoryDetails ? 'rotate-180' : ''">expand_more</span></button>
+                    <div v-if="showHistoryDetails" class="mt-3 space-y-3 max-h-64 overflow-y-auto pr-1"><div v-for="order in filteredOrders" :key="order.key" class="p-2.5 bg-stone-50 rounded-lg border border-stone-200 shadow-sm text-xs"><div class="flex justify-between items-center mb-2 pb-1 border-b border-stone-200/50"><div class="flex items-baseline gap-2"><span class="font-bold text-stone-700 text-sm">#{{ order.number }}</span><span class="text-[9px] text-stone-400">{{ order.timeString }}</span></div><div class="flex items-center gap-2"><span class="font-bold text-brick">${{ order.total }}</span><button @click="deleteOrder(order)" class="text-stone-300 hover:text-red-400 transition-colors"><span class="material-icons-round text-base">delete_sweep</span></button></div></div><div class="space-y-2"><div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center bg-white/70 p-1.5 rounded border border-stone-100"><span class="flex-1 font-medium">{{ item.name }}</span><div class="flex items-center gap-2"><span class="text-stone-400">x{{ item.qty }}</span><span class="w-8 text-right font-bold">${{ item.price * item.qty }}</span><button @click="deleteOrderItem(order, idx)" class="text-stone-300 hover:text-red-400"><span class="material-icons-round text-sm">close</span></button></div></div></div></div></div>
                 </div>
                 <div class="pt-4 border-t border-stone-100"><button @click="deleteAllOrdersByDate" class="w-full py-2.5 text-[10px] text-red-400 bg-transparent border border-red-100 rounded-lg font-bold hover:bg-red-50">⚠️ 清空所有訂單</button></div>
             </div>
@@ -337,6 +337,9 @@
             const isDesktop = ref(window.innerWidth >= 768);
             const menuSettings = ref([]); 
             const showHistoryDetails = ref(false);
+            
+            // 🌟 控制備料戰情視窗的變數
+            const showKitchenStatsModal = ref(false);
 
             onMounted(() => {
                 const savedToken = localStorage.getItem('jiantou_admin_token');
@@ -358,6 +361,7 @@
                 });
             });
 
+            // 菜單管理
             const addOption = (item) => { if (!item.options) item.options = []; item.options.push({ name: '', price: 0 }); };
             const removeOption = (item, optIndex) => { item.options.splice(optIndex, 1); };
             const moveMenuUp = (index) => { if (index > 0) [menuSettings.value[index], menuSettings.value[index - 1]] = [menuSettings.value[index - 1], menuSettings.value[index]]; };
@@ -414,7 +418,7 @@
                 if(confirm('確定要悄悄移除這個品項嗎？金額會自動重新計算喔。')) {
                     const newItems = [...order.items]; newItems.splice(itemIndex, 1);
                     if (newItems.length === 0) remove(dbRef(db, `orders/${order.key}`));
-                    else update(dbRef(db), { [`orders/${order.key}/items`] : newItems, [`orders/${order.key}/total`] : newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) });
+                    else update(dbRef(db), { [`orders/${order.key}/items`]: newItems, [`orders/${order.key}/total`]: newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) });
                 }
             };
             const toggleItemReady = (order, itemIndex) => {
@@ -429,6 +433,7 @@
             const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
             const displayRightColumn = computed(() => filteredOrders.value.filter(o => isToday.value ? o.status === 'paid' : (o.status === 'paid' || o.status === 'done')).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
 
+            // 🌟 備料戰情室統計邏輯
             const kitchenStatsArray = computed(() => {
                 const statsMap = {};
                 filteredOrders.value.filter(o => o.status === 'paid').forEach(order => {
@@ -468,7 +473,8 @@
             });
 
             return { 
-                isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout, selectedDate, isToday, formattedDateString, pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport, updateStatus, shopIsOpen, toggleShopStatus, deleteOrder, deleteOrderItem, toggleItemReady, deleteAllOrdersByDate, currentTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue, isDesktop, menuSettings, saveMenuToFirebase, addMenuItem, moveMenuUp, moveMenuDown, addOption, removeOption, removeMenuItem, filteredOrders, showHistoryDetails, kitchenStatsArray
+                isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout, selectedDate, isToday, formattedDateString, pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport, updateStatus, shopIsOpen, toggleShopStatus, deleteOrder, deleteOrderItem, toggleItemReady, deleteAllOrdersByDate, currentTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue, isDesktop, menuSettings, saveMenuToFirebase, addMenuItem, moveMenuUp, moveMenuDown, addOption, removeOption, removeMenuItem, filteredOrders, showHistoryDetails, kitchenStatsArray,
+                showKitchenStatsModal // 🌟 釋放新魔法變數
             };
         }
     }).mount('#app');
