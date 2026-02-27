@@ -529,7 +529,7 @@
             };
             
             const startNewOrder = () => {
-                if(confirm(`若要加點，此畫面會消失！\n\n請務必先記住您目前的號碼：#${myOrder.value?.number} \n建議先截圖餐點內容再加點\n或是使用同一手機末三碼\n\n確定要開始新點餐嗎？`)) {
+                if(confirm(`若要加點，此畫面會消失！\n\n請務必先記住您目前的號碼：#${myOrder.value?.number} \n建議先截圖餐點內容再加點使用同一手機末三碼\n\n確定要開始新點餐嗎？`)) {
                     myOrder.value = null;
                     localStorage.removeItem('jiantou_order_key');
                 }
@@ -617,6 +617,7 @@
 </script>
 </body>
 </html>
+
 
 
 
