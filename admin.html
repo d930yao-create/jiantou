@@ -279,24 +279,45 @@
                 </table>
 
                 <div class="pt-2 border-t border-stone-100">
-                    <h4 class="text-xs font-bold text-stone-400 mb-3 flex items-center gap-1">
-                        <span class="material-icons-round text-sm">receipt_long</span> 歷史訂單管理
-                    </h4>
-                    <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        <div v-for="order in filteredOrders" :key="order.key" class="flex justify-between items-center p-3 bg-stone-50 rounded-xl border border-stone-100 group transition-colors hover:border-stone-200">
-                            <div class="flex flex-col gap-1">
+                    <button @click="showHistoryDetails = !showHistoryDetails" class="w-full flex justify-between items-center py-3 px-2 text-stone-500 hover:bg-stone-50 rounded-xl transition-colors">
+                        <span class="text-sm font-bold flex items-center gap-1">
+                            <span class="material-icons-round text-lg">receipt_long</span> 展開歷史訂單明細
+                        </span>
+                        <span class="material-icons-round transform transition-transform" :class="showHistoryDetails ? 'rotate-180' : ''">expand_more</span>
+                    </button>
+
+                    <div v-if="showHistoryDetails" class="mt-3 space-y-4 max-h-72 overflow-y-auto pr-1">
+                        <div v-for="order in filteredOrders" :key="order.key" class="p-3 bg-stone-50 rounded-xl border border-stone-200 shadow-sm">
+                            
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-stone-200/60">
                                 <div class="flex items-baseline gap-2">
                                     <span class="font-bold text-stone-700 text-lg">#{{ order.number }}</span>
                                     <span class="text-[10px] text-stone-400 bg-white px-1.5 py-0.5 rounded shadow-sm">{{ order.timeString }}</span>
                                 </div>
-                                <span class="text-xs text-stone-400 truncate max-w-[150px]">{{ formatItems(order.items) }}</span>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-brick">${{ order.total }}</span>
+                                    <button @click="deleteOrder(order)" class="text-stone-300 hover:text-red-400 transition-colors p-1" title="刪除整筆訂單">
+                                        <span class="material-icons-round text-sm">delete_sweep</span>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-brick">${{ order.total }}</span>
-                                <button @click="deleteOrder(order)" class="w-8 h-8 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-300 hover:text-red-400 hover:border-red-200 transition-all shadow-sm active:scale-95" title="刪除此單">
-                                    <span class="material-icons-round text-sm">delete_outline</span>
-                                </button>
+
+                            <div class="space-y-2">
+                                <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center bg-white p-2 rounded-lg border border-stone-100">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-bold text-stone-600 truncate">{{ item.name }}</div>
+                                        <div v-if="item.options && item.options.length" class="text-[10px] text-brick">{{ item.options.join(', ') }}</div>
+                                    </div>
+                                    <div class="flex items-center gap-3 ml-2">
+                                        <span class="text-xs text-stone-400 font-bold">x{{ item.qty }}</span>
+                                        <span class="text-sm font-bold text-stone-600 w-10 text-right">${{ item.price * item.qty }}</span>
+                                        <button @click="deleteOrderItem(order, idx)" class="text-stone-300 hover:text-red-400 p-1 flex items-center justify-center transition-colors" title="移除此品項">
+                                            <span class="material-icons-round text-sm">close</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                            
                         </div>
                         <div v-if="filteredOrders.length === 0" class="text-center text-xs text-stone-300 py-4 font-bold">目前沒有訂單紀錄喔</div>
                     </div>
@@ -358,6 +379,9 @@
             const manualQueue = ref({});
             const isDesktop = ref(window.innerWidth >= 768);
             const menuSettings = ref([]); 
+
+            // 🌟 控制隱形抽屜開關的魔法
+            const showHistoryDetails = ref(false);
 
             const defaultMenu = [
                 { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true, options: [] },
@@ -515,14 +539,32 @@
                 if (newStatus === 'done') set(dbRef(db, 'currentCallingNumber'), order.number);
             };
             
-            // 🌟 刪除單一訂單的魔法
             const deleteOrder = (order) => {
                 if(confirm(`確定要輕輕刪除訂單 #${order.number} 嗎？\n這筆金額將會從營收中被移除喔。`)) { 
                     remove(dbRef(db, `orders/${order.key}`)); 
                 }
             };
+
+            // 🌟 針對單一品項刪除的全新魔法
+            const deleteOrderItem = (order, itemIndex) => {
+                if(confirm('確定要悄悄移除這個品項嗎？金額會自動重新計算喔。')) {
+                    const newItems = [...order.items];
+                    newItems.splice(itemIndex, 1);
+
+                    if (newItems.length === 0) {
+                        // 如果這是最後一個品項，就直接把整張單溫柔刪除
+                        remove(dbRef(db, `orders/${order.key}`));
+                    } else {
+                        // 重新計算剩下的總金額，並更新回雲端
+                        const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                        const updates = {};
+                        updates[`orders/${order.key}/items`] = newItems;
+                        updates[`orders/${order.key}/total`] = newTotal;
+                        update(dbRef(db), updates);
+                    }
+                }
+            };
             
-            // 🌟 升級版：安全又俐落的全部清空魔法
             const deleteAllOrdersByDate = async () => {
                 const targetDate = formattedDateString.value;
                 const count = filteredOrders.value.length;
@@ -617,10 +659,11 @@
                 isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
                 selectedDate, isToday, formattedDateString,
                 pendingOrders, displayRightColumn, dailyRevenue, completedOrdersCount, salesReport, showReport,
-                updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteAllOrdersByDate, exportToCSV,
+                updateStatus, formatItems, shopIsOpen, toggleShopStatus, deleteOrder, deleteOrderItem, deleteAllOrdersByDate, exportToCSV,
                 currentTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue,
                 isDesktop, menuSettings, saveMenuToFirebase, addMenuItem,
-                moveMenuUp, moveMenuDown, addOption, removeOption, filteredOrders
+                moveMenuUp, moveMenuDown, addOption, removeOption, filteredOrders,
+                showHistoryDetails // 🌟 記得把隱形抽屜的變數放出來
             };
         }
     }).mount('#app');
