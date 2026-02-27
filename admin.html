@@ -737,6 +737,7 @@
                 return list.sort(sortByTimeAsc); 
             });
 
+// 🌟 讓戰情總表更聰明：自動合併「加點」品項，讓廚房只看總數
             const kitchenStatsArray = computed(() => {
                 const statsMap = {};
                 filteredOrders.value.filter(o => o.status === 'paid').forEach(order => {
@@ -746,12 +747,15 @@
                         const remainingQty = item.ready ? 0 : (totalQty - readyQty);
 
                         if (remainingQty > 0) {
-                            const itemNameWithOpts = item.name + (item.options && item.options.length ? ` (${item.options.join(', ')})` : '');
+                            // 🌟 魔法點：統計時把 [加點] 字眼拿掉，這樣名字就會跟原始品項一模一樣，進而合併計算
+                            const cleanName = item.name.replace(' [加點]', '');
+                            const itemNameWithOpts = cleanName + (item.options && item.options.length ? ` (${item.options.join(', ')})` : '');
+                            
                             if (!statsMap[itemNameWithOpts]) {
                                 statsMap[itemNameWithOpts] = {
                                     name: itemNameWithOpts,
                                     count: 0,
-                                    baseName: item.name.replace(' [加點]', '') // 把加點字眼拿掉來比對排序
+                                    baseName: cleanName // 用來比對菜單排序
                                 };
                             }
                             statsMap[itemNameWithOpts].count += remainingQty;
@@ -764,12 +768,9 @@
                 return Object.values(statsMap).sort((a, b) => {
                     let indexA = menuOrder.indexOf(a.baseName);
                     let indexB = menuOrder.indexOf(b.baseName);
-                    
                     if (indexA === -1) indexA = 999;
                     if (indexB === -1) indexB = 999;
-                    
                     if (indexA !== indexB) return indexA - indexB;
-                    
                     return a.name.localeCompare(b.name);
                 }).map(item => ({
                     name: item.name,
@@ -815,4 +816,5 @@
 </script>
 </body>
 </html>
+
 
