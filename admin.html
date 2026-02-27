@@ -146,7 +146,12 @@
                                      :class="item.ready ? 'opacity-40 bg-stone-100 border-transparent' : ''">
                                      
                                     <div class="flex flex-col min-w-0 flex-1 pr-2" :class="item.ready ? 'line-through text-stone-400' : ''">
-                                        <span class="text-sm font-bold text-stone-700 truncate leading-tight transition-colors">{{ item.name }}</span>
+                                        <div class="text-sm font-bold text-stone-700 truncate leading-tight transition-colors">
+                                            {{ item.name }}
+                                            <span v-if="!item.ready && (item.readyQty || 0) > 0" class="inline-block bg-orange-100 text-orange-600 text-[10px] px-1.5 py-0.5 rounded ml-1 relative -top-0.5 not-italic no-underline">
+                                                已好 {{ item.readyQty }}
+                                            </span>
+                                        </div>
                                         <span v-if="item.options && item.options.length" class="text-[10px] text-brick mt-0.5">{{ item.options.join(', ') }}</span>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -604,11 +609,29 @@
                 }
             };
 
-
+            // 🌟 超聰明的點擊計數魔法
             const toggleItemReady = (order, itemIndex) => {
                 const newItems = [...order.items];
-                const currentStatus = newItems[itemIndex].ready || false;
-                newItems[itemIndex].ready = !currentStatus;
+                const item = newItems[itemIndex];
+
+                let currentReadyQty = item.readyQty || 0;
+
+                if (item.qty > 1) {
+                    currentReadyQty += 1;
+                    if (currentReadyQty > item.qty) {
+                        currentReadyQty = 0;
+                        item.ready = false;
+                    } else if (currentReadyQty === item.qty) {
+                        item.ready = true;
+                    } else {
+                        item.ready = false;
+                    }
+                    item.readyQty = currentReadyQty;
+                } else {
+                    item.ready = !(item.ready || false);
+                    item.readyQty = item.ready ? 1 : 0;
+                }
+
                 update(dbRef(db), { [`orders/${order.key}/items`]: newItems });
             };
             
@@ -680,23 +703,25 @@
                 return list.sort(sortByTimeAsc); 
             });
 
-            // 🌟 精準計算「尚未劃線準備好」的廚房戰情統計
+            // 🌟 讓戰情總表也變聰明，能精準扣除部分完成的數量
             const kitchenStatsArray = computed(() => {
                 const statsMap = {};
-                // 只統計在「製作中」(paid) 的訂單
                 filteredOrders.value.filter(o => o.status === 'paid').forEach(order => {
                     order.items.forEach(item => {
-                        // 只有「還沒被劃線(ready不為true)」的才統計進去
-                        if (!item.ready) {
+                        const totalQty = item.qty || 1;
+                        const readyQty = item.readyQty || 0;
+                        const remainingQty = item.ready ? 0 : (totalQty - readyQty);
+
+                        if (remainingQty > 0) {
                             const itemNameWithOpts = item.name + (item.options && item.options.length ? ` (${item.options.join(', ')})` : '');
-                            statsMap[itemNameWithOpts] = (statsMap[itemNameWithOpts] || 0) + item.qty;
+                            statsMap[itemNameWithOpts] = (statsMap[itemNameWithOpts] || 0) + remainingQty;
                         }
                     });
                 });
                 return Object.keys(statsMap).map(key => ({
                     name: key,
                     count: statsMap[key]
-                })).sort((a, b) => b.count - a.count); // 數量多的排前面
+                })).sort((a, b) => b.count - a.count); 
             });
 
             const validOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done'));
@@ -736,4 +761,3 @@
 </script>
 </body>
 </html>
-
