@@ -604,11 +604,11 @@
                 }
             };
 
-            // 🌟 點擊切換品項準備狀態的魔法
+
             const toggleItemReady = (order, itemIndex) => {
                 const newItems = [...order.items];
-                // 如果沒有 ready 屬性，就預設為 false 再切換成 true
-                newItems[itemIndex].ready = !newItems[itemIndex].ready;
+                const currentStatus = newItems[itemIndex].ready || false;
+                newItems[itemIndex].ready = !currentStatus;
                 update(dbRef(db), { [`orders/${order.key}/items`]: newItems });
             };
             
@@ -736,3 +736,4 @@
 </script>
 </body>
 </html>
+
