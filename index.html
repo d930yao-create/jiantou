@@ -575,7 +575,7 @@
                         hasEnteredShop.value = true;
                         
                     } catch (error) {
-                        trackError.value = '網路有點小塞車，請再試一次';
+                        trackError.value = '系統提示: ' + error.message;
                     }
                 }
             };
@@ -617,3 +617,4 @@
 </script>
 </body>
 </html>
+
