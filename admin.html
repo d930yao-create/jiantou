@@ -80,7 +80,7 @@
                         </button>
                         <div @click="updateStatus(order, 'paid')">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] text-stone-400 bg-stone-100 px-1 rounded">{{ order.timeString }}</span>
+                                <span class="text-[10px] text-stone-400 bg-white/60 px-1 rounded shadow-sm">{{ order.timeString }}</span>
                                 <span class="font-bold text-xl text-stone-800 flex items-center">
                                     #{{ order.number }}
                                     <span v-if="order.isAddon" class="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">加點</span>
@@ -117,14 +117,15 @@
                     <span class="bg-red-100 px-2 rounded-full text-[10px]">{{ displayRightColumn.length }}</span>
                 </div>
                 
-                <div v-if="isToday && kitchenStatsArray.length > 0" class="bg-stone-50 border-b border-stone-200 p-2.5 flex-shrink-0">
-                    <div class="text-[10px] text-stone-400 font-bold mb-1.5 flex items-center gap-1">
-                        <span class="material-icons-round text-sm text-orange-500">local_fire_department</span> 待製作總計
+                <div v-if="isToday && kitchenStatsArray.length > 0" class="bg-stone-50 border-b border-stone-200 p-3 flex-shrink-0">
+                    <div class="text-[10px] text-stone-400 font-bold mb-2 flex items-center gap-1 uppercase tracking-widest">
+                        <span class="material-icons-round text-sm text-orange-500">local_fire_department</span> 備料清單
                     </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        <span v-for="stat in kitchenStatsArray" :key="stat.name" class="bg-white border border-stone-200 text-stone-700 px-2 py-1 rounded-lg text-sm font-bold shadow-sm">
-                            {{ stat.name }} <span class="text-brick ml-0.5 text-base">{{ stat.count }}</span>
-                        </span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div v-for="stat in kitchenStatsArray" :key="stat.name" class="bg-white border border-stone-200 p-2 rounded-lg shadow-sm flex justify-between items-center">
+                            <span class="text-sm font-bold text-stone-600 truncate mr-1">{{ stat.name }}</span>
+                            <span class="text-brick font-bold text-lg leading-none">{{ stat.count }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -357,14 +358,13 @@
                 });
             });
 
-            // 菜單與管理
             const addOption = (item) => { if (!item.options) item.options = []; item.options.push({ name: '', price: 0 }); };
             const removeOption = (item, optIndex) => { item.options.splice(optIndex, 1); };
             const moveMenuUp = (index) => { if (index > 0) [menuSettings.value[index], menuSettings.value[index - 1]] = [menuSettings.value[index - 1], menuSettings.value[index]]; };
             const moveMenuDown = (index) => { if (index < menuSettings.value.length - 1) [menuSettings.value[index], menuSettings.value[index + 1]] = [menuSettings.value[index + 1], menuSettings.value[index]]; };
             const saveMenuToFirebase = () => { set(dbRef(db, 'menu'), menuSettings.value).then(() => { alert('更新成功！'); currentTab.value = 'pending'; }); };
             const addMenuItem = () => { menuSettings.value.push({ id: Date.now(), name: '', price: 0, desc: '', active: true, options: [] }); };
-            const removeMenuItem = (index) => { if(confirm('確定刪除這個菜單品項嗎？')) menuSettings.value.splice(index, 1); };
+            const removeMenuItem = (index) => { if(confirm('確定要刪除這個菜單品項嗎？')) menuSettings.value.splice(index, 1); };
 
             const addToManualQueue = () => { if(!manualInput.value) return; push(dbRef(db, 'manualQueue'), { n: manualInput.value, p: manualPrice.value ? parseInt(manualPrice.value) : 0 }); manualInput.value = ''; manualPrice.value = ''; };
             const callManualNumber = (item, key) => {
@@ -410,16 +410,13 @@
             };
             
             const deleteOrder = (order) => { if(confirm(`確定刪除訂單 #${order.number}？`)) remove(dbRef(db, `orders/${order.key}`)); };
-            
-            // 🌟 溫柔語氣魔法找回來了
             const deleteOrderItem = (order, itemIndex) => {
                 if(confirm('確定要悄悄移除這個品項嗎？金額會自動重新計算喔。')) {
                     const newItems = [...order.items]; newItems.splice(itemIndex, 1);
                     if (newItems.length === 0) remove(dbRef(db, `orders/${order.key}`));
-                    else update(dbRef(db), { [`orders/${order.key}/items`]: newItems, [`orders/${order.key}/total`]: newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) });
+                    else update(dbRef(db), { [`orders/${order.key}/items`] : newItems, [`orders/${order.key}/total`] : newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) });
                 }
             };
-
             const toggleItemReady = (order, itemIndex) => {
                 const newItems = [...order.items]; const item = newItems[itemIndex];
                 let currentReadyQty = item.readyQty || 0;
@@ -427,7 +424,6 @@
                 else { item.ready = !(item.ready || false); item.readyQty = item.ready ? 1 : 0; }
                 update(dbRef(db), { [`orders/${order.key}/items`]: newItems });
             };
-
             const deleteAllOrdersByDate = async () => { if (filteredOrders.value.length === 0 || !confirm(`確定清空？`)) return; const updates = {}; filteredOrders.value.forEach(order => updates[`orders/${order.key}`] = null); try { await update(dbRef(db), updates); showReport.value = false; } catch (error) { alert(error.message); } };
 
             const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
