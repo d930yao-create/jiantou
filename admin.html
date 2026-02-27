@@ -117,20 +117,16 @@
                     <span class="bg-red-100 px-2 rounded-full text-[10px]">{{ displayRightColumn.length }}</span>
                 </div>
                 
-<div v-if="isToday && kitchenStatsArray.length > 0" class="bg-stone-50 border-b border-stone-200 p-3 flex-shrink-0">
-    <div class="text-xs text-stone-500 font-bold mb-2 flex items-center gap-1.5">
-        <span class="material-icons-round text-sm text-orange-500">local_fire_department</span>
-        待製作餐點統計
-    </div>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <div v-for="stat in kitchenStatsArray" :key="stat.name" 
-             class="bg-white rounded-lg p-2.5 text-center shadow-sm"
-             :class="stat.count >= 5 ? 'border-2 border-red-300' : 'border border-stone-200'">
-            <div class="text-sm font-bold text-stone-700 truncate">{{ stat.name }}</div>
-            <div class="text-xl font-black text-brick mt-1">{{ stat.count }}</div>
-        </div>
-    </div>
-</div>
+                <div v-if="isToday && kitchenStatsArray.length > 0" class="bg-stone-50 border-b border-stone-200 p-2.5 flex-shrink-0">
+                    <div class="text-[10px] text-stone-400 font-bold mb-1.5 flex items-center gap-1">
+                        <span class="material-icons-round text-sm text-orange-500">local_fire_department</span> 待製作總計
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <span v-for="stat in kitchenStatsArray" :key="stat.name" class="bg-white border border-stone-200 text-stone-700 px-2 py-1 rounded-lg text-sm font-bold shadow-sm">
+                            {{ stat.name }} <span class="text-brick ml-0.5 text-base">{{ stat.count }}</span>
+                        </span>
+                    </div>
+                </div>
 
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
                     <div v-for="order in displayRightColumn" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm cursor-pointer relative group transition-colors hover:bg-red-50">
