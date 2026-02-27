@@ -14,9 +14,16 @@
         [v-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
 
-        /* 🌟 精簡版側滑動畫 - 效能優先 */
+        /* 🌟 直立式標籤文字 */
+        .vertical-text {
+            writing-mode: vertical-lr;
+            text-orientation: upright;
+            letter-spacing: 0.2em;
+        }
+
+        /* 🌟 抽屜滑動動畫 (效能優先) */
         .drawer-enter-active, .drawer-leave-active {
-            transition: transform 0.25s ease-out;
+            transition: transform 0.3s ease-out;
         }
         .drawer-enter-from, .drawer-leave-to {
             transform: translateX(100%);
@@ -142,12 +149,14 @@
             </div>
         </div>
 
-        <button v-if="isToday && kitchenStatsArray.length > 0 && (currentTab === 'processing' || isDesktop)" 
+        <button v-if="isToday && kitchenStatsArray.length > 0" 
             @click="showKitchenStatsModal = true" 
-            class="fixed bottom-20 right-4 z-40 bg-stone-800 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-2 active:scale-95 transition-all border border-white/20">
-            <span class="material-icons-round text-brick text-xl">local_fire_department</span>
-            <span class="font-bold text-sm tracking-widest">點餐統計</span>
-            <span class="bg-brick text-white text-[10px] px-2 py-0.5 rounded-full ml-1">{{ totalKitchenItems }}</span>
+            class="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-brick text-white pl-2 pr-1.5 py-4 rounded-l-xl shadow-xl flex flex-col items-center gap-1 active:scale-95 transition-all">
+            <span class="material-icons-round text-xs mb-1">analytics</span>
+            <span class="vertical-text font-bold text-[13px] leading-tight">待產統計</span>
+            <div class="mt-2 bg-white text-brick text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black shadow-inner">
+                {{ totalKitchenItems }}
+            </div>
         </button>
 
         <div class="bg-white p-2 border-t flex justify-center flex-shrink-0 safe-area-bottom">
@@ -159,23 +168,23 @@
     </div>
 
     <transition name="fade">
-        <div v-if="showKitchenStatsModal" class="fixed inset-0 z-[60] bg-stone-900/60" @click="showKitchenStatsModal = false"></div>
+        <div v-if="showKitchenStatsModal" class="fixed inset-0 z-[60] bg-stone-900/40" @click="showKitchenStatsModal = false"></div>
     </transition>
 
     <transition name="drawer">
-        <div v-if="showKitchenStatsModal" class="fixed top-0 right-0 bottom-0 z-[70] w-[85%] max-w-sm bg-white shadow-2xl flex flex-col">
-            <div class="flex justify-between items-center px-6 py-5 border-b border-stone-100 bg-stone-50/50">
+        <div v-if="showKitchenStatsModal" class="fixed top-0 right-0 bottom-0 z-[70] w-[85%] max-w-sm bg-[#FDFBF7] shadow-2xl flex flex-col border-l border-stone-200">
+            <div class="flex justify-between items-center px-6 py-5 border-b border-stone-100 bg-stone-50">
                 <div class="flex items-center gap-2">
                     <span class="material-icons-round text-brick">analytics</span>
-                    <h2 class="text-lg font-bold text-stone-800 tracking-widest">目前待製作總計</h2>
+                    <h2 class="text-lg font-bold text-stone-800 tracking-widest serif">待製作總計</h2>
                 </div>
-                <button @click="showKitchenStatsModal = false" class="text-stone-300 hover:text-stone-500 p-1">
+                <button @click="showKitchenStatsModal = false" class="text-stone-300 hover:text-stone-500">
                     <span class="material-icons-round text-3xl">chevron_right</span>
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-6 py-2 bg-white">
-                <div class="divide-y divide-stone-50">
+            <div class="flex-1 overflow-y-auto px-6 py-2">
+                <div class="divide-y divide-stone-100">
                     <div v-for="stat in kitchenStatsArray" :key="stat.name" class="flex justify-between items-center py-5">
                         <span class="text-stone-600 text-base font-bold pr-4 leading-tight">{{ stat.name }}</span>
                         <div class="flex items-center gap-1.5">
@@ -190,9 +199,9 @@
                 </div>
             </div>
             
-            <div class="p-6 bg-stone-50 border-t border-stone-100">
-                <button @click="showKitchenStatsModal = false" class="w-full py-4 bg-white border border-stone-200 rounded-xl text-stone-500 font-bold text-xs tracking-widest active:bg-stone-100 transition-colors">
-                    返回出餐主頁
+            <div class="p-6 bg-white border-t border-stone-100">
+                <button @click="showKitchenStatsModal = false" class="w-full py-4 bg-stone-50 border border-stone-200 rounded-xl text-stone-500 font-bold text-xs tracking-widest active:bg-stone-100">
+                    返回出餐頁
                 </button>
             </div>
         </div>
@@ -248,14 +257,14 @@
                     <div class="text-stone-500 text-xs">總訂單: <span class="font-bold">{{ completedOrdersCount }}</span> 筆</div>
                     <div class="text-right"><p class="text-[10px] text-stone-400 mb-0.5">總營業額</p><p class="text-2xl font-bold text-brick">${{ dailyRevenue }}</p></div>
                 </div>
-                <table class="w-full text-xs text-left"><thead class="text-stone-400 uppercase bg-stone-50 border-b border-stone-100"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">金額</th></tr></thead>
+                <table class="w-full text-sm text-left"><thead class="text-xs text-stone-400 uppercase bg-stone-50 border-b border-stone-100"><tr><th class="px-2 py-2">品項</th><th class="px-2 py-2 text-center">數</th><th class="px-2 py-2 text-right">金額</th></tr></thead>
                     <tbody class="text-stone-600"><tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-50 last:border-0"><td class="px-2 py-3 font-medium">{{ item.name }}</td><td class="px-2 py-3 text-center bg-stone-50/50 font-bold">{{ item.count }}</td><td class="px-2 py-3 text-right text-stone-800 font-bold">${{ item.total }}</td></tr></tbody>
                 </table>
                 <div class="pt-2 border-t border-stone-100">
                     <button @click="showHistoryDetails = !showHistoryDetails" class="w-full flex justify-between items-center py-2 px-1 text-stone-500 hover:bg-stone-50 rounded-lg transition-colors"><span class="text-xs font-bold flex items-center gap-1"><span class="material-icons-round text-base">receipt_long</span> 展開歷史訂單明細</span><span class="material-icons-round transform transition-transform text-base" :class="showHistoryDetails ? 'rotate-180' : ''">expand_more</span></button>
                     <div v-if="showHistoryDetails" class="mt-3 space-y-3 max-h-64 overflow-y-auto pr-1"><div v-for="order in filteredOrders" :key="order.key" class="p-2.5 bg-stone-50 rounded-lg border border-stone-200 shadow-sm text-xs"><div class="flex justify-between items-center mb-2 pb-1 border-b border-stone-200/50"><div class="flex items-baseline gap-2"><span class="font-bold text-stone-700 text-sm">#{{ order.number }}</span><span class="text-[9px] text-stone-400">{{ order.timeString }}</span></div><div class="flex items-center gap-2"><span class="font-bold text-brick">${{ order.total }}</span><button @click="deleteOrder(order)" class="text-stone-300 hover:text-red-400 transition-colors"><span class="material-icons-round text-base">delete_sweep</span></button></div></div><div class="space-y-2"><div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center bg-white/70 p-1.5 rounded border border-stone-100"><span class="flex-1 font-medium">{{ item.name }}</span><div class="flex items-center gap-2"><span class="text-stone-400">x{{ item.qty }}</span><span class="w-8 text-right font-bold">${{ item.price * item.qty }}</span><button @click="deleteOrderItem(order, idx)" class="text-stone-300 hover:text-red-400"><span class="material-icons-round text-sm">close</span></button></div></div></div></div></div>
                 </div>
-                <div class="pt-4 border-t border-stone-100"><button @click="deleteAllOrdersByDate" class="w-full py-2.5 text-[10px] text-red-400 bg-transparent border border-red-100 rounded-lg font-bold hover:bg-red-50">⚠️ 清空所有訂單</button></div>
+                <div class="pt-4 border-t border-stone-100 flex flex-col gap-3"><button @click="deleteAllOrdersByDate" class="w-full py-2.5 text-[10px] text-red-400 bg-transparent border border-red-100 rounded-lg font-bold hover:bg-red-50">⚠️ 清空所有訂單</button></div>
             </div>
             <div class="p-3 bg-white border-t border-stone-100 flex-shrink-0"><button @click="showReport=false" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-sm shadow-md transition-transform">關閉報表</button></div>
         </div>
@@ -320,6 +329,7 @@
                 });
             });
 
+            // 菜單與管理
             const addOption = (item) => { if (!item.options) item.options = []; item.options.push({ name: '', price: 0 }); };
             const removeOption = (item, optIndex) => { item.options.splice(optIndex, 1); };
             const moveMenuUp = (index) => { if (index > 0) [menuSettings.value[index], menuSettings.value[index - 1]] = [menuSettings.value[index - 1], menuSettings.value[index]]; };
@@ -439,4 +449,3 @@
 </script>
 </body>
 </html>
-
