@@ -621,13 +621,13 @@
             };
             
             const deleteOrder = (order) => {
-                if(confirm(`確定要輕輕刪除訂單 #${order.number} 嗎？\n這筆金額將會從營收中被移除喔。`)) { 
+                if(confirm(`確定要刪除訂單 #${order.number} 嗎？\n這筆金額將會從營收中被移除喔。`)) { 
                     remove(dbRef(db, `orders/${order.key}`)); 
                 }
             };
 
             const deleteOrderItem = (order, itemIndex) => {
-                if(confirm('確定要悄悄移除這個品項嗎？金額會自動重新計算喔。')) {
+                if(confirm('確定要移除這個品項嗎？金額會自動重新計算喔。')) {
                     const newItems = [...order.items];
                     newItems.splice(itemIndex, 1);
 
@@ -682,10 +682,10 @@
                     
                     try {
                         await update(dbRef(db), updates);
-                        alert('已經溫柔地為你全部清空了。'); 
+                        alert('已經全部清空了。'); 
                         showReport.value = false;
                     } catch (error) {
-                        alert('稍微卡住了，請再試一次：' + error.message);
+                        alert('卡住了，請再試一次：' + error.message);
                     }
                 }
             };
@@ -815,3 +815,4 @@
 </script>
 </body>
 </html>
+
