@@ -1,110 +1,142 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="尖頭油飯 - 傳統美味點餐系統">
+    <meta name="theme-color" content="#FDFBF7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>尖頭油飯 | 點餐</title>
+    
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/d930yao-create/jiantou/refs/heads/main/image/download-Photoroom.png">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/d930yao-create/jiantou/refs/heads/main/image/download-Photoroom.png">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF7; font-weight: 500; }
+        
+        :root {
+            --color-cream: #FDFBF7;
+            --color-brick: #9E5A5A;
+            --color-brick-dark: #7F4545;
+            --color-stone: #44403C;
+            --color-stone-light: #78716C;
+            --color-stone-muted: #A8A29E;
+            --color-paid-bg: #FDE68A;
+            --color-paid-text: #92400E;
+            --color-done-bg: #D1FAE5;
+            --color-done-text: #065F46;
+        }
+
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background-color: var(--color-cream); 
+            font-weight: 500; 
+            color: var(--color-stone);
+        }
+
         .serif { font-family: 'Noto Serif TC', serif; }
-        .text-brick { color: #9E5A5A; }
-        .bg-brick { background-color: #9E5A5A; }
-        .status-paid { background-color: #FDE68A; color: #92400E; }
-        .status-done { background-color: #D1FAE5; color: #065F46; }
+        .text-brick { color: var(--color-brick); }
+        .bg-brick { background-color: var(--color-brick); }
+        .status-paid { background-color: var(--color-paid-bg); color: var(--color-paid-text); }
+        .status-done { background-color: var(--color-done-bg); color: var(--color-done-text); }
+        
         [v-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } 
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
-<body class="text-stone-700 h-[100dvh] flex flex-col overflow-hidden select-none">
+<body class="h-[100dvh] flex flex-col overflow-hidden select-none">
 
 <div id="app" v-cloak class="h-full flex flex-col relative">
     
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
-<div v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto">
-    <div class="min-h-full flex flex-col items-center justify-center py-12 px-4">
-        
-        <div class="w-full max-w-xs flex flex-col items-center">
-            
-            <div class="w-24 h-24 flex items-center justify-center mx-auto mb-2 animate-[fadeIn_0.5s_ease-out]">
-                <img src="https://github.com/d930yao-create/jiantou/blob/main/image/jt2.png?raw=true" alt="尖頭油飯" class="w-full h-full object-contain">
-            </div>
-            
-            <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
-            <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
-            
-            <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out]">
-                <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
-                <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
-            </div>
+    <main v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto" role="main">
+        <div class="min-h-full flex flex-col items-center justify-center py-12 px-4">
+            <header class="w-full max-w-xs flex flex-col items-center">
+                <div class="w-24 h-24 flex items-center justify-center mx-auto mb-2 animate-[fadeIn_0.5s_ease-out]">
+                    <img src="https://github.com/d930yao-create/jiantou/blob/main/image/jt2.png?raw=true" alt="尖頭油飯 Logo" class="w-full h-full object-contain">
+                </div>
+                <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
+                <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
+                
+                <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out]">
+                    <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
+                    <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
+                </div>
 
-            <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
-                <button @click="enterShop" 
-                    :disabled="!shopIsOpen && !myOrder"
-                    class="w-full py-5 rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
-                    :class="(!shopIsOpen && !myOrder) ? 'bg-stone-200 text-stone-400 cursor-not-allowed' : 'bg-brick text-white hover:bg-red-900 shadow-red-100'">
-                    <span class="material-icons-round text-2xl">{{ myOrder ? 'receipt_long' : 'flatware' }}</span>
-                    {{ myOrder ? '查看我的訂單' : (shopIsOpen ? '開始點餐' : '暫停點餐') }}
-                </button>
+                <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
+                    <button @click="enterShop" 
+                        :disabled="!shopIsOpen && !myOrder"
+                        class="w-full py-5 rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
+                        :class="(!shopIsOpen && !myOrder) ? 'bg-stone-200 text-stone-400 cursor-not-allowed' : 'bg-brick text-white hover:bg-red-900 shadow-red-100'"
+                        aria-label="開始點餐或查看訂單">
+                        <span class="material-icons-round text-2xl" aria-hidden="true">{{ myOrder ? 'receipt_long' : 'flatware' }}</span>
+                        {{ myOrder ? '查看我的訂單' : (shopIsOpen ? '開始點餐' : '暫停點餐') }}
+                    </button>
 
-                <button @click="isTrackingMode=true" class="w-full py-5 bg-white border-2 border-stone-100 text-stone-600 rounded-2xl font-bold text-xl shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-stone-50 hover:border-stone-200">
-                    <span class="material-icons-round text-2xl text-yellow-500">search</span>
-                    單號追蹤
-                </button>
-            </div>
+                    <button @click="isTrackingMode=true" 
+                        class="w-full py-5 bg-white border-2 border-stone-100 text-stone-600 rounded-2xl font-bold text-xl shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-stone-50 hover:border-stone-200"
+                        aria-label="單號追蹤">
+                        <span class="material-icons-round text-2xl text-yellow-500" aria-hidden="true">search</span>
+                        單號追蹤
+                    </button>
+                </div>
+            </header>
+
+            <section class="mt-16 text-center animate-[slideUp_0.5s_ease-out]">
+                <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
+                <p class="text-7xl font-bold text-stone-300 serif">#{{ currentCallingNumber || '--' }}</p>
+            </section>
         </div>
+    </main>
 
-        <div class="mt-16 text-center animate-[slideUp_0.5s_ease-out]">
-            <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
-            <p class="text-7xl font-bold text-stone-300 serif">#{{ currentCallingNumber || '--' }}</p>
-        </div>
-        
-    </div>
-</div>
-
-    <div v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]">
-        
-        <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0 flex justify-between items-center">
-            <div @click="hasEnteredShop=false" class="cursor-pointer">
+    <main v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]" role="main">
+        <header class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0 flex justify-between items-center">
+            <div @click="hasEnteredShop=false" class="cursor-pointer" role="button" aria-label="返回首頁">
                 <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif flex items-center gap-1">
-                    <span class="material-icons-round text-stone-400 text-2xl">arrow_back_ios</span>
+                    <span class="material-icons-round text-stone-400 text-2xl" aria-hidden="true">arrow_back_ios</span>
                     尖頭油飯
                 </h1> 
                 <p class="text-xs text-brick mt-1 tracking-widest pl-7">TRADITIONAL TASTE</p>
             </div>
-        </div>
+        </header>
 
-        <div class="flex-1 overflow-y-auto px-5 pb-64 space-y-4">
-            <div v-for="item in menu" :key="item.id" class="flex justify-between items-start bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+        <section class="flex-1 overflow-y-auto px-5 pb-64 space-y-4">
+            <article v-for="item in menu" :key="item.id" class="flex justify-between items-start bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
                 <div class="flex-1 pr-2">
                     <h3 class="text-xl font-bold text-stone-800 serif leading-tight">{{ item.name }}</h3>
                     <p class="text-sm text-stone-400 mt-2">{{ item.desc }}</p>
                     <span class="text-brick font-bold mt-3 block text-xl">${{ item.price }}</span>
                 </div>
-                <div class="flex items-center gap-3 ml-2 self-end mb-1">
-                    <button v-if="getItemCount(item.id) > 0" @click="removeFromCart(item)" class="w-10 h-10 rounded-full border-2 border-stone-200 text-stone-400 flex items-center justify-center text-xl font-bold active:bg-stone-100 transition-colors">-</button>
+                <nav class="flex items-center gap-3 ml-2 self-end mb-1">
+                    <button v-if="getItemCount(item.id) > 0" @click="removeFromCart(item)" 
+                        class="w-10 h-10 rounded-full border-2 border-stone-200 text-stone-400 flex items-center justify-center text-xl font-bold active:bg-stone-100 transition-colors"
+                        aria-label="減少數量">-</button>
                     <span v-if="getItemCount(item.id) > 0" class="font-bold text-stone-800 w-6 text-center text-lg">{{ getItemCount(item.id) }}</span>
-                    <button @click="addToCart(item)" class="w-10 h-10 rounded-full bg-brick text-white flex items-center justify-center shadow-lg shadow-red-100 text-xl font-bold active:scale-95 transition-transform" :disabled="!shopIsOpen && !myOrder && !isAppending">+</button>
-                </div>
-            </div>
+                    <button @click="addToCart(item)" 
+                        class="w-10 h-10 rounded-full bg-brick text-white flex items-center justify-center shadow-lg shadow-red-100 text-xl font-bold active:scale-95 transition-transform" 
+                        :disabled="!shopIsOpen && !myOrder && !isAppending"
+                        aria-label="增加數量">+</button>
+                </nav>
+            </article>
             <div v-if="!shopIsOpen && !myOrder && !isAppending" class="text-center py-10">
                 <p class="text-stone-400 font-bold mb-2 text-lg">本店休息中</p>
                 <p class="text-sm text-stone-300">暫停點餐，僅供查詢訂單</p>
             </div>
-        </div>
+        </section>
 
-        <div class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom">
-            
-            <div v-if="(!myOrder && !trackedNumber) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
+        <footer class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom" role="contentinfo">
+            <section v-if="(!myOrder && !trackedNumber) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
                 <div class="flex justify-between items-center mb-5">
                     <div>
                         <p class="text-sm text-stone-400 mb-1">{{ isAppending ? '加點總金額' : '總金額' }}</p>
@@ -119,9 +151,9 @@
                     <button v-if="isAppending" @click="isAppending=false; cart={}" class="px-6 py-4 rounded-xl font-bold text-lg text-stone-500 bg-stone-100 transition-all active:scale-95">取消</button>
                     <button @click="openConfirmation" :disabled="cartCount===0" class="flex-1 py-4 rounded-xl font-bold text-xl tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">{{ isAppending ? '確認加點明細' : '點餐明細' }}</button>
                 </div>
-            </div>
+            </section>
 
-            <div v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[70vh] overflow-y-auto">
+            <section v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[70vh] overflow-y-auto">
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <p class="text-sm text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
@@ -134,9 +166,9 @@
                 </div>
 
                 <div v-if="myOrder" class="bg-stone-50 rounded-xl p-5 mb-4 border border-stone-100">
-                    <div class="flex justify-between items-center mb-3 cursor-pointer" @click="showDetails = !showDetails">
+                    <div class="flex justify-between items-center mb-3 cursor-pointer" @click="showDetails = !showDetails" role="button" :aria-expanded="showDetails">
                         <span class="text-sm font-bold text-stone-500">訂單明細 ({{ myOrder.items.length }}項)</span>
-                        <span class="material-icons-round text-stone-400 text-lg transform transition-transform" :class="showDetails ? 'rotate-180' : ''">expand_more</span>
+                        <span class="material-icons-round text-stone-400 text-lg transform transition-transform" :class="showDetails ? 'rotate-180' : ''" aria-hidden="true">expand_more</span>
                     </div>
                     <div v-if="showDetails" class="space-y-3 border-t border-stone-200 pt-3 mt-2">
                         <div v-for="(item, index) in myOrder.items" :key="index" class="flex justify-between text-base text-stone-600 border-b border-stone-100 pb-2 last:border-0">
@@ -154,9 +186,9 @@
                     <div class="absolute right-0 top-0 w-16 h-16 bg-orange-100 rounded-bl-full opacity-50"></div>
                     <div class="relative z-10">
                         <p class="font-bold text-orange-700 mb-1 flex items-center gap-1">
-                            <span class="material-icons-round text-sm">notifications_active</span> 加點項目待結帳
+                            <span class="material-icons-round text-sm" aria-hidden="true">notifications_active</span> 加點項目待結帳
                         </p>
-                        <p class="text-sm text-orange-600 mb-3">請至櫃檯現場支付加點金額 <span class="font-bold text-brick text-base">${{ myAddonOrder.total }}</span></p>
+                        <p class="text-sm text-orange-600 mb-3">請至櫃檯支付加點金額 <span class="font-bold text-brick text-base">${{ myAddonOrder.total }}</span></p>
                         <button @click="cancelAddon" class="px-4 py-2 bg-white text-orange-500 rounded-lg text-xs font-bold shadow-sm border border-orange-100 active:scale-95 transition-transform">取消加點</button>
                     </div>
                 </div>
@@ -169,38 +201,39 @@
                 <div v-if="myOrder?.status === 'pending'" class="text-center p-4 bg-stone-100 rounded-xl text-stone-500 text-base mb-4">
                     請至攤位現場付款<br>
                     完成後開始製作餐點<br>
-                    <button @click="cancelOrder" class="mt-3 text-sm text-stone-400 underline p-2">取消訂單 (重新點餐)</button>
+                    <button @click="cancelOrder" class="mt-3 text-sm text-stone-400 underline p-2" aria-label="取消訂單並重新點餐">取消訂單 (重新點餐)</button>
                 </div>
 
-                <div v-if="myOrder && !isTrackedNumberCalled && myOrder.status !== 'done'" class="p-4 bg-stone-50 rounded-xl border border-stone-200 flex items-start gap-3">
-                    <span class="material-icons-round text-stone-400 text-xl opacity-80 mt-0.5">info</span>
+                <aside v-if="myOrder && !isTrackedNumberCalled && myOrder.status !== 'done'" class="p-4 bg-stone-50 rounded-xl border border-stone-200 flex items-start gap-3">
+                    <span class="material-icons-round text-stone-400 text-xl opacity-80 mt-0.5" aria-hidden="true">info</span>
                     <div class="text-sm text-stone-500 leading-relaxed text-left">
                         <p class="font-bold text-stone-600 mb-1 tracking-wide">出餐小提醒</p>
                         <p>蘿蔔糕為現點現煎，需稍作等待</p>
                         <p>若訂單內僅有油飯，會優先出餐</p>
                         <p>出餐訊息若有不同造成不便敬請見諒🙇🏻‍♀️</p>
                     </div>
-                </div>
+                </aside>
 
                 <p v-if="myOrder?.status === 'done' || isTrackedNumberCalled" class="text-center text-lg font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
 
-                <button @click="startAppend" v-if="myOrder && myOrder.status === 'paid' && (!myAddonOrder || myAddonOrder.status !== 'pending')" class="w-full mt-4 py-3 bg-stone-100 text-stone-600 rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-2">
-                    <span class="material-icons-round text-lg">add_circle_outline</span> 我想加點
+                <button @click="startAppend" v-if="myOrder && myOrder.status === 'paid' && (!myAddonOrder || myAddonOrder.status !== 'pending')" 
+                    class="w-full mt-4 py-3 bg-stone-100 text-stone-600 rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-2"
+                    aria-label="新增餐點到此訂單">
+                    <span class="material-icons-round text-lg" aria-hidden="true">add_circle_outline</span> 我想加點
                 </button>
                 
                 <button @click="resetOrder" v-if="myOrder?.status==='done' || myOrder?.status==='archived' || isTrackedNumberCalled" class="w-full mt-4 py-3 border-2 border-stone-200 rounded-xl text-base font-bold text-stone-400">關閉</button>
                 
                 <button @click="stopTracking" v-if="trackedNumber && !isTrackedNumberCalled" class="w-full mt-4 text-sm text-stone-400 underline p-2">停止追蹤</button>
-            </div>
-        </div>
-    </div>
+            </section>
+        </footer>
+    </main>
 
-
-    <div v-if="selectedItemForOptions" class="fixed inset-0 bg-black/60 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="selectedItemForOptions=null">
-        <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out]">
+    <div v-if="selectedItemForOptions" class="fixed inset-0 bg-black/60 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="selectedItemForOptions=null" role="dialog" aria-modal="true">
+        <section class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out]">
             <div class="flex justify-between items-center mb-2">
                 <h3 class="text-2xl font-bold text-stone-800 serif">{{ selectedItemForOptions.name }}</h3>
-                <button @click="selectedItemForOptions=null" class="text-stone-400 p-1"><span class="material-icons-round">close</span></button>
+                <button @click="selectedItemForOptions=null" class="text-stone-400 p-1" aria-label="關閉選項"><span class="material-icons-round" aria-hidden="true">close</span></button>
             </div>
             <p class="text-sm text-stone-500 mb-4 border-b border-stone-100 pb-3">客製化選項 / 加價購</p>
             
@@ -218,14 +251,13 @@
             <button @click="confirmAddOptions" class="w-full py-4 bg-brick text-white rounded-xl font-bold text-xl shadow-lg shadow-red-100 active:scale-95 transition-transform">
                 加入購物車
             </button>
-        </div>
+        </section>
     </div>
 
-
-    <div v-if="showPickupModal" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-6 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-8 text-center relative shadow-2xl border-4 border-green-400">
+    <div v-if="showPickupModal" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-6 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]" role="dialog" aria-modal="true">
+        <section class="bg-white w-full max-w-sm rounded-2xl p-8 text-center relative shadow-2xl border-4 border-green-400">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-[bounce_1s_infinite]">
-                <span class="material-icons-round text-5xl text-green-500">restaurant</span>
+                <span class="material-icons-round text-5xl text-green-500" aria-hidden="true">restaurant</span>
             </div>
             <h2 class="text-2xl font-bold text-stone-800 mb-2">餐點好囉！</h2>
             <p class="text-stone-500 mb-6 text-lg">呼叫號碼</p>
@@ -233,27 +265,28 @@
             <button @click="closePickupModal" class="w-full py-5 bg-stone-800 text-white rounded-xl font-bold text-xl shadow-lg active:scale-95 transition-transform">
                 我知道了，馬上去拿！
             </button>
-        </div>
+        </section>
     </div>
 
-    <div v-if="isTrackingMode" class="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center p-6 animate-[slideUp_0.3s_ease-out]">
-        <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2"><span class="material-icons-round text-4xl">close</span></button>
+    <div v-if="isTrackingMode" class="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center p-6 animate-[slideUp_0.3s_ease-out]" role="dialog" aria-modal="true">
+        <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2" aria-label="關閉追蹤"><span class="material-icons-round text-4xl" aria-hidden="true">close</span></button>
         <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
         <p class="text-stone-400 text-base mb-8">櫃台點餐的客人，請輸入取餐號碼</p>
         <input type="tel" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="88" 
-            class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40">
-        <p v-if="trackError" class="text-brick font-bold mb-6 h-6 animate-[fadeIn_0.3s_ease-out]">{{ trackError }}</p>
+            class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40"
+            aria-label="輸入取餐號碼">
+        <p v-if="trackError" class="text-brick font-bold mb-6 h-6 animate-[fadeIn_0.3s_ease-out]" role="alert">{{ trackError }}</p>
         <div v-else class="h-6 mb-6"></div>
         <button @click="startTracking" :disabled="!tempTrackInput" class="w-full max-w-xs py-5 bg-brick text-white rounded-xl font-bold text-2xl shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
             開始追蹤
         </button>
     </div>
 
-    <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false">
-        <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
+    <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false" role="dialog" aria-modal="true">
+        <section class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
             <h3 class="text-2xl font-bold text-stone-800 mb-4 serif text-center border-b border-stone-100 pb-4">{{ isAppending ? '確認加點內容' : '確認餐點內容' }}</h3>
             <div class="space-y-4 max-h-[40vh] overflow-y-auto mb-6 px-1">
-                <div v-for="(cItem, cartKey) in cart" :key="cartKey" class="flex justify-between items-start text-base border-b border-stone-100 pb-3 last:border-0">
+                <article v-for="(cItem, cartKey) in cart" :key="cartKey" class="flex justify-between items-start text-base border-b border-stone-100 pb-3 last:border-0">
                     <div class="flex flex-col flex-1 pr-4">
                         <span class="font-bold text-stone-700 text-lg leading-tight">{{ cItem.item.name }}</span>
                         <span v-if="cItem.options.length > 0" class="text-xs text-brick mt-1 font-bold">
@@ -265,7 +298,7 @@
                         <span class="text-stone-500 font-bold">x{{ cItem.qty }}</span>
                         <span class="font-bold w-16 text-right text-lg">${{ (cItem.item.price + cItem.options.reduce((s,o)=>s+o.price,0)) * cItem.qty }}</span>
                     </div>
-                </div>
+                </article>
             </div>
             <div class="flex justify-between items-center border-t border-dashed border-stone-300 pt-4 mb-4">
                 <span class="text-stone-500 font-bold text-lg">{{ isAppending ? '加點總計' : '總計金額' }}</span>
@@ -274,14 +307,19 @@
             
             <div v-if="!isAppending" class="mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100">
                 <label class="block text-sm font-bold text-stone-600 mb-2 text-center">請輸入手機末三碼 取餐用</label>
-                <input type="tel" maxlength="3" v-model="phoneSuffix" placeholder="點擊輸入" class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick">
+                <input type="tel" maxlength="3" v-model="phoneSuffix" placeholder="點擊輸入" 
+                    class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick"
+                    aria-label="手機末三碼">
             </div>
 
-            <div class="flex gap-3 mt-2">
+            <nav class="flex gap-3 mt-2">
                 <button @click="isConfirming=false" class="flex-1 py-4 bg-stone-100 text-stone-500 rounded-xl font-bold text-lg">返回修改</button>
-                <button @click="submitOrder" :disabled="isSubmitting" class="flex-1 py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50">{{ isSubmitting ? '傳送中...' : (isAppending ? '送出加點單' : '確認送單') }}</button>
-            </div>
-        </div>
+                <button @click="submitOrder" :disabled="isSubmitting" 
+                    class="flex-1 py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50">
+                    {{ isSubmitting ? '傳送中...' : (isAppending ? '送出加點單' : '確認送單') }}
+                </button>
+            </nav>
+        </section>
     </div>
 
 </div>
@@ -300,61 +338,57 @@
         messagingSenderId: "435285773521",
         appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
     };
+    
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
     createApp({
         setup() {
+            // 狀態定義
             const hasEnteredShop = ref(false);
             const menu = ref([]); 
-            const defaultMenu = [
-                { id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true, options: [] }
-            ];
-            
+            const defaultMenu = [{ id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true, options: [] }];
             const cart = ref({});
             const selectedItemForOptions = ref(null);
             const selectedOptionsArr = ref([]);
-            
             const myOrder = ref(null);
-            const myAddonOrder = ref(null); // 🌟 專門用來追蹤客人的加點單
+            const myAddonOrder = ref(null);
             const isSubmitting = ref(false);
             const currentCallingNumber = ref(null);
             const shopIsOpen = ref(true);
             const showDetails = ref(true);
             const isConfirming = ref(false);
             const showPickupModal = ref(false);
-            
             const isTrackingMode = ref(false);
             const trackedNumber = ref(null);
             const tempTrackInput = ref('');
             const trackError = ref('');
             const isTrackedNumberCalled = ref(false);
-
             const phoneSuffix = ref('');
             const isAppending = ref(false);
 
             onMounted(() => {
-                const callRef = dbRef(db, 'currentCallingNumber');
-                onValue(callRef, (snapshot) => { currentCallingNumber.value = snapshot.val(); });
+                // 叫號機聯動
+                onValue(dbRef(db, 'currentCallingNumber'), (snapshot) => { 
+                    currentCallingNumber.value = snapshot.val(); 
+                });
 
-                const shopStatusRef = dbRef(db, 'shopStatus');
-                onValue(shopStatusRef, (snapshot) => {
+                // 店家狀態聯動
+                onValue(dbRef(db, 'shopStatus'), (snapshot) => {
                     const val = snapshot.val();
                     shopIsOpen.value = (val === null) ? true : val;
                 });
 
-                const menuRef = dbRef(db, 'menu');
-                onValue(menuRef, (snapshot) => {
+                // 菜單聯動
+                onValue(dbRef(db, 'menu'), (snapshot) => {
                     const data = snapshot.val();
-                    if (data) { menu.value = data.filter(item => item.active); } 
-                    else { menu.value = defaultMenu; }
+                    menu.value = data ? data.filter(item => item.active) : defaultMenu;
                 });
 
-                // 追蹤主訂單
+                // 本地訂單恢復
                 const savedOrderKey = localStorage.getItem('jiantou_order_key');
                 if (savedOrderKey) {
-                    const savedOrderRef = dbRef(db, `orders/${savedOrderKey}`);
-                    onValue(savedOrderRef, (snapshot) => {
+                    onValue(dbRef(db, `orders/${savedOrderKey}`), (snapshot) => {
                         const data = snapshot.val();
                         if (data && data.status !== 'archived') {
                             myOrder.value = { ...data, key: snapshot.key };
@@ -366,7 +400,7 @@
                     });
                 }
                 
-                // 🌟 追蹤加點專屬訂單
+                // 本地加點訂單恢復
                 const savedAddonKey = localStorage.getItem('jiantou_addon_key');
                 if (savedAddonKey) {
                     onValue(dbRef(db, `orders/${savedAddonKey}`), (snapshot) => {
@@ -380,6 +414,7 @@
                     });
                 }
 
+                // 追蹤號碼恢復
                 const savedTrack = localStorage.getItem('jiantou_tracked_number');
                 if (savedTrack) {
                     trackedNumber.value = savedTrack; 
@@ -387,26 +422,29 @@
                 }
             });
 
+            // 進入商店
             const enterShop = () => {
                 if (shopIsOpen.value || myOrder.value) {
                     hasEnteredShop.value = true;
                 }
             };
 
+            // 監聽取餐狀態
             watch(() => myOrder.value?.status, (newStatus, oldStatus) => {
                 if (newStatus === 'done' && oldStatus !== 'done') {
-                    notifyUser();
+                    triggerPickupNotification();
                 }
             });
 
             watch(currentCallingNumber, (newVal) => {
                 if (trackedNumber.value && newVal == trackedNumber.value) {
                     isTrackedNumberCalled.value = true;
-                    notifyUser();
+                    triggerPickupNotification();
                 }
             });
 
-            const notifyUser = () => {
+            // 通知觸發
+            const triggerPickupNotification = () => {
                 showPickupModal.value = true;
                 const audio = document.getElementById('pickupSound');
                 if (audio) {
@@ -418,6 +456,7 @@
                 }
             };
 
+            // 購物車邏輯
             const getItemCount = (id) => {
                 return Object.values(cart.value).filter(c => c.item.id === id).reduce((sum, c) => sum + c.qty, 0);
             };
@@ -466,24 +505,23 @@
                 let total = 0;
                 for (const cartKey in cart.value) {
                     const cItem = cart.value[cartKey];
-                    const basePrice = cItem.item.price;
                     const optPrice = cItem.options.reduce((sum, o) => sum + o.price, 0);
-                    total += (basePrice + optPrice) * cItem.qty;
+                    total += (cItem.item.price + optPrice) * cItem.qty;
                 }
                 return total;
             });
 
             const openConfirmation = () => { if (cartCount.value > 0) isConfirming.value = true; };
 
+            // 加點邏輯
             const startAppend = () => {
                 isAppending.value = true;
                 cart.value = {}; 
             };
 
-            // 🌟 加點取消魔法
             const cancelAddon = () => {
                 if(confirm('確定要取消這次的加點嗎？')) {
-                    if (myAddonOrder.value && myAddonOrder.value.key) {
+                    if (myAddonOrder.value?.key) {
                         remove(dbRef(db, `orders/${myAddonOrder.value.key}`));
                     }
                     myAddonOrder.value = null;
@@ -491,16 +529,16 @@
                 }
             };
 
+            // 送單邏輯
             const submitOrder = async () => {
-                if (!isAppending.value) {
-                    if (!phoneSuffix.value || phoneSuffix.value.length !== 3) {
-                        alert('為了方便取餐，請輸入完整的手機末三碼喔！');
-                        return;
-                    }
+                if (!isAppending.value && (!phoneSuffix.value || phoneSuffix.value.length !== 3)) {
+                    alert('為了方便取餐，請輸入完整的手機末三碼喔！');
+                    return;
                 }
 
                 if (isSubmitting.value) return;
                 
+                // 預解鎖音訊
                 const audio = document.getElementById('pickupSound');
                 if (audio) {
                     audio.volume = 0; 
@@ -509,17 +547,14 @@
 
                 isSubmitting.value = true;
                 const newCartItems = [];
-                
                 for (const cartKey in cart.value) {
                     const cItem = cart.value[cartKey];
-                    const optNames = cItem.options.map(o => o.name);
-                    const optPrice = cItem.options.reduce((sum, o) => sum + o.price, 0);
                     newCartItems.push({
                         id: cItem.item.id,
                         name: cItem.item.name,
-                        price: cItem.item.price + optPrice,
+                        price: cItem.item.price + cItem.options.reduce((s, o) => s + o.price, 0),
                         qty: cItem.qty,
-                        options: optNames
+                        options: cItem.options.map(o => o.name)
                     });
                 }
                 
@@ -527,14 +562,12 @@
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
                 const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
 
-                const ordersRef = dbRef(db, 'orders');
-
-                // 🌟 加點單專屬的傳送通道 (改為送出一張待結帳的獨立單)
-                if (isAppending.value && myOrder.value && myOrder.value.key) {
+                // 處理加點
+                if (isAppending.value && myOrder.value?.key) {
                     const addonData = {
                         number: myOrder.value.number,
                         parentKey: myOrder.value.key,
-                        isAddon: true, // 告訴後台這是一張加點單
+                        isAddon: true,
                         items: newCartItems,
                         total: cartTotal.value,
                         status: 'pending',
@@ -543,18 +576,13 @@
                         dateString: dateString
                     };
                     
-                    const newRef = push(ordersRef, addonData);
+                    const newRef = push(dbRef(db, 'orders'), addonData);
                     localStorage.setItem('jiantou_addon_key', newRef.key);
                     
-                    // 開始追蹤這張加點單
                     onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
                         const data = snapshot.val();
-                        if (data) {
-                            myAddonOrder.value = { ...data, key: snapshot.key };
-                        } else {
-                            myAddonOrder.value = null;
-                            localStorage.removeItem('jiantou_addon_key');
-                        }
+                        myAddonOrder.value = data ? { ...data, key: snapshot.key } : null;
+                        if (!data) localStorage.removeItem('jiantou_addon_key');
                     });
 
                     isAppending.value = false;
@@ -564,7 +592,7 @@
                     return; 
                 }
                 
-                // 一般正常訂單通道
+                // 處理主訂單
                 const newOrderData = {
                     number: phoneSuffix.value, 
                     items: newCartItems, 
@@ -575,18 +603,15 @@
                     dateString: dateString
                 };
 
-                const newRef = push(ordersRef, newOrderData);
-                const localOrder = { ...newOrderData, key: newRef.key };
-                
+                const newRef = push(dbRef(db, 'orders'), newOrderData);
                 localStorage.setItem('jiantou_order_key', newRef.key);
 
-                myOrder.value = localOrder;
+                myOrder.value = { ...newOrderData, key: newRef.key };
                 cart.value = {};
                 isConfirming.value = false;
                 isSubmitting.value = false;
 
-                const thisOrderRef = dbRef(db, `orders/${newRef.key}`);
-                onValue(thisOrderRef, (snapshot) => {
+                onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
                     const data = snapshot.val();
                     if (data && data.status !== 'archived') {
                         myOrder.value = { ...data, key: snapshot.key };
@@ -597,6 +622,7 @@
                 });
             };
 
+            // 重置與取消
             const resetOrder = () => {
                 myOrder.value = null;
                 trackedNumber.value = null; 
@@ -607,25 +633,23 @@
 
             const cancelOrder = () => {
                 if(confirm('確定要取消這筆訂單嗎？')) {
-                    if (myOrder.value && myOrder.value.key) {
+                    if (myOrder.value?.key) {
                         remove(dbRef(db, `orders/${myOrder.value.key}`));
                     }
                     resetOrder();
                 }
             };
 
+            // 單號追蹤
             const startTracking = async () => {
                 if (tempTrackInput.value) {
                     trackError.value = '';
                     const inputNum = tempTrackInput.value.toString();
-                    
-                    const ordersRef = dbRef(db, 'orders');
-                    const q = query(ordersRef, orderByChild('number'), equalTo(inputNum));
+                    const q = query(dbRef(db, 'orders'), orderByChild('number'), equalTo(inputNum));
                     
                     try {
                         const snapshot = await get(q);
                         let isValidOrder = false;
-                        
                         if (snapshot.exists()) {
                             snapshot.forEach((child) => {
                                 const order = child.val();
@@ -651,7 +675,6 @@
                         isTrackingMode.value = false;
                         tempTrackInput.value = '';
                         hasEnteredShop.value = true;
-                        
                     } catch (error) {
                         trackError.value = '系統提示: ' + error.message;
                     }
@@ -664,20 +687,11 @@
                 localStorage.removeItem('jiantou_tracked_number');
             };
 
-            const stopTrackingAndClear = () => {
-                stopTracking();
-                tempTrackInput.value = '';
-            };
-            
-            const closePickupModal = () => {
-                showPickupModal.value = false;
-            };
+            const closePickupModal = () => { showPickupModal.value = false; };
 
             const getStatusText = (status) => {
-                if (status === 'pending') return '等待付款';
-                if (status === 'paid') return '製作中';
-                if (status === 'done') return '可取餐';
-                return '已結案';
+                const map = { pending: '等待付款', paid: '製作中', done: '可取餐' };
+                return map[status] || '已結案';
             };
 
             return { 
@@ -685,11 +699,10 @@
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
                 shopIsOpen, showDetails, isConfirming, openConfirmation,
                 resetOrder, cancelOrder, showPickupModal, closePickupModal,
-                isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking, stopTrackingAndClear,
+                isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking,
                 hasEnteredShop, enterShop, trackError,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
-                phoneSuffix,
-                isAppending, startAppend, myAddonOrder, cancelAddon
+                phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon
             };
         }
     }).mount('#app');
