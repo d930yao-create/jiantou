@@ -197,7 +197,7 @@
                             </div>
 
                             <div v-if="isToday" class="mt-3 flex justify-end">
-                                <button class="text-[11px] bg-brick text-white px-4 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition-transform">一鍵叫號並結案</button>
+                                <button class="text-[11px] bg-brick text-white px-4 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition-transform">叫號並結案</button>
                             </div>
                         </div>
                     </article>
@@ -593,7 +593,6 @@
             const marqueeSettings = ref({ text: '', showCount: false });
             const showKitchenStatsModal = ref(false);
 
-            // ✨ 萬用工具箱狀態 ✨
             const showToolbox = ref(false);
             const toolboxTab = ref('history');
 
@@ -652,12 +651,10 @@
                 return filteredOrders.value.filter(o => o.status === 'pending').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
             });
             
-            // ✨ 製作中：只顯示 paid，變成 done 就消失 ✨
             const processingOrders = computed(() => {
                 return filteredOrders.value.filter(o => o.status === 'paid').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
             });
 
-            // ✨ 最近出餐(歷史訂單)：顯示 done 與 archived，越新的在越上面 ✨
             const historyOrders = computed(() => {
                 return filteredOrders.value.filter(o => o.status === 'done' || o.status === 'archived').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
             });
@@ -692,9 +689,10 @@
             const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
             const completedOrdersCount = computed(() => validOrders.value.filter(o => o.total > 0).length);
             
+            // ✨ 修正跑馬燈計算：只計算「真正進廚房」的單 ✨
             const waitingOrdersCount = computed(() => {
                 const todayOrders = allOrders.value.filter(order => order.dateString === `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`);
-                return todayOrders.filter(o => o.status === 'pending' || o.status === 'paid').length;
+                return todayOrders.filter(o => o.status === 'paid').length;
             });
 
             const updateMarqueeCount = () => {
@@ -808,7 +806,6 @@
                 posCart.value = {};
                 posPhoneSuffix.value = '';
                 posNote.value = '';
-                // 不自動切換分頁，讓阿寶可以連續點餐！
             };
 
             const updateOrderNote = (order) => {
