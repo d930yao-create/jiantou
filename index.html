@@ -53,7 +53,6 @@
 
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
-        /* ✨ 溫柔的跑馬燈動畫魔法 ✨ */
         .marquee-container {
             width: 100%;
             overflow: hidden;
@@ -77,6 +76,38 @@
     
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
+    <div v-if="myOrder && myOrder.status === 'done'" class="fixed inset-0 bg-green-500 z-[100] flex flex-col items-center justify-center p-6 animate-[fadeIn_0.3s_ease-out]">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl flex flex-col items-center text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-green-100 rounded-full opacity-50"></div>
+            <div class="absolute -bottom-10 -left-10 w-24 h-24 bg-green-50 rounded-full opacity-50"></div>
+            
+            <div class="relative z-10 w-full flex flex-col items-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                    <span class="material-icons-round text-4xl text-green-500">check_circle</span>
+                </div>
+                <h2 class="text-2xl font-bold text-stone-800 mb-1">餐點已完成</h2>
+                <p class="text-stone-500 mb-6 text-sm">請憑此畫面至櫃檯取餐</p>
+                
+                <div class="text-7xl font-bold text-green-600 serif mb-6 tracking-tighter">#{{ myOrder.number }}</div>
+                
+                <div class="w-full text-left bg-stone-50 border border-stone-100 p-4 rounded-2xl mb-8 max-h-48 overflow-y-auto shadow-inner">
+                    <p class="text-xs font-bold text-stone-400 mb-3 border-b border-stone-200 pb-2">點餐明細核對</p>
+                    <div v-for="(item, idx) in myOrder.items" :key="idx" class="flex justify-between items-start mb-3 last:mb-0">
+                        <div class="flex flex-col flex-1 pr-2">
+                            <span class="font-bold text-stone-700 leading-tight">{{ item.name }}</span>
+                            <span class="text-[10px] text-stone-500 mt-0.5" v-if="item.options && item.options.length">{{ item.options.join(', ') }}</span>
+                        </div>
+                        <span class="font-bold text-stone-600">x{{ item.qty }}</span>
+                    </div>
+                </div>
+                
+                <button @click="resetOrder" class="w-full py-4 bg-stone-800 text-white rounded-xl font-bold text-lg active:scale-95 transition-transform shadow-lg">
+                    我已完成取餐
+                </button>
+            </div>
+        </div>
+    </div>
+
     <main v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto relative" role="main">
         <div class="min-h-full flex flex-col items-center justify-center py-12 px-4 pb-16">
             <header class="w-full max-w-xs flex flex-col items-center">
@@ -87,36 +118,26 @@
                 <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
                 
                 <div class="mt-5 mb-4 flex flex-wrap items-center justify-center gap-2 animate-[fadeIn_0.5s_ease-out]">
-                    
                     <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
                     <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
                     
                     <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" 
                        class="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-stone-200 rounded-full text-stone-500 hover:text-brick hover:border-brick/50 hover:bg-red-50 text-xs font-bold transition-all active:scale-95">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
-                            <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
-                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
-                        </svg>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line></svg>
                         INSTAGRAM
                     </a>
                     
                     <a href="https://lin.ee/xfFqC97" target="_blank" 
                        class="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-stone-200 rounded-full text-stone-500 hover:text-green-600 hover:border-green-600/50 hover:bg-green-50 text-xs font-bold transition-all active:scale-95">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                         LINE
                     </a>
-
                     <span v-if="isStaffMode" class="bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm animate-[fadeIn_0.3s_ease-out]">✨ 店長模式</span>
                 </div>
 
                 <div v-if="finalMarqueeText" class="w-full max-w-[280px] bg-stone-100/80 rounded-lg py-2 mb-6 animate-[fadeIn_0.5s_ease-out] border border-stone-200/50 backdrop-blur-sm">
                     <div class="marquee-container">
-                        <span class="marquee-content text-sm text-stone-600 font-bold tracking-wide">
-                            {{ finalMarqueeText }}
-                        </span>
+                        <span class="marquee-content text-sm text-stone-600 font-bold tracking-wide">{{ finalMarqueeText }}</span>
                     </div>
                 </div>
 
@@ -161,9 +182,7 @@
             
             <div v-if="finalMarqueeText" class="w-full bg-stone-100/80 rounded-lg py-2 mb-2 border border-stone-200/50 backdrop-blur-sm">
                 <div class="marquee-container">
-                    <span class="marquee-content text-sm text-stone-600 font-bold tracking-wide">
-                        {{ finalMarqueeText }}
-                    </span>
+                    <span class="marquee-content text-sm text-stone-600 font-bold tracking-wide">{{ finalMarqueeText }}</span>
                 </div>
             </div>
 
@@ -192,7 +211,7 @@
         </section>
 
         <footer class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom" role="contentinfo">
-            <section v-if="(!myOrder && !trackedNumber) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
+            <section v-if="(!myOrder) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
                 <div class="flex justify-between items-center mb-5">
                     <div>
                         <p class="text-sm text-stone-400 mb-1">{{ isAppending ? '加點總金額' : '總金額' }}</p>
@@ -213,11 +232,10 @@
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <p class="text-sm text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
-                        <h2 class="text-6xl font-bold text-stone-800 serif">#{{ myOrder?.number || trackedNumber }}</h2>
+                        <h2 class="text-6xl font-bold text-stone-800 serif">#{{ myOrder?.number }}</h2>
                     </div>
                     <div class="text-right">
-                        <span v-if="trackedNumber" class="px-4 py-2 rounded-full text-sm font-bold" :class="isTrackedNumberCalled ? 'status-done animate-pulse' : 'bg-gray-200 text-gray-600'">{{ isTrackedNumberCalled ? '可取餐' : '等待叫號' }}</span>
-                        <span v-else class="px-4 py-2 rounded-full text-sm font-bold" :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">{{ getStatusText(myOrder.status) }}</span>
+                        <span class="px-4 py-2 rounded-full text-sm font-bold" :class="{'bg-gray-200 text-gray-600': myOrder.status==='pending', 'status-paid': myOrder.status==='paid', 'status-done': myOrder.status==='done'}">{{ getStatusText(myOrder.status) }}</span>
                     </div>
                 </div>
 
@@ -249,18 +267,13 @@
                     </div>
                 </div>
 
-                <div v-if="trackedNumber && !isTrackedNumberCalled" class="text-center p-6 bg-stone-50 rounded-xl text-stone-500 text-base mb-4">
-                    <p class="font-bold mb-1">🔍 正在追蹤叫號機...</p>
-                    <p class="text-sm mt-1">請保持網頁開啟，叫號時會通知您</p>
-                </div>
-
                 <div v-if="myOrder?.status === 'pending'" class="text-center p-4 bg-stone-100 rounded-xl text-stone-500 text-base mb-4">
                     請至攤位現場付款<br>
                     完成後開始製作餐點<br>
                     <button @click="cancelOrder" class="mt-3 text-sm text-stone-400 underline p-2" aria-label="取消訂單並重新點餐">取消訂單 (重新點餐)</button>
                 </div>
 
-                <aside v-if="myOrder && !isTrackedNumberCalled && myOrder.status !== 'done'" class="p-4 bg-stone-50 rounded-xl border border-stone-200 flex items-start gap-3">
+                <aside v-if="myOrder && myOrder.status !== 'done'" class="p-4 bg-stone-50 rounded-xl border border-stone-200 flex items-start gap-3">
                     <span class="material-icons-round text-stone-400 text-xl opacity-80 mt-0.5" aria-hidden="true">info</span>
                     <div class="text-sm text-stone-500 leading-relaxed text-left">
                         <p class="font-bold text-stone-600 mb-1 tracking-wide">出餐小提醒</p>
@@ -270,17 +283,11 @@
                     </div>
                 </aside>
 
-                <p v-if="myOrder?.status === 'done' || isTrackedNumberCalled" class="text-center text-lg font-bold text-green-600 mt-4 animate-pulse">🎉 餐點好囉！請取餐</p>
-
                 <button @click="startAppend" v-if="myOrder && myOrder.status === 'paid' && (!myAddonOrder || myAddonOrder.status !== 'pending')" 
                     class="w-full mt-4 py-3 bg-stone-100 text-stone-600 rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-2"
                     aria-label="新增餐點到此訂單">
                     <span class="material-icons-round text-lg" aria-hidden="true">add_circle_outline</span> 我想加點
                 </button>
-                
-                <button @click="resetOrder" v-if="myOrder?.status==='done' || myOrder?.status==='archived' || isTrackedNumberCalled" class="w-full mt-4 py-3 border-2 border-stone-200 rounded-xl text-base font-bold text-stone-400">關閉</button>
-                
-                <button @click="stopTracking" v-if="trackedNumber && !isTrackedNumberCalled" class="w-full mt-4 text-sm text-stone-400 underline p-2">停止追蹤</button>
             </section>
         </footer>
     </main>
@@ -310,31 +317,18 @@
         </section>
     </div>
 
-    <div v-if="showPickupModal" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-6 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]" role="dialog" aria-modal="true">
-        <section class="bg-white w-full max-w-sm rounded-2xl p-8 text-center relative shadow-2xl border-4 border-green-400">
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-[bounce_1s_infinite]">
-                <span class="material-icons-round text-5xl text-green-500" aria-hidden="true">restaurant</span>
-            </div>
-            <h2 class="text-2xl font-bold text-stone-800 mb-2">餐點好囉！</h2>
-            <p class="text-stone-500 mb-6 text-lg">呼叫號碼</p>
-            <div class="text-8xl font-bold text-brick serif mb-8">#{{ myOrder?.number || trackedNumber }}</div>
-            <button @click="closePickupModal" class="w-full py-5 bg-stone-800 text-white rounded-xl font-bold text-xl shadow-lg active:scale-95 transition-transform">
-                我知道了，馬上去拿！
-            </button>
-        </section>
-    </div>
-
     <div v-if="isTrackingMode" class="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center p-6 animate-[slideUp_0.3s_ease-out]" role="dialog" aria-modal="true">
         <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2" aria-label="關閉追蹤"><span class="material-icons-round text-4xl" aria-hidden="true">close</span></button>
-        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">領餐號碼</h2>
-        <p class="text-stone-400 text-base mb-8">請輸入　手機號碼末三碼　追蹤訂單狀態</p>
-        <input type="tel" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="88" 
+        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
+        <p class="text-stone-400 text-base mb-8 text-center">找回您的訂單明細與狀態<br>(包含現場櫃檯為您點的單)</p>
+        
+        <input type="text" inputmode="numeric" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="888" 
             class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40"
             aria-label="輸入取餐號碼">
         <p v-if="trackError" class="text-brick font-bold mb-6 h-6 animate-[fadeIn_0.3s_ease-out]" role="alert">{{ trackError }}</p>
         <div v-else class="h-6 mb-6"></div>
-        <button @click="startTracking" :disabled="!tempTrackInput" class="w-full max-w-xs py-5 bg-brick text-white rounded-xl font-bold text-2xl shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
-            開始追蹤
+        <button @click="startTracking" :disabled="tempTrackInput.toString().trim().length === 0" class="w-full max-w-xs py-5 bg-brick text-white rounded-xl font-bold text-2xl shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
+            尋找訂單
         </button>
     </div>
 
@@ -363,7 +357,7 @@
             
             <div v-if="!isAppending" class="mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100">
                 <label class="block text-sm font-bold text-stone-600 mb-2 text-center">請輸入手機末三碼 取餐用</label>
-                <input type="tel" maxlength="3" v-model="phoneSuffix" placeholder="點擊輸入" 
+                <input type="text" inputmode="numeric" maxlength="3" v-model="phoneSuffix" placeholder="點擊輸入" 
                     class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick"
                     aria-label="手機末三碼">
             </div>
@@ -413,16 +407,12 @@
             const shopIsOpen = ref(true);
             const showDetails = ref(true);
             const isConfirming = ref(false);
-            const showPickupModal = ref(false);
             const isTrackingMode = ref(false);
-            const trackedNumber = ref(null);
             const tempTrackInput = ref('');
             const trackError = ref('');
-            const isTrackedNumberCalled = ref(false);
             const phoneSuffix = ref('');
             const isAppending = ref(false);
             
-            // ✨ 升級版跑馬燈資料包 ✨
             const marqueeData = ref({ text: '', showCount: false, count: 0 });
             
             const isStaffMode = ref(false);
@@ -444,15 +434,9 @@
                     menu.value = data ? data.filter(item => item.active) : defaultMenu;
                 });
 
-                // ✨ 聆聽雲端的跑馬燈資料包 ✨
                 onValue(dbRef(db, 'marqueeData'), (snapshot) => {
                     const data = snapshot.val();
-                    if (data) {
-                        marqueeData.value = data;
-                    } else {
-                        // 相容舊版或空白時
-                        marqueeData.value = { text: '', showCount: false, count: 0 };
-                    }
+                    if (data) marqueeData.value = data;
                 });
 
                 const savedOrderKey = localStorage.getItem('jiantou_order_key');
@@ -481,43 +465,26 @@
                         }
                     });
                 }
-
-                const savedTrack = localStorage.getItem('jiantou_tracked_number');
-                if (savedTrack) {
-                    trackedNumber.value = savedTrack; 
-                    hasEnteredShop.value = true;
-                }
             });
 
-            // ✨ 自動合成最終要顯示的跑馬燈文字 ✨
             const finalMarqueeText = computed(() => {
                 let text = marqueeData.value.text || '';
                 let showCount = marqueeData.value.showCount;
                 let count = marqueeData.value.count || 0;
 
                 let parts = [];
-                if (text) {
-                    parts.push(text);
-                }
-                
+                if (text) parts.push(text);
                 if (showCount) {
-                    if (count > 0) {
-                        parts.push(`🧑‍🍳 目前前面有 ${count} 張訂單製作中，感謝您的耐心等候`);
-                    } else {
-                        parts.push(`✨ 目前無需等候，速速為您出餐`);
-                    }
+                    if (count > 0) parts.push(`🧑‍🍳 目前前面有 ${count} 張訂單製作中，感謝您的耐心等候`);
+                    else parts.push(`✨ 目前無需等候，速速為您出餐`);
                 }
-
                 return parts.join(' ｜ ');
             });
 
             const secretTap = () => {
                 tapCount++;
                 if (tapTimeout) clearTimeout(tapTimeout);
-                
-                tapTimeout = setTimeout(() => {
-                    tapCount = 0; 
-                }, 1000);
+                tapTimeout = setTimeout(() => { tapCount = 0; }, 1000);
 
                 if (tapCount >= 5) {
                     isStaffMode.value = true;
@@ -533,30 +500,17 @@
                 }
             };
 
+            // ✨ 取餐通知音效：當自己的訂單變成 done 時觸發 ✨
             watch(() => myOrder.value?.status, (newStatus, oldStatus) => {
                 if (newStatus === 'done' && oldStatus !== 'done') {
-                    triggerPickupNotification();
+                    const audio = document.getElementById('pickupSound');
+                    if (audio) {
+                        audio.volume = 1.0;
+                        audio.play().catch(() => {});
+                    }
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
                 }
             });
-
-            watch(currentCallingNumber, (newVal) => {
-                if (trackedNumber.value && newVal == trackedNumber.value) {
-                    isTrackedNumberCalled.value = true;
-                    triggerPickupNotification();
-                }
-            });
-
-            const triggerPickupNotification = () => {
-                showPickupModal.value = true;
-                const audio = document.getElementById('pickupSound');
-                if (audio) {
-                    audio.volume = 1.0;
-                    audio.play().catch(() => {});
-                }
-                if (navigator.vibrate) {
-                    navigator.vibrate([200, 100, 200, 100, 500]);
-                }
-            };
 
             const getItemCount = (id) => {
                 return Object.values(cart.value).filter(c => c.item.id === id).reduce((sum, c) => sum + c.qty, 0);
@@ -568,9 +522,7 @@
                     selectedOptionsArr.value = [];
                 } else {
                     const cartKey = `item_${item.id}`;
-                    if (!cart.value[cartKey]) {
-                        cart.value[cartKey] = { item: item, options: [], qty: 0 };
-                    }
+                    if (!cart.value[cartKey]) cart.value[cartKey] = { item: item, options: [], qty: 0 };
                     cart.value[cartKey].qty++;
                 }
             };
@@ -581,9 +533,7 @@
                 const optIds = opts.map(o => o.name).sort().join('_');
                 const cartKey = `item_${item.id}_${optIds}`;
 
-                if (!cart.value[cartKey]) {
-                    cart.value[cartKey] = { item: item, options: [...opts], qty: 0 };
-                }
+                if (!cart.value[cartKey]) cart.value[cartKey] = { item: item, options: [...opts], qty: 0 };
                 cart.value[cartKey].qty++;
                 selectedItemForOptions.value = null;
             };
@@ -594,9 +544,7 @@
                     const lastKey = keys[keys.length - 1];
                     if (cart.value[lastKey].qty > 0) {
                         cart.value[lastKey].qty--;
-                        if (cart.value[lastKey].qty === 0) {
-                            delete cart.value[lastKey];
-                        }
+                        if (cart.value[lastKey].qty === 0) delete cart.value[lastKey];
                     }
                 }
             };
@@ -613,24 +561,19 @@
             });
 
             const openConfirmation = () => { if (cartCount.value > 0) isConfirming.value = true; };
-
-            const startAppend = () => {
-                isAppending.value = true;
-                cart.value = {}; 
-            };
+            const startAppend = () => { isAppending.value = true; cart.value = {}; };
 
             const cancelAddon = () => {
                 if(confirm('確定要取消這次的加點嗎？')) {
-                    if (myAddonOrder.value?.key) {
-                        remove(dbRef(db, `orders/${myAddonOrder.value.key}`));
-                    }
+                    if (myAddonOrder.value?.key) remove(dbRef(db, `orders/${myAddonOrder.value.key}`));
                     myAddonOrder.value = null;
                     localStorage.removeItem('jiantou_addon_key');
                 }
             };
 
             const submitOrder = async () => {
-                if (!isAppending.value && (!phoneSuffix.value || phoneSuffix.value.length !== 3)) {
+                const suffixStr = phoneSuffix.value.toString().trim();
+                if (!isAppending.value && suffixStr.length !== 3) {
                     alert('為了方便取餐，請輸入完整的手機末三碼喔！');
                     return;
                 }
@@ -690,7 +633,7 @@
                 }
                 
                 const newOrderData = {
-                    number: phoneSuffix.value, 
+                    number: suffixStr, 
                     items: newCartItems, 
                     total: cartTotal.value, 
                     status: 'pending',
@@ -720,10 +663,7 @@
 
             const resetOrder = () => {
                 myOrder.value = null;
-                trackedNumber.value = null; 
-                isTrackedNumberCalled.value = false;
                 localStorage.removeItem('jiantou_order_key');
-                localStorage.removeItem('jiantou_tracked_number');
             };
 
             const cancelOrder = () => {
@@ -735,37 +675,52 @@
                 }
             };
 
+            // ✨ 單號追蹤大升級：直接把整張訂單找回來！ ✨
             const startTracking = async () => {
-                if (tempTrackInput.value) {
+                const valStr = tempTrackInput.value.toString().trim();
+                if (valStr) {
                     trackError.value = '';
-                    const inputNum = tempTrackInput.value.toString();
-                    const q = query(dbRef(db, 'orders'), orderByChild('number'), equalTo(inputNum));
+                    const q = query(dbRef(db, 'orders'), orderByChild('number'), equalTo(valStr));
                     
                     try {
                         const snapshot = await get(q);
-                        let isValidOrder = false;
+                        let foundOrder = null;
+                        let foundKey = null;
                         if (snapshot.exists()) {
                             snapshot.forEach((child) => {
                                 const order = child.val();
-                                if (order.status !== 'done' && order.status !== 'archived' && !order.isAddon) {
-                                    isValidOrder = true;
+                                // 排除已歸檔與加點單，找到主單
+                                if (order.status !== 'archived' && !order.isAddon) {
+                                    foundOrder = order;
+                                    foundKey = child.key;
                                 }
                             });
                         }
                         
-                        if (!isValidOrder) {
+                        if (!foundOrder) {
                             trackError.value = '目前沒有這個號碼喔，是不是記錯了呢';
                             return;
                         }
                         
+                        // 預解鎖音效
                         const audio = document.getElementById('pickupSound');
                         if (audio) {
                             audio.volume = 0; 
                             audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
                         }
 
-                        trackedNumber.value = inputNum;
-                        localStorage.setItem('jiantou_tracked_number', trackedNumber.value);
+                        // 完全綁定為自己的訂單，找回所有明細！
+                        localStorage.setItem('jiantou_order_key', foundKey);
+                        onValue(dbRef(db, `orders/${foundKey}`), (snap) => {
+                            const data = snap.val();
+                            if (data && data.status !== 'archived') {
+                                myOrder.value = { ...data, key: snap.key };
+                            } else {
+                                myOrder.value = null;
+                                localStorage.removeItem('jiantou_order_key');
+                            }
+                        });
+
                         isTrackingMode.value = false;
                         tempTrackInput.value = '';
                         hasEnteredShop.value = true;
@@ -774,14 +729,6 @@
                     }
                 }
             };
-
-            const stopTracking = () => {
-                trackedNumber.value = null;
-                isTrackedNumberCalled.value = false;
-                localStorage.removeItem('jiantou_tracked_number');
-            };
-
-            const closePickupModal = () => { showPickupModal.value = false; };
 
             const getStatusText = (status) => {
                 const map = { pending: '等待付款', paid: '製作中', done: '可取餐' };
@@ -792,12 +739,12 @@
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
                 shopIsOpen, showDetails, isConfirming, openConfirmation,
-                resetOrder, cancelOrder, showPickupModal, closePickupModal,
-                isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking,
-                hasEnteredShop, enterShop, trackError,
+                resetOrder, cancelOrder, 
+                isTrackingMode, tempTrackInput, startTracking, trackError,
+                hasEnteredShop, enterShop,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
                 phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon,
-                isStaffMode, secretTap, finalMarqueeText // ✨ 釋出聰明版跑馬燈 ✨
+                isStaffMode, secretTap, finalMarqueeText 
             };
         }
     }).mount('#app');
