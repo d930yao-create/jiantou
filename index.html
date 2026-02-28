@@ -60,10 +60,10 @@
     
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
-    <main v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto" role="main">
-        <div class="min-h-full flex flex-col items-center justify-center py-12 px-4">
+    <main v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto relative" role="main">
+        <div class="min-h-full flex flex-col items-center justify-center py-12 px-4 pb-32">
             <header class="w-full max-w-xs flex flex-col items-center">
-                <div class="w-24 h-24 flex items-center justify-center mx-auto mb-2 animate-[fadeIn_0.5s_ease-out]">
+                <div @click="secretTap" class="w-24 h-24 flex items-center justify-center mx-auto mb-2 animate-[fadeIn_0.5s_ease-out] cursor-pointer">
                     <img src="https://github.com/d930yao-create/jiantou/blob/main/image/jt2.png?raw=true" alt="尖頭油飯 Logo" class="w-full h-full object-contain">
                 </div>
                 <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
@@ -72,16 +72,18 @@
                 <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out]">
                     <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
                     <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
+                    
+                    <span v-if="isStaffMode" class="ml-2 bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">店長模式</span>
                 </div>
 
                 <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
                     <button @click="enterShop" 
-                        :disabled="!shopIsOpen && !myOrder"
+                        :disabled="(!shopIsOpen && !isStaffMode) && !myOrder"
                         class="w-full py-5 rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
-                        :class="(!shopIsOpen && !myOrder) ? 'bg-stone-200 text-stone-400 cursor-not-allowed' : 'bg-brick text-white hover:bg-red-900 shadow-red-100'"
+                        :class="((!shopIsOpen && !isStaffMode) && !myOrder) ? 'bg-stone-200 text-stone-400 cursor-not-allowed' : 'bg-brick text-white hover:bg-red-900 shadow-red-100'"
                         aria-label="開始點餐或查看訂單">
                         <span class="material-icons-round text-2xl" aria-hidden="true">{{ myOrder ? 'receipt_long' : 'flatware' }}</span>
-                        {{ myOrder ? '查看我的訂單' : (shopIsOpen ? '開始點餐' : '暫停點餐') }}
+                        {{ myOrder ? '查看我的訂單' : ((shopIsOpen || isStaffMode) ? '開始點餐' : '暫停點餐') }}
                     </button>
 
                     <button @click="isTrackingMode=true" 
@@ -97,6 +99,24 @@
                 <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
                 <p class="text-7xl font-bold text-stone-300 serif">#{{ currentCallingNumber || '--' }}</p>
             </section>
+        </div>
+
+        <div class="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-4 animate-[fadeIn_0.5s_ease-out]">
+            <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:text-brick">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
+                    <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
+                </svg>
+                <span class="text-xs font-bold tracking-wider uppercase">Instagram</span>
+            </a>
+
+            <a href="https://lin.ee/xfFqC97" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:text-green-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                <span class="text-xs font-bold tracking-wider uppercase">LINE</span>
+            </a>
         </div>
     </main>
 
@@ -125,34 +145,15 @@
                     <span v-if="getItemCount(item.id) > 0" class="font-bold text-stone-800 w-6 text-center text-lg">{{ getItemCount(item.id) }}</span>
                     <button @click="addToCart(item)" 
                         class="w-10 h-10 rounded-full bg-brick text-white flex items-center justify-center shadow-lg shadow-red-100 text-xl font-bold active:scale-95 transition-transform" 
-                        :disabled="!shopIsOpen && !myOrder && !isAppending"
+                        :disabled="(!shopIsOpen && !isStaffMode) && !myOrder && !isAppending"
                         aria-label="增加數量">+</button>
                 </nav>
             </article>
 
-            <div v-if="!shopIsOpen && !myOrder && !isAppending" class="text-center py-10">
+            <div v-if="(!shopIsOpen && !isStaffMode) && !myOrder && !isAppending" class="text-center py-10">
                 <p class="text-stone-400 font-bold mb-2 text-lg">本店休息中</p>
                 <p class="text-sm text-stone-300">暫停點餐，僅供查詢訂單</p>
             </div>
-
-            <div class="pt-8 pb-4 flex items-center justify-center gap-4 border-t border-stone-100 mt-2">
-                <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:bg-stone-50 hover:text-brick">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
-                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
-                    </svg>
-                    <span class="text-xs font-bold tracking-wider uppercase">Instagram</span>
-                </a>
-
-                <a href="https://lin.ee/xfFqC97" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:bg-stone-50 hover:text-green-600">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                    </svg>
-                    <span class="text-xs font-bold tracking-wider uppercase">LINE</span>
-                </a>
-            </div>
-            
         </section>
 
         <footer class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom" role="contentinfo">
@@ -230,7 +231,7 @@
                         <p class="font-bold text-stone-600 mb-1 tracking-wide">出餐小提醒</p>
                         <p>蘿蔔糕為現點現煎，需稍作等待</p>
                         <p>若訂單內僅有油飯，會優先出餐</p>
-                        <p>出餐順序若有不同造成不便敬請見諒🙇🏻‍♀️</p>
+                        <p>出餐訊息若有不同造成不便敬請見諒🙇🏻‍♀️</p>
                     </div>
                 </aside>
 
@@ -386,6 +387,11 @@
             const isTrackedNumberCalled = ref(false);
             const phoneSuffix = ref('');
             const isAppending = ref(false);
+            
+            // ✨ 店長專屬彩蛋變數 ✨
+            const isStaffMode = ref(false);
+            let tapCount = 0;
+            let tapTimeout = null;
 
             onMounted(() => {
                 // 叫號機聯動
@@ -442,9 +448,26 @@
                 }
             });
 
+            // ✨ 彩蛋解鎖邏輯 ✨
+            const secretTap = () => {
+                tapCount++;
+                if (tapTimeout) clearTimeout(tapTimeout);
+                
+                tapTimeout = setTimeout(() => {
+                    tapCount = 0; 
+                }, 1000); // 1秒內沒有連點就重新計算
+
+                if (tapCount >= 5) {
+                    isStaffMode.value = true;
+                    tapCount = 0;
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // 手機震動回饋
+                    alert('✨ 叮咚！店長專屬點餐模式已解鎖 ✨');
+                }
+            };
+
             // 進入商店
             const enterShop = () => {
-                if (shopIsOpen.value || myOrder.value) {
+                if (shopIsOpen.value || isStaffMode.value || myOrder.value) {
                     hasEnteredShop.value = true;
                 }
             };
@@ -722,7 +745,8 @@
                 isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking,
                 hasEnteredShop, enterShop, trackError,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
-                phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon
+                phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon,
+                isStaffMode, secretTap // ✨ 將彩蛋變數釋放出來 ✨
             };
         }
     }).mount('#app');
