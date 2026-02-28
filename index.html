@@ -319,10 +319,10 @@
 
     <div v-if="isTrackingMode" class="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center p-6 animate-[slideUp_0.3s_ease-out]" role="dialog" aria-modal="true">
         <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2" aria-label="關閉追蹤"><span class="material-icons-round text-4xl" aria-hidden="true">close</span></button>
-        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
+        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入手機號碼後三碼</h2>
         <p class="text-stone-400 text-base mb-8 text-center">找回您的訂單明細與狀態<br>(包含現場櫃檯為您點的單)</p>
         
-        <input type="text" inputmode="numeric" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="888" 
+        <input type="text" inputmode="numeric" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="輸入號碼" 
             class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40"
             aria-label="輸入取餐號碼">
         <p v-if="trackError" class="text-brick font-bold mb-6 h-6 animate-[fadeIn_0.3s_ease-out]" role="alert">{{ trackError }}</p>
@@ -747,3 +747,4 @@
 </script>
 </body>
 </html>
+
