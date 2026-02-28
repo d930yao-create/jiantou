@@ -130,14 +130,12 @@
                 </nav>
             </article>
 
-
-<div v-if="!shopIsOpen && !myOrder && !isAppending" class="text-center py-10">
+            <div v-if="!shopIsOpen && !myOrder && !isAppending" class="text-center py-10">
                 <p class="text-stone-400 font-bold mb-2 text-lg">本店休息中</p>
                 <p class="text-sm text-stone-300">暫停點餐，僅供查詢訂單</p>
             </div>
 
             <div class="pt-8 pb-4 flex items-center justify-center gap-4 border-t border-stone-100 mt-2">
-                
                 <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:bg-stone-50 hover:text-brick">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
@@ -153,10 +151,9 @@
                     </svg>
                     <span class="text-xs font-bold tracking-wider uppercase">LINE</span>
                 </a>
-
             </div>
-        </section> <footer class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom" role="contentinfo">
-        
+            
+        </section>
 
         <footer class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom" role="contentinfo">
             <section v-if="(!myOrder && !trackedNumber) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
@@ -233,7 +230,7 @@
                         <p class="font-bold text-stone-600 mb-1 tracking-wide">出餐小提醒</p>
                         <p>蘿蔔糕為現點現煎，需稍作等待</p>
                         <p>若訂單內僅有油飯，會優先出餐</p>
-                        <p>出餐訊息若有不同造成不便敬請見諒🙇🏻‍♀️</p>
+                        <p>出餐順序若有不同造成不便敬請見諒🙇🏻‍♀️</p>
                     </div>
                 </aside>
 
@@ -732,6 +729,3 @@
 </script>
 </body>
 </html>
-
-
-
