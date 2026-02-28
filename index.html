@@ -52,6 +52,23 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+        /* ✨ 溫柔的跑馬燈動畫魔法 ✨ */
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+        .marquee-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden select-none">
@@ -69,7 +86,7 @@
                 <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
                 <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
                 
-                <div class="mt-5 mb-8 flex flex-wrap items-center justify-center gap-2 animate-[fadeIn_0.5s_ease-out]">
+                <div class="mt-5 mb-4 flex flex-wrap items-center justify-center gap-2 animate-[fadeIn_0.5s_ease-out]">
                     
                     <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
                     <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
@@ -93,6 +110,14 @@
                     </a>
 
                     <span v-if="isStaffMode" class="bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm animate-[fadeIn_0.3s_ease-out]">✨ 店長模式</span>
+                </div>
+
+                <div v-if="finalMarqueeText" class="w-full max-w-[280px] bg-stone-100/80 rounded-lg py-2 mb-6 animate-[fadeIn_0.5s_ease-out] border border-stone-200/50 backdrop-blur-sm">
+                    <div class="marquee-container">
+                        <span class="marquee-content text-sm text-stone-600 font-bold tracking-wide">
+                            {{ finalMarqueeText }}
+                        </span>
+                    </div>
                 </div>
 
                 <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
@@ -133,6 +158,15 @@
         </header>
 
         <section class="flex-1 overflow-y-auto px-5 pb-64 space-y-4">
+            
+            <div v-if="finalMarqueeText" class="w-full bg-stone-100/80 rounded-lg py-2 mb-2 border border-stone-200/50 backdrop-blur-sm">
+                <div class="marquee-container">
+                    <span class="marquee-content text-sm text-stone-600 font-bold tracking-wide">
+                        {{ finalMarqueeText }}
+                    </span>
+                </div>
+            </div>
+
             <article v-for="item in menu" :key="item.id" class="flex justify-between items-start bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
                 <div class="flex-1 pr-2">
                     <h3 class="text-xl font-bold text-stone-800 serif leading-tight">{{ item.name }}</h3>
@@ -292,8 +326,8 @@
 
     <div v-if="isTrackingMode" class="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center p-6 animate-[slideUp_0.3s_ease-out]" role="dialog" aria-modal="true">
         <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2" aria-label="關閉追蹤"><span class="material-icons-round text-4xl" aria-hidden="true">close</span></button>
-        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
-        <p class="text-stone-400 text-base mb-8">櫃台點餐的客人，請輸入取餐號碼</p>
+        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">領餐號碼</h2>
+        <p class="text-stone-400 text-base mb-8">請輸入　手機號碼末三碼　追蹤訂單狀態</p>
         <input type="tel" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="88" 
             class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40"
             aria-label="輸入取餐號碼">
@@ -388,6 +422,9 @@
             const phoneSuffix = ref('');
             const isAppending = ref(false);
             
+            // ✨ 升級版跑馬燈資料包 ✨
+            const marqueeData = ref({ text: '', showCount: false, count: 0 });
+            
             const isStaffMode = ref(false);
             let tapCount = 0;
             let tapTimeout = null;
@@ -405,6 +442,17 @@
                 onValue(dbRef(db, 'menu'), (snapshot) => {
                     const data = snapshot.val();
                     menu.value = data ? data.filter(item => item.active) : defaultMenu;
+                });
+
+                // ✨ 聆聽雲端的跑馬燈資料包 ✨
+                onValue(dbRef(db, 'marqueeData'), (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        marqueeData.value = data;
+                    } else {
+                        // 相容舊版或空白時
+                        marqueeData.value = { text: '', showCount: false, count: 0 };
+                    }
                 });
 
                 const savedOrderKey = localStorage.getItem('jiantou_order_key');
@@ -439,6 +487,28 @@
                     trackedNumber.value = savedTrack; 
                     hasEnteredShop.value = true;
                 }
+            });
+
+            // ✨ 自動合成最終要顯示的跑馬燈文字 ✨
+            const finalMarqueeText = computed(() => {
+                let text = marqueeData.value.text || '';
+                let showCount = marqueeData.value.showCount;
+                let count = marqueeData.value.count || 0;
+
+                let parts = [];
+                if (text) {
+                    parts.push(text);
+                }
+                
+                if (showCount) {
+                    if (count > 0) {
+                        parts.push(`🧑‍🍳 目前前面有 ${count} 張訂單製作中，感謝您的耐心等候`);
+                    } else {
+                        parts.push(`✨ 目前無需等候，速速為您出餐`);
+                    }
+                }
+
+                return parts.join(' ｜ ');
             });
 
             const secretTap = () => {
@@ -727,7 +797,7 @@
                 hasEnteredShop, enterShop, trackError,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
                 phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon,
-                isStaffMode, secretTap
+                isStaffMode, secretTap, finalMarqueeText // ✨ 釋出聰明版跑馬燈 ✨
             };
         }
     }).mount('#app');
