@@ -53,7 +53,6 @@
             opacity: 0;
         }
         
-        /* 🌟 新增：讓上方導覽列可以左右滑動，避免分頁太多擠在一起 */
         .nav-scrollbar::-webkit-scrollbar { display: none; }
         .nav-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -103,7 +102,6 @@
             <button @click="currentTab='pending'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'pending' ? 'page' : false">待結帳 ({{ pendingOrders.length }})</button>
             <button @click="currentTab='processing'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'processing' ? 'page' : false">製作中 ({{ displayRightColumn.length }})</button>
             <button @click="currentTab='pos'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pos' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'pos' ? 'page' : false">現場點餐</button>
-            
             <button @click="currentTab='manual'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'" :aria-current="currentTab === 'manual' ? 'page' : false">快速叫號</button>
         </nav>
 
@@ -144,6 +142,14 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="mt-2 pt-2 border-t border-dashed border-stone-200" @click.stop>
+                                <div class="flex items-center bg-stone-50 hover:bg-yellow-50 focus-within:bg-yellow-50 border border-transparent hover:border-yellow-200 focus-within:border-yellow-400 rounded p-1.5 gap-1.5 transition-colors">
+                                    <span class="material-icons-round text-stone-400 text-xs">edit_note</span>
+                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增或修改備註..." class="w-full bg-transparent text-xs text-stone-600 outline-none placeholder-stone-300">
+                                </div>
+                            </div>
+
                             <div v-if="isToday" class="mt-3 text-center text-xs bg-stone-100 text-stone-600 py-2 rounded font-bold">{{ order.isAddon ? '收加點費並併單' : '點擊收款' }}</div>
                         </div>
                     </article>
@@ -182,6 +188,14 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="mt-2 pt-2 border-t border-dashed border-red-100" @click.stop>
+                                <div class="flex items-center bg-white/80 hover:bg-yellow-50 focus-within:bg-yellow-50 border border-transparent hover:border-yellow-200 focus-within:border-yellow-400 rounded p-1.5 gap-1.5 transition-colors">
+                                    <span class="material-icons-round text-brick/50 text-xs">edit_note</span>
+                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增或修改備註..." class="w-full bg-transparent text-xs text-stone-700 outline-none placeholder-stone-300 font-medium">
+                                </div>
+                            </div>
+
                             <div v-if="isToday" class="mt-2 flex justify-end">
                                 <span class="text-[11px] bg-brick text-white px-4 py-1.5 rounded-full font-bold shadow-sm mt-1">通知取餐</span>
                             </div>
@@ -210,30 +224,41 @@
                 </div>
 
                 <div class="bg-white border-t border-stone-200 p-3 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] flex-shrink-0">
-                    <div v-if="posCartCount > 0" class="mb-3 max-h-32 overflow-y-auto border-b border-stone-100 pb-2 space-y-1">
-                        <div v-for="(cItem, cartKey) in posCart" :key="cartKey" class="flex justify-between items-center text-sm">
-                            <div class="flex flex-col">
-                                <span class="font-bold text-stone-700">{{ cItem.item.name }} <span class="font-normal text-stone-400 text-xs ml-1">x{{ cItem.qty }}</span></span>
+                    <div v-if="posCartCount > 0" class="mb-3 max-h-32 overflow-y-auto border-b border-stone-100 pb-2 space-y-2">
+                        <div v-for="(cItem, cartKey) in posCart" :key="cartKey" class="flex justify-between items-center text-sm py-1 border-b border-stone-50 last:border-0">
+                            <div class="flex flex-col flex-1 pr-2">
+                                <span class="font-bold text-stone-700">{{ cItem.item.name }}</span>
                                 <span v-if="cItem.options.length" class="text-[10px] text-brick">{{ cItem.options.map(o=>o.name).join(', ') }}</span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold">${{ (cItem.item.price + cItem.options.reduce((s,o)=>s+o.price,0)) * cItem.qty }}</span>
-                                <button @click="removePosCart(cItem.item)" class="text-stone-300 hover:text-red-400 p-1"><span class="material-icons-round text-xs">remove</span></button>
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center bg-stone-100 border border-stone-200 rounded-lg overflow-hidden">
+                                    <button @click="decreasePosCart(cartKey)" class="w-7 h-7 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-colors"><span class="material-icons-round text-sm">remove</span></button>
+                                    <span class="w-6 text-center font-bold text-stone-700">{{ cItem.qty }}</span>
+                                    <button @click="increasePosCart(cartKey)" class="w-7 h-7 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-colors"><span class="material-icons-round text-sm">add</span></button>
+                                </div>
+                                <span class="font-bold text-right w-12">${{ (cItem.item.price + cItem.options.reduce((s,o)=>s+o.price,0)) * cItem.qty }}</span>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="flex justify-between items-center mb-3">
+                    <div class="flex justify-between items-center mb-2">
                         <span class="text-xs text-stone-500 font-bold">總計金額</span>
                         <span class="text-xl font-bold text-brick">${{ posCartTotal }}</span>
+                    </div>
+
+                    <div class="mb-3 pt-2 border-t border-stone-100">
+                        <div class="flex items-center bg-yellow-50/50 border border-yellow-200 rounded-lg p-2 gap-2 focus-within:bg-yellow-50 focus-within:border-yellow-400 transition-colors">
+                            <span class="material-icons-round text-yellow-600 text-sm">edit_note</span>
+                            <input type="text" v-model="posNote" placeholder="訂單備註 (例如：不要香菜、飯少一點)" class="w-full bg-transparent text-sm text-stone-700 outline-none placeholder-stone-400 font-medium">
+                        </div>
                     </div>
 
                     <div class="flex gap-2">
                         <input type="tel" maxlength="3" v-model="posPhoneSuffix" placeholder="末三碼" class="w-20 bg-stone-100 border border-stone-200 rounded-lg text-center font-bold text-stone-700 outline-none focus:border-stone-400">
                         <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.length !== 3" class="flex-1 bg-stone-800 text-white font-bold py-2.5 rounded-lg disabled:opacity-30 active:scale-95 transition-transform flex items-center justify-center gap-1">
-                            <span class="material-icons-round text-sm">point_of_sale</span> 直接送單 (已收錢)
+                            <span class="material-icons-round text-sm">point_of_sale</span> 送單製作 (已收錢)
                         </button>
-                        <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''" class="px-3 bg-stone-200 text-stone-500 rounded-lg active:scale-95"><span class="material-icons-round text-sm">delete</span></button>
+                        <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''; posNote=''" class="px-3 bg-stone-200 text-stone-500 rounded-lg active:scale-95"><span class="material-icons-round text-sm">delete</span></button>
                     </div>
                 </div>
             </section>
@@ -513,7 +538,7 @@
             const selectedDate = ref('');
             const shopIsOpen = ref(false);
             
-            const currentTab = ref('pos'); // 預設開啟現場點餐
+            const currentTab = ref('pos'); 
             const manualInput = ref('');
             const manualPrice = ref('');
             const manualQueue = ref({});
@@ -526,6 +551,7 @@
             // ✨ POS 現場點餐專屬狀態 ✨
             const posCart = ref({});
             const posPhoneSuffix = ref('');
+            const posNote = ref('');
             const posSelectedItem = ref(null);
             const posSelectedOptions = ref([]);
 
@@ -657,14 +683,14 @@
                 posSelectedItem.value = null;
             };
 
-            const removePosCart = (item) => {
-                const keys = Object.keys(posCart.value).filter(k => posCart.value[k].item.id === item.id);
-                if (keys.length > 0) {
-                    const lastKey = keys[keys.length - 1];
-                    if (posCart.value[lastKey].qty > 0) {
-                        posCart.value[lastKey].qty--;
-                        if (posCart.value[lastKey].qty === 0) delete posCart.value[lastKey];
-                    }
+            // ✨ POS 數量加減 ✨
+            const increasePosCart = (cartKey) => {
+                if (posCart.value[cartKey]) posCart.value[cartKey].qty++;
+            };
+            const decreasePosCart = (cartKey) => {
+                if (posCart.value[cartKey]) {
+                    posCart.value[cartKey].qty--;
+                    if (posCart.value[cartKey].qty === 0) delete posCart.value[cartKey];
                 }
             };
 
@@ -690,7 +716,8 @@
                     number: posPhoneSuffix.value.toString(), 
                     items: newCartItems, 
                     total: posCartTotal.value, 
-                    status: 'paid', // 🌟 直接設為已付款，跳過待結帳
+                    status: 'paid', // 直接送進製作中
+                    note: posNote.value, // ✨ 記錄備註 ✨
                     createdAt: serverTimestamp(), 
                     timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
                     dateString: `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`
@@ -701,7 +728,13 @@
                 // 清空並切換到製作中
                 posCart.value = {};
                 posPhoneSuffix.value = '';
+                posNote.value = '';
                 currentTab.value = 'processing';
+            };
+
+            // ✨ 更新現有訂單備註 ✨
+            const updateOrderNote = (order) => {
+                update(dbRef(db), { [`orders/${order.key}/note`]: order.note || '' });
             };
 
             // 基礎操作
@@ -788,6 +821,12 @@
                         const updates = {};
                         updates[`orders/${parent.key}/items`] = mergedItems;
                         updates[`orders/${parent.key}/total`] = parent.total + order.total;
+                        
+                        // 若原單已有備註，且加點也有備註，則將兩者合併
+                        if (order.note) {
+                            updates[`orders/${parent.key}/note`] = parent.note ? `${parent.note} + ${order.note}` : order.note;
+                        }
+
                         if (parent.status === 'done') updates[`orders/${parent.key}/status`] = 'paid';
                         updates[`orders/${order.key}`] = null;
                         update(dbRef(db), updates);
@@ -867,9 +906,10 @@
                 isDesktop, menuSettings, saveMenuToFirebase, addMenuItem, moveMenuUp, 
                 moveMenuDown, addOption, removeOption, removeMenuItem, filteredOrders, 
                 showHistoryDetails, kitchenStatsArray, totalKitchenItems, showKitchenStatsModal,
-                // ✨ POS 專屬返回 ✨
-                posCart, posPhoneSuffix, posSelectedItem, posSelectedOptions, activeMenuSettings,
-                posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, removePosCart, submitPosOrder
+                
+                posCart, posPhoneSuffix, posNote, posSelectedItem, posSelectedOptions, activeMenuSettings,
+                posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, increasePosCart, decreasePosCart, submitPosOrder,
+                updateOrderNote
             };
         }
     }).mount('#app');
