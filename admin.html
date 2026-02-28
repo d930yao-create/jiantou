@@ -33,14 +33,12 @@
         [v-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
 
-        /* 🌟 直立書籤文字：移除圖示後更顯簡約 */
         .vertical-text {
             writing-mode: vertical-lr;
             text-orientation: upright;
             letter-spacing: 0.2em;
         }
 
-        /* 🌟 精簡抽屜動畫 */
         .drawer-enter-active, .drawer-leave-active {
             transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -54,6 +52,10 @@
         .fade-enter-from, .fade-leave-to {
             opacity: 0;
         }
+        
+        /* 🌟 新增：讓上方導覽列可以左右滑動，避免分頁太多擠在一起 */
+        .nav-scrollbar::-webkit-scrollbar { display: none; }
+        .nav-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
@@ -97,10 +99,12 @@
             </div>
         </header>
 
-        <nav class="flex md:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0" aria-label="主要分頁">
-            <button @click="currentTab='pending'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'pending' ? 'page' : false">待結帳 ({{ pendingOrders.length }})</button>
-            <button @click="currentTab='processing'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'processing' ? 'page' : false">製作中 ({{ displayRightColumn.length }})</button>
-            <button @click="currentTab='manual'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'" :aria-current="currentTab === 'manual' ? 'page' : false">現場叫號</button>
+        <nav class="flex md:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0 overflow-x-auto nav-scrollbar" aria-label="主要分頁">
+            <button @click="currentTab='pending'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'pending' ? 'page' : false">待結帳 ({{ pendingOrders.length }})</button>
+            <button @click="currentTab='processing'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'processing' ? 'page' : false">製作中 ({{ displayRightColumn.length }})</button>
+            <button @click="currentTab='pos'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pos' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'pos' ? 'page' : false">現場點餐</button>
+            
+            <button @click="currentTab='manual'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='manual' ? 'bg-white shadow text-brick' : 'text-stone-400'" :aria-current="currentTab === 'manual' ? 'page' : false">快速叫號</button>
         </nav>
 
         <main class="flex-1 overflow-hidden relative flex flex-col md:flex-row p-2 gap-2 min-h-0">
@@ -187,8 +191,55 @@
                 </div>
             </section>
 
-            <section v-show="currentTab === 'manual' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-600 overflow-hidden min-h-0 md:flex" aria-label="現場叫號與記帳">
-                <header class="p-2 bg-stone-100 font-bold text-stone-600 text-xs text-center flex-shrink-0">現場叫號 / 記帳</header>
+            <section v-show="currentTab === 'pos'" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-800 overflow-hidden min-h-0" aria-label="現場點餐系統">
+                <header class="p-2 bg-stone-100 font-bold text-stone-600 text-xs text-center flex-shrink-0 border-b border-stone-200">
+                    現場點餐 (POS)
+                </header>
+                
+                <div class="flex-1 overflow-y-auto p-2 bg-stone-50 space-y-2">
+                    <article v-for="item in activeMenuSettings" :key="item.id" class="bg-white p-3 rounded-lg border border-stone-200 shadow-sm flex justify-between items-center cursor-pointer active:bg-stone-50 transition-colors" @click="addPosCart(item)">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-stone-800">{{ item.name }}</span>
+                            <span class="text-xs text-brick font-bold">${{ item.price }}</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center">
+                            <span class="material-icons-round text-sm">add</span>
+                        </div>
+                    </article>
+                    <div v-if="activeMenuSettings.length === 0" class="text-center text-stone-400 text-xs py-4">請先至菜單管理新增品項</div>
+                </div>
+
+                <div class="bg-white border-t border-stone-200 p-3 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] flex-shrink-0">
+                    <div v-if="posCartCount > 0" class="mb-3 max-h-32 overflow-y-auto border-b border-stone-100 pb-2 space-y-1">
+                        <div v-for="(cItem, cartKey) in posCart" :key="cartKey" class="flex justify-between items-center text-sm">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-stone-700">{{ cItem.item.name }} <span class="font-normal text-stone-400 text-xs ml-1">x{{ cItem.qty }}</span></span>
+                                <span v-if="cItem.options.length" class="text-[10px] text-brick">{{ cItem.options.map(o=>o.name).join(', ') }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold">${{ (cItem.item.price + cItem.options.reduce((s,o)=>s+o.price,0)) * cItem.qty }}</span>
+                                <button @click="removePosCart(cItem.item)" class="text-stone-300 hover:text-red-400 p-1"><span class="material-icons-round text-xs">remove</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs text-stone-500 font-bold">總計金額</span>
+                        <span class="text-xl font-bold text-brick">${{ posCartTotal }}</span>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input type="tel" maxlength="3" v-model="posPhoneSuffix" placeholder="末三碼" class="w-20 bg-stone-100 border border-stone-200 rounded-lg text-center font-bold text-stone-700 outline-none focus:border-stone-400">
+                        <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.length !== 3" class="flex-1 bg-stone-800 text-white font-bold py-2.5 rounded-lg disabled:opacity-30 active:scale-95 transition-transform flex items-center justify-center gap-1">
+                            <span class="material-icons-round text-sm">point_of_sale</span> 直接送單 (已收錢)
+                        </button>
+                        <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''" class="px-3 bg-stone-200 text-stone-500 rounded-lg active:scale-95"><span class="material-icons-round text-sm">delete</span></button>
+                    </div>
+                </div>
+            </section>
+
+            <section v-show="currentTab === 'manual'" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-400 overflow-hidden min-h-0 md:hidden" aria-label="現場快速叫號">
+                <header class="p-2 bg-stone-100 font-bold text-stone-600 text-xs text-center flex-shrink-0">快速叫號 / 記帳</header>
                 <div class="p-3 bg-white border-b border-stone-100 flex-shrink-0">
                     <div class="flex gap-2 mb-2">
                         <div class="flex-1 text-center">
@@ -196,11 +247,11 @@
                             <input type="number" inputmode="numeric" v-model="manualInput" placeholder="66" aria-label="輸入叫號號碼" class="w-full bg-stone-50 text-center text-lg font-bold py-1.5 rounded-lg border border-stone-200 outline-none">
                         </div>
                         <div class="flex-1 text-center">
-                            <label class="text-[9px] text-stone-400 block mb-1">金額</label>
+                            <label class="text-[9px] text-stone-400 block mb-1">金額(選填)</label>
                             <input type="number" inputmode="numeric" v-model="manualPrice" placeholder="0" aria-label="輸入金額(選填)" class="w-full bg-stone-50 text-center text-lg font-bold py-1.5 rounded-lg border border-stone-200 outline-none text-brick">
                         </div>
                     </div>
-                    <button @click="addToManualQueue" :disabled="!manualInput" class="w-full bg-stone-700 text-white py-2 rounded-lg font-bold shadow-lg text-sm">加入列表</button>
+                    <button @click="addToManualQueue" :disabled="!manualInput" class="w-full bg-stone-700 text-white py-2 rounded-lg font-bold shadow-lg text-sm">加入待叫列表</button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50">
                     <article v-for="(item, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-white rounded-lg border border-stone-200 shadow-sm">
@@ -231,14 +282,37 @@
             </div>
         </button>
 
-        <footer class="bg-white p-2 border-t flex justify-center flex-shrink-0 safe-area-bottom">
+        <footer class="bg-white p-2 border-t flex justify-center flex-shrink-0 safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
             <div class="flex gap-4">
-                <button @click="currentTab='menu'" class="text-xs text-stone-400 hover:text-brick flex items-center gap-1 transition-colors">
+                <button @click="currentTab='menu'" class="text-xs text-stone-500 font-bold hover:text-brick flex items-center gap-1 transition-colors px-3 py-1 bg-stone-100 rounded-full">
                     <span class="material-icons-round text-sm" aria-hidden="true">edit_note</span> 菜單管理
                 </button>
-                <button @click="logout" class="text-xs text-stone-400 underline hover:text-stone-600">登出</button>
+                <button @click="logout" class="text-xs text-stone-400 underline hover:text-stone-600 px-3 py-1">登出</button>
             </div>
         </footer>
+    </div>
+
+    <div v-if="posSelectedItem" class="fixed inset-0 bg-black/60 z-[70] flex items-end justify-center p-0 backdrop-blur-sm" @click.self="posSelectedItem=null" role="dialog" aria-modal="true">
+        <section class="bg-white w-full max-w-sm rounded-t-3xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out]">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xl font-bold text-stone-800">{{ posSelectedItem.name }}</h3>
+                <button @click="posSelectedItem=null" class="text-stone-400 p-1" aria-label="關閉選項"><span class="material-icons-round">close</span></button>
+            </div>
+            <p class="text-xs text-stone-500 mb-4 border-b border-stone-100 pb-3">請選擇客製化選項</p>
+            
+            <div class="space-y-2 mb-6 max-h-[40vh] overflow-y-auto px-1">
+                <label v-for="(opt, idx) in posSelectedItem.options" :key="idx" class="flex items-center justify-between p-3 border border-stone-200 rounded-xl cursor-pointer active:bg-stone-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" :value="opt" v-model="posSelectedOptions" class="w-5 h-5 accent-stone-800 rounded">
+                        <span class="font-bold text-stone-700 text-sm">{{ opt.name }}</span>
+                    </div>
+                    <span v-if="opt.price > 0" class="text-brick font-bold text-sm">+${{ opt.price }}</span>
+                    <span v-else class="text-stone-400 text-xs font-bold">免費</span>
+                </label>
+            </div>
+            
+            <button @click="confirmPosAddOptions" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-lg active:scale-95 transition-transform">加入訂單</button>
+        </section>
     </div>
 
     <transition name="fade">
@@ -323,7 +397,7 @@
             </div>
         </div>
         <footer class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-stone-100 flex justify-center shadow-lg">
-            <button @click="saveMenuToFirebase" class="w-full max-w-md bg-brick text-white py-3 rounded-xl font-bold text-base active:scale-95 transition-transform">儲存變更並更新排序</button>
+            <button @click="saveMenuToFirebase" class="w-full max-w-md bg-stone-800 text-white py-3 rounded-xl font-bold text-base active:scale-95 transition-transform">儲存變更並更新排序</button>
         </footer>
     </div>
 
@@ -411,9 +485,8 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue, update, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, onValue, update, set, remove, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // --- Firebase 初始化 ---
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
         authDomain: "jiantou-000rlhad.firebaseapp.com",
@@ -428,7 +501,6 @@
 
     createApp({
         setup() {
-            // --- 狀態定義 (State) ---
             const adminTokenVersion = 'admin_v1';
             const isLoggedIn = ref(false);
             const loginUser = ref('');
@@ -441,7 +513,7 @@
             const selectedDate = ref('');
             const shopIsOpen = ref(false);
             
-            const currentTab = ref('pending'); 
+            const currentTab = ref('pos'); // 預設開啟現場點餐
             const manualInput = ref('');
             const manualPrice = ref('');
             const manualQueue = ref({});
@@ -451,7 +523,12 @@
             const showHistoryDetails = ref(false);
             const showKitchenStatsModal = ref(false);
 
-            // --- 生命週期與監聽 (Lifecycle & Watchers) ---
+            // ✨ POS 現場點餐專屬狀態 ✨
+            const posCart = ref({});
+            const posPhoneSuffix = ref('');
+            const posSelectedItem = ref(null);
+            const posSelectedOptions = ref([]);
+
             onMounted(() => {
                 const savedToken = localStorage.getItem('jiantou_admin_token');
                 if (savedToken === adminTokenVersion) isLoggedIn.value = true;
@@ -488,7 +565,6 @@
                 filterOrdersByDate(); 
             });
 
-            // --- 計算屬性 (Computed) ---
             const isToday = computed(() => {
                 return selectedDate.value === `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
             });
@@ -502,6 +578,8 @@
             const displayRightColumn = computed(() => {
                 return filteredOrders.value.filter(o => isToday.value ? o.status === 'paid' : (o.status === 'paid' || o.status === 'done')).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
             });
+
+            const activeMenuSettings = computed(() => menuSettings.value.filter(item => item.active));
 
             const kitchenStatsArray = computed(() => {
                 const statsMap = {};
@@ -527,7 +605,6 @@
             });
 
             const totalKitchenItems = computed(() => kitchenStatsArray.value.reduce((a, b) => a + b.count, 0));
-
             const validOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done'));
             const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
             const completedOrdersCount = computed(() => validOrders.value.filter(o => o.total > 0).length);
@@ -546,9 +623,88 @@
                 return Object.values(report).sort((a, b) => b.total - a.total);
             });
 
-            // --- 核心方法 (Methods) ---
-            
-            // 登入與基礎操作
+            // ✨ POS 現場點餐邏輯 ✨
+            const posCartCount = computed(() => Object.values(posCart.value).reduce((a, b) => a + b.qty, 0));
+            const posCartTotal = computed(() => {
+                let total = 0;
+                for (const cartKey in posCart.value) {
+                    const cItem = posCart.value[cartKey];
+                    const optPrice = cItem.options.reduce((sum, o) => sum + o.price, 0);
+                    total += (cItem.item.price + optPrice) * cItem.qty;
+                }
+                return total;
+            });
+
+            const addPosCart = (item) => {
+                if (item.options && item.options.length > 0) {
+                    posSelectedItem.value = item;
+                    posSelectedOptions.value = [];
+                } else {
+                    const cartKey = `item_${item.id}`;
+                    if (!posCart.value[cartKey]) posCart.value[cartKey] = { item: item, options: [], qty: 0 };
+                    posCart.value[cartKey].qty++;
+                }
+            };
+
+            const confirmPosAddOptions = () => {
+                const item = posSelectedItem.value;
+                const opts = posSelectedOptions.value;
+                const optIds = opts.map(o => o.name).sort().join('_');
+                const cartKey = `item_${item.id}_${optIds}`;
+
+                if (!posCart.value[cartKey]) posCart.value[cartKey] = { item: item, options: [...opts], qty: 0 };
+                posCart.value[cartKey].qty++;
+                posSelectedItem.value = null;
+            };
+
+            const removePosCart = (item) => {
+                const keys = Object.keys(posCart.value).filter(k => posCart.value[k].item.id === item.id);
+                if (keys.length > 0) {
+                    const lastKey = keys[keys.length - 1];
+                    if (posCart.value[lastKey].qty > 0) {
+                        posCart.value[lastKey].qty--;
+                        if (posCart.value[lastKey].qty === 0) delete posCart.value[lastKey];
+                    }
+                }
+            };
+
+            const submitPosOrder = () => {
+                if (!posPhoneSuffix.value || posPhoneSuffix.value.length !== 3) {
+                    alert('請輸入客人的手機末三碼'); return;
+                }
+                
+                const newCartItems = [];
+                for (const cartKey in posCart.value) {
+                    const cItem = posCart.value[cartKey];
+                    newCartItems.push({
+                        id: cItem.item.id,
+                        name: cItem.item.name,
+                        price: cItem.item.price + cItem.options.reduce((s, o) => s + o.price, 0),
+                        qty: cItem.qty,
+                        options: cItem.options.map(o => o.name)
+                    });
+                }
+                
+                const now = new Date();
+                const newOrderData = {
+                    number: posPhoneSuffix.value.toString(), 
+                    items: newCartItems, 
+                    total: posCartTotal.value, 
+                    status: 'paid', // 🌟 直接設為已付款，跳過待結帳
+                    createdAt: serverTimestamp(), 
+                    timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
+                    dateString: `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`
+                };
+
+                push(dbRef(db, 'orders'), newOrderData);
+                
+                // 清空並切換到製作中
+                posCart.value = {};
+                posPhoneSuffix.value = '';
+                currentTab.value = 'processing';
+            };
+
+            // 基礎操作
             const checkLogin = () => { 
                 if (loginUser.value === 'admin_jt' && loginPass.value === '554708') { 
                     isLoggedIn.value = true; 
@@ -587,7 +743,7 @@
             const saveMenuToFirebase = () => { 
                 set(dbRef(db, 'menu'), menuSettings.value).then(() => { 
                     alert('更新成功！'); 
-                    currentTab.value = 'pending'; 
+                    currentTab.value = 'pos'; 
                 }); 
             };
             const addMenuItem = () => { 
@@ -597,7 +753,7 @@
                 if(confirm('確定要刪除這個菜單品項嗎？')) menuSettings.value.splice(index, 1); 
             };
 
-            // 現場叫號管理
+            // 快速叫號管理
             const addToManualQueue = () => { 
                 if(!manualInput.value) return; 
                 push(dbRef(db, 'manualQueue'), { n: manualInput.value, p: manualPrice.value ? parseInt(manualPrice.value) : 0 }); 
@@ -710,7 +866,10 @@
                 addToManualQueue, callManualNumber, removeManualNumber, clearManualQueue, 
                 isDesktop, menuSettings, saveMenuToFirebase, addMenuItem, moveMenuUp, 
                 moveMenuDown, addOption, removeOption, removeMenuItem, filteredOrders, 
-                showHistoryDetails, kitchenStatsArray, totalKitchenItems, showKitchenStatsModal
+                showHistoryDetails, kitchenStatsArray, totalKitchenItems, showKitchenStatsModal,
+                // ✨ POS 專屬返回 ✨
+                posCart, posPhoneSuffix, posSelectedItem, posSelectedOptions, activeMenuSettings,
+                posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, removePosCart, submitPosOrder
             };
         }
     }).mount('#app');
