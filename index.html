@@ -467,6 +467,7 @@
                 }
             });
 
+            // ✨ 修正語病，不再把客人自己的單算在前面 ✨
             const finalMarqueeText = computed(() => {
                 let text = marqueeData.value.text || '';
                 let showCount = marqueeData.value.showCount;
@@ -475,7 +476,7 @@
                 let parts = [];
                 if (text) parts.push(text);
                 if (showCount) {
-                    if (count > 0) parts.push(`🧑‍🍳 目前前面有 ${count} 張訂單製作中，感謝您的耐心等候`);
+                    if (count > 0) parts.push(`🧑‍🍳 目前共有 ${count} 張訂單製作中，感謝您的耐心等候`);
                     else parts.push(`✨ 目前無需等候，速速為您出餐`);
                 }
                 return parts.join(' ｜ ');
@@ -500,7 +501,6 @@
                 }
             };
 
-            // ✨ 取餐通知音效：當自己的訂單變成 done 時觸發 ✨
             watch(() => myOrder.value?.status, (newStatus, oldStatus) => {
                 if (newStatus === 'done' && oldStatus !== 'done') {
                     const audio = document.getElementById('pickupSound');
@@ -675,7 +675,6 @@
                 }
             };
 
-            // ✨ 單號追蹤大升級：直接把整張訂單找回來！ ✨
             const startTracking = async () => {
                 const valStr = tempTrackInput.value.toString().trim();
                 if (valStr) {
@@ -689,7 +688,6 @@
                         if (snapshot.exists()) {
                             snapshot.forEach((child) => {
                                 const order = child.val();
-                                // 排除已歸檔與加點單，找到主單
                                 if (order.status !== 'archived' && !order.isAddon) {
                                     foundOrder = order;
                                     foundKey = child.key;
@@ -702,14 +700,12 @@
                             return;
                         }
                         
-                        // 預解鎖音效
                         const audio = document.getElementById('pickupSound');
                         if (audio) {
                             audio.volume = 0; 
                             audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
                         }
 
-                        // 完全綁定為自己的訂單，找回所有明細！
                         localStorage.setItem('jiantou_order_key', foundKey);
                         onValue(dbRef(db, `orders/${foundKey}`), (snap) => {
                             const data = snap.val();
