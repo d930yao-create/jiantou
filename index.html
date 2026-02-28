@@ -101,8 +101,7 @@
             </section>
         </div>
 
-        <div class="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-4 animate-[fadeIn_0.5s_ease-out]">
-            <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:text-brick">
+<footer class="mt-20 pb-10 flex items-center justify-center gap-4">            <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:text-brick">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
                     <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
@@ -203,16 +202,31 @@
                     </div>
                 </div>
                 
-                <div v-if="myAddonOrder && myAddonOrder.status === 'pending'" class="mb-4 p-4 bg-orange-50 rounded-xl border border-orange-100 relative overflow-hidden">
-                    <div class="absolute right-0 top-0 w-16 h-16 bg-orange-100 rounded-bl-full opacity-50"></div>
-                    <div class="relative z-10">
-                        <p class="font-bold text-orange-700 mb-1 flex items-center gap-1">
-                            <span class="material-icons-round text-sm" aria-hidden="true">notifications_active</span> 加點項目待結帳
-                        </p>
-                        <p class="text-sm text-orange-600 mb-3">請至櫃檯支付加點金額 <span class="font-bold text-brick text-base">${{ myAddonOrder.total }}</span></p>
-                        <button @click="cancelAddon" class="px-4 py-2 bg-white text-orange-500 rounded-lg text-xs font-bold shadow-sm border border-orange-100 active:scale-95 transition-transform">取消加點</button>
-                    </div>
-                </div>
+<div v-if="myAddonOrder && myAddonOrder.status === 'pending'" 
+     class="mb-4 p-4 bg-orange-50 rounded-xl border border-orange-100 relative overflow-hidden">
+
+    <div class="absolute right-0 top-0 w-16 h-16 bg-orange-100 rounded-bl-full opacity-50"></div>
+
+    <div class="relative z-10">
+        <p class="font-bold text-orange-700 mb-1 flex items-center gap-1">
+            <span class="material-icons-round text-sm">notifications_active</span>
+            加點項目待結帳
+        </p>
+
+        <p class="text-sm text-orange-600 mb-3">
+            請至櫃檯支付加點金額 
+            <span class="font-bold text-brick text-base">
+                ${{ myAddonOrder.total }}
+            </span>
+        </p>
+
+        <button 
+            @click="cancelAddon" 
+            class="px-4 py-2 bg-white text-orange-600 border border-orange-200 rounded-lg text-sm font-bold active:scale-95 transition">
+            取消加點
+        </button>
+    </div>
+</div>
 
                 <div v-if="trackedNumber && !isTrackedNumberCalled" class="text-center p-6 bg-stone-50 rounded-xl text-stone-500 text-base mb-4">
                     <p class="font-bold mb-1">🔍 正在追蹤叫號機...</p>
@@ -231,7 +245,7 @@
                         <p class="font-bold text-stone-600 mb-1 tracking-wide">出餐小提醒</p>
                         <p>蘿蔔糕為現點現煎，需稍作等待</p>
                         <p>若訂單內僅有油飯，會優先出餐</p>
-                        <p>出餐訊息若有不同造成不便敬請見諒🙇🏻‍♀️</p>
+                        <p>出餐順序若有不同造成不便敬請見諒🙇🏻‍♀️</p>
                     </div>
                 </aside>
 
@@ -753,3 +767,4 @@
 </script>
 </body>
 </html>
+
