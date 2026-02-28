@@ -69,34 +69,10 @@
                 <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
                 <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
                 
-                
-                <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out]">
+                <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out] text-center">
                     <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
-                <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
-               
-                <span v-if="isStaffMode" class="bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">店長模式</span>
-
-                <!-- 移過來的 IG + LINE 按鈕（變小一點更協調） -->
-                <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" 
-                   class="flex items-center gap-1.5 px-3 py-1.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-brick text-xs font-bold transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
-                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
-                    </svg>
-                    IG
-                </a>
-                
-                <a href="https://lin.ee/xfFqC97" target="_blank" 
-                   class="flex items-center gap-1.5 px-3 py-1.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-green-600 text-xs font-bold transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                    </svg>
-                    LINE
-                </a>
-            </div>
-                    
-                    <span v-if="isStaffMode" class="ml-2 bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">店長模式</span>
+                    <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
+                    <span v-if="isStaffMode" class="ml-2 bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm inline-block mt-2">店長模式</span>
                 </div>
 
                 <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
@@ -124,7 +100,25 @@
             </section>
         </div>
 
-
+        <div class="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-4 animate-[fadeIn_0.5s_ease-out]">
+            <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" 
+               class="flex items-center gap-1.5 px-4 py-2 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-brick text-xs font-bold transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
+                    <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
+                </svg>
+                Instagram
+            </a>
+            
+            <a href="https://lin.ee/xfFqC97" target="_blank" 
+               class="flex items-center gap-1.5 px-4 py-2 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-green-600 text-xs font-bold transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                LINE
+            </a>
+        </div>
     </main>
 
     <main v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]" role="main">
@@ -210,31 +204,16 @@
                     </div>
                 </div>
                 
-<div v-if="myAddonOrder && myAddonOrder.status === 'pending'" 
-     class="mb-4 p-4 bg-orange-50 rounded-xl border border-orange-100 relative overflow-hidden">
-
-    <div class="absolute right-0 top-0 w-16 h-16 bg-orange-100 rounded-bl-full opacity-50"></div>
-
-    <div class="relative z-10">
-        <p class="font-bold text-orange-700 mb-1 flex items-center gap-1">
-            <span class="material-icons-round text-sm">notifications_active</span>
-            加點項目待結帳
-        </p>
-
-        <p class="text-sm text-orange-600 mb-3">
-            請至櫃檯支付加點金額 
-            <span class="font-bold text-brick text-base">
-                ${{ myAddonOrder.total }}
-            </span>
-        </p>
-
-        <button 
-            @click="cancelAddon" 
-            class="px-4 py-2 bg-white text-orange-600 border border-orange-200 rounded-lg text-sm font-bold active:scale-95 transition">
-            取消加點
-        </button>
-    </div>
-</div>
+                <div v-if="myAddonOrder && myAddonOrder.status === 'pending'" class="mb-4 p-4 bg-orange-50 rounded-xl border border-orange-100 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-16 h-16 bg-orange-100 rounded-bl-full opacity-50"></div>
+                    <div class="relative z-10">
+                        <p class="font-bold text-orange-700 mb-1 flex items-center gap-1">
+                            <span class="material-icons-round text-sm" aria-hidden="true">notifications_active</span> 加點項目待結帳
+                        </p>
+                        <p class="text-sm text-orange-600 mb-3">請至櫃檯支付加點金額 <span class="font-bold text-brick text-base">${{ myAddonOrder.total }}</span></p>
+                        <button @click="cancelAddon" class="px-4 py-2 bg-white text-orange-600 border border-orange-200 rounded-lg text-sm font-bold active:scale-95 transition">取消加點</button>
+                    </div>
+                </div>
 
                 <div v-if="trackedNumber && !isTrackedNumberCalled" class="text-center p-6 bg-stone-50 rounded-xl text-stone-500 text-base mb-4">
                     <p class="font-bold mb-1">🔍 正在追蹤叫號機...</p>
@@ -768,12 +747,10 @@
                 hasEnteredShop, enterShop, trackError,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
                 phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon,
-                isStaffMode, secretTap // ✨ 將彩蛋變數釋放出來 ✨
+                isStaffMode, secretTap 
             };
         }
     }).mount('#app');
 </script>
 </body>
 </html>
-
-
