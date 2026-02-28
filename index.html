@@ -61,7 +61,7 @@
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
     <main v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto relative" role="main">
-        <div class="min-h-full flex flex-col items-center justify-center py-12 px-4 pb-32">
+        <div class="min-h-full flex flex-col items-center justify-center py-12 px-4 pb-16">
             <header class="w-full max-w-xs flex flex-col items-center">
                 <div @click="secretTap" class="w-24 h-24 flex items-center justify-center mx-auto mb-2 animate-[fadeIn_0.5s_ease-out] cursor-pointer">
                     <img src="https://github.com/d930yao-create/jiantou/blob/main/image/jt2.png?raw=true" alt="尖頭油飯 Logo" class="w-full h-full object-contain">
@@ -69,10 +69,30 @@
                 <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
                 <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
                 
-                <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out] text-center">
+                <div class="mt-5 mb-8 flex flex-wrap items-center justify-center gap-2.5 animate-[fadeIn_0.5s_ease-out]">
+                    
                     <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
                     <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
-                    <span v-if="isStaffMode" class="ml-2 bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm inline-block mt-2">店長模式</span>
+                    
+                    <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" 
+                       class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-200 rounded-full text-stone-500 hover:text-brick hover:border-brick/50 hover:bg-red-50 text-sm font-bold transition-all active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
+                            <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
+                        </svg>
+                        INSTAGRAM
+                    </a>
+                    
+                    <a href="https://lin.ee/xfFqC97" target="_blank" 
+                       class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-200 rounded-full text-stone-500 hover:text-green-600 hover:border-green-600/50 hover:bg-green-50 text-sm font-bold transition-all active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        LINE
+                    </a>
+
+                    <span v-if="isStaffMode" class="bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm animate-[fadeIn_0.3s_ease-out]">✨ 店長模式</span>
                 </div>
 
                 <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
@@ -98,26 +118,6 @@
                 <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
                 <p class="text-7xl font-bold text-stone-300 serif">#{{ currentCallingNumber || '--' }}</p>
             </section>
-        </div>
-
-        <div class="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-4 animate-[fadeIn_0.5s_ease-out]">
-            <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" 
-               class="flex items-center gap-1.5 px-4 py-2 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-brick text-xs font-bold transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
-                    <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
-                </svg>
-                Instagram
-            </a>
-            
-            <a href="https://lin.ee/xfFqC97" target="_blank" 
-               class="flex items-center gap-1.5 px-4 py-2 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-green-600 text-xs font-bold transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                LINE
-            </a>
         </div>
     </main>
 
@@ -366,7 +366,6 @@
 
     createApp({
         setup() {
-            // 狀態定義
             const hasEnteredShop = ref(false);
             const menu = ref([]); 
             const defaultMenu = [{ id: 1, name: '招牌豬肉油飯', price: 60, desc: '傳統香菇肉絲', active: true, options: [] }];
@@ -389,30 +388,25 @@
             const phoneSuffix = ref('');
             const isAppending = ref(false);
             
-            // ✨ 店長專屬彩蛋變數 ✨
             const isStaffMode = ref(false);
             let tapCount = 0;
             let tapTimeout = null;
 
             onMounted(() => {
-                // 叫號機聯動
                 onValue(dbRef(db, 'currentCallingNumber'), (snapshot) => { 
                     currentCallingNumber.value = snapshot.val(); 
                 });
 
-                // 店家狀態聯動
                 onValue(dbRef(db, 'shopStatus'), (snapshot) => {
                     const val = snapshot.val();
                     shopIsOpen.value = (val === null) ? true : val;
                 });
 
-                // 菜單聯動
                 onValue(dbRef(db, 'menu'), (snapshot) => {
                     const data = snapshot.val();
                     menu.value = data ? data.filter(item => item.active) : defaultMenu;
                 });
 
-                // 本地訂單恢復
                 const savedOrderKey = localStorage.getItem('jiantou_order_key');
                 if (savedOrderKey) {
                     onValue(dbRef(db, `orders/${savedOrderKey}`), (snapshot) => {
@@ -427,7 +421,6 @@
                     });
                 }
                 
-                // 本地加點訂單恢復
                 const savedAddonKey = localStorage.getItem('jiantou_addon_key');
                 if (savedAddonKey) {
                     onValue(dbRef(db, `orders/${savedAddonKey}`), (snapshot) => {
@@ -441,7 +434,6 @@
                     });
                 }
 
-                // 追蹤號碼恢復
                 const savedTrack = localStorage.getItem('jiantou_tracked_number');
                 if (savedTrack) {
                     trackedNumber.value = savedTrack; 
@@ -449,31 +441,28 @@
                 }
             });
 
-            // ✨ 彩蛋解鎖邏輯 ✨
             const secretTap = () => {
                 tapCount++;
                 if (tapTimeout) clearTimeout(tapTimeout);
                 
                 tapTimeout = setTimeout(() => {
                     tapCount = 0; 
-                }, 1000); // 1秒內沒有連點就重新計算
+                }, 1000);
 
                 if (tapCount >= 5) {
                     isStaffMode.value = true;
                     tapCount = 0;
-                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // 手機震動回饋
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                     alert('✨ 叮咚！店長專屬點餐模式已解鎖 ✨');
                 }
             };
 
-            // 進入商店
             const enterShop = () => {
                 if (shopIsOpen.value || isStaffMode.value || myOrder.value) {
                     hasEnteredShop.value = true;
                 }
             };
 
-            // 監聽取餐狀態
             watch(() => myOrder.value?.status, (newStatus, oldStatus) => {
                 if (newStatus === 'done' && oldStatus !== 'done') {
                     triggerPickupNotification();
@@ -487,7 +476,6 @@
                 }
             });
 
-            // 通知觸發
             const triggerPickupNotification = () => {
                 showPickupModal.value = true;
                 const audio = document.getElementById('pickupSound');
@@ -500,7 +488,6 @@
                 }
             };
 
-            // 購物車邏輯
             const getItemCount = (id) => {
                 return Object.values(cart.value).filter(c => c.item.id === id).reduce((sum, c) => sum + c.qty, 0);
             };
@@ -557,7 +544,6 @@
 
             const openConfirmation = () => { if (cartCount.value > 0) isConfirming.value = true; };
 
-            // 加點邏輯
             const startAppend = () => {
                 isAppending.value = true;
                 cart.value = {}; 
@@ -573,7 +559,6 @@
                 }
             };
 
-            // 送單邏輯
             const submitOrder = async () => {
                 if (!isAppending.value && (!phoneSuffix.value || phoneSuffix.value.length !== 3)) {
                     alert('為了方便取餐，請輸入完整的手機末三碼喔！');
@@ -582,7 +567,6 @@
 
                 if (isSubmitting.value) return;
                 
-                // 預解鎖音訊
                 const audio = document.getElementById('pickupSound');
                 if (audio) {
                     audio.volume = 0; 
@@ -606,7 +590,6 @@
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
                 const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
 
-                // 處理加點
                 if (isAppending.value && myOrder.value?.key) {
                     const addonData = {
                         number: myOrder.value.number,
@@ -636,7 +619,6 @@
                     return; 
                 }
                 
-                // 處理主訂單
                 const newOrderData = {
                     number: phoneSuffix.value, 
                     items: newCartItems, 
@@ -666,7 +648,6 @@
                 });
             };
 
-            // 重置與取消
             const resetOrder = () => {
                 myOrder.value = null;
                 trackedNumber.value = null; 
@@ -684,7 +665,6 @@
                 }
             };
 
-            // 單號追蹤
             const startTracking = async () => {
                 if (tempTrackInput.value) {
                     trackError.value = '';
@@ -747,7 +727,7 @@
                 hasEnteredShop, enterShop, trackError,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
                 phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon,
-                isStaffMode, secretTap 
+                isStaffMode, secretTap
             };
         }
     }).mount('#app');
