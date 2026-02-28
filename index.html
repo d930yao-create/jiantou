@@ -69,9 +69,32 @@
                 <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">尖頭油飯</h1>
                 <p class="text-sm text-brick tracking-[0.3em] font-bold animate-[fadeIn_0.5s_ease-out]">TRADITIONAL TASTE</p>
                 
+                
                 <div class="mt-4 mb-8 animate-[fadeIn_0.5s_ease-out]">
                     <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">● 營業中</span>
-                    <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
+                <span v-else class="bg-stone-200 text-stone-500 px-4 py-1.5 rounded-full text-sm font-bold border border-stone-300">● 休息中</span>
+               
+                <span v-if="isStaffMode" class="bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">店長模式</span>
+
+                <!-- 移過來的 IG + LINE 按鈕（變小一點更協調） -->
+                <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" 
+                   class="flex items-center gap-1.5 px-3 py-1.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-brick text-xs font-bold transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
+                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
+                    </svg>
+                    IG
+                </a>
+                
+                <a href="https://lin.ee/xfFqC97" target="_blank" 
+                   class="flex items-center gap-1.5 px-3 py-1.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 hover:text-green-600 text-xs font-bold transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    LINE
+                </a>
+            </div>
                     
                     <span v-if="isStaffMode" class="ml-2 bg-brick text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">店長模式</span>
                 </div>
@@ -101,22 +124,7 @@
             </section>
         </div>
 
-<footer class="mt-20 pb-10 flex items-center justify-center gap-4">            <a href="https://www.instagram.com/jiantou_?igsh=NDN3NHlpbzVxbGg4" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:text-brick">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <rect x="2" y="2" width="20" height="20" rx="5" stroke-width="2"></rect>
-                    <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2" stroke-linecap="round"></line>
-                </svg>
-                <span class="text-xs font-bold tracking-wider uppercase">Instagram</span>
-            </a>
 
-            <a href="https://lin.ee/xfFqC97" target="_blank" class="flex items-center gap-2 px-5 py-2.5 bg-white shadow-sm border border-stone-200 rounded-full text-stone-400 active:scale-95 transition-transform hover:text-green-600">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                <span class="text-xs font-bold tracking-wider uppercase">LINE</span>
-            </a>
-        </div>
     </main>
 
     <main v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]" role="main">
@@ -767,4 +775,5 @@
 </script>
 </body>
 </html>
+
 
