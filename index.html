@@ -53,6 +53,15 @@
 
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
+        /* ✨ 專屬的溫柔閃爍動畫 ✨ */
+        @keyframes gentle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.03); }
+        }
+        .animate-gentle-pulse {
+            animation: gentle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
         .marquee-container {
             width: 100%;
             overflow: hidden;
@@ -228,7 +237,7 @@
                 </div>
             </section>
 
-            <section v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[70vh] overflow-y-auto">
+            <section v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[75vh] overflow-y-auto">
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <p class="text-sm text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
@@ -283,16 +292,61 @@
                     </div>
                 </aside>
 
-                <button @click="startAppend" v-if="myOrder && myOrder.status === 'paid' && (!myAddonOrder || myAddonOrder.status !== 'pending')" 
-                    class="w-full mt-4 py-3 bg-stone-100 text-stone-600 rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-2"
-                    aria-label="新增餐點到此訂單">
-                    <span class="material-icons-round text-lg" aria-hidden="true">add_circle_outline</span> 我想加點
-                </button>
+                <div class="flex gap-3 mt-4">
+                    <button @click="startAppend" v-if="myOrder && myOrder.status === 'paid' && (!myAddonOrder || myAddonOrder.status !== 'pending')" 
+                        class="flex-1 py-3 bg-stone-100 text-stone-600 rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-1"
+                        aria-label="新增餐點到此訂單">
+                        <span class="material-icons-round text-lg" aria-hidden="true">add_circle_outline</span> 我想加點
+                    </button>
+
+                    <button @click="showBoardDrawer = true" v-if="myOrder && myOrder.status !== 'done'" 
+                        class="flex-[2] py-3 bg-stone-800 text-white rounded-xl text-base font-bold active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-md">
+                        <span class="material-icons-round text-lg" aria-hidden="true">format_list_numbered</span> 現場叫號看板
+                    </button>
+                </div>
             </section>
         </footer>
     </main>
 
-    <div v-if="selectedItemForOptions" class="fixed inset-0 bg-black/60 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="selectedItemForOptions=null" role="dialog" aria-modal="true">
+    <div v-if="showBoardDrawer" class="fixed inset-0 bg-black/60 z-[70] flex items-end justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="showBoardDrawer=false" role="dialog">
+        <section class="bg-[#FDFBF7] w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out] flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-6 flex-shrink-0">
+                <h3 class="text-2xl font-bold text-stone-800 serif">現場取餐進度</h3>
+                <button @click="showBoardDrawer=false" class="text-stone-400 p-2 bg-stone-100 rounded-full active:scale-95 transition-transform"><span class="material-icons-round">close</span></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto pb-4 px-1">
+                <div class="flex items-center justify-center gap-2 mb-6 text-stone-400">
+                    <span class="h-px w-8 bg-stone-200"></span>
+                    <span class="text-xs tracking-widest font-bold">目前可取餐號碼</span>
+                    <span class="h-px w-8 bg-stone-200"></span>
+                </div>
+
+                <div v-if="readyOrders.length > 0" class="grid grid-cols-2 gap-4">
+                    <article v-for="order in readyOrders" :key="order.number" 
+                        class="py-5 rounded-2xl text-center border-2 shadow-sm transition-all duration-500"
+                        :class="(myOrder && order.number === myOrder.number) ? 'bg-green-50 border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.3)] animate-gentle-pulse' : 'bg-white border-stone-100'">
+                        <p class="text-[10px] font-bold tracking-widest mb-1" :class="(myOrder && order.number === myOrder.number) ? 'text-green-600' : 'text-stone-400'">
+                            {{ (myOrder && order.number === myOrder.number) ? '🎉 您的餐點好囉' : 'PLEASE PICKUP' }}
+                        </p>
+                        <p class="text-4xl font-bold serif tracking-tighter" :class="(myOrder && order.number === myOrder.number) ? 'text-green-600' : 'text-stone-700'">
+                            #{{ order.number }}
+                        </p>
+                    </article>
+                </div>
+                
+                <div v-else class="flex flex-col items-center justify-center py-12 text-stone-300">
+                    <span class="material-icons-round text-5xl mb-2 opacity-50">restaurant</span>
+                    <p class="text-sm font-bold tracking-widest">目前等待出餐中</p>
+                </div>
+            </div>
+            <button @click="showBoardDrawer=false" class="w-full mt-2 py-4 bg-stone-200 text-stone-600 rounded-xl font-bold text-lg active:scale-95 transition-transform">
+                返回我的訂單
+            </button>
+        </section>
+    </div>
+
+    <div v-if="selectedItemForOptions" class="fixed inset-0 bg-black/60 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="selectedItemForOptions=null" role="dialog" aria-modal="true">
         <section class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out]">
             <div class="flex justify-between items-center mb-2">
                 <h3 class="text-2xl font-bold text-stone-800 serif">{{ selectedItemForOptions.name }}</h3>
@@ -317,22 +371,22 @@
         </section>
     </div>
 
-    <div v-if="isTrackingMode" class="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center p-6 animate-[slideUp_0.3s_ease-out]" role="dialog" aria-modal="true">
+    <div v-if="isTrackingMode" class="fixed inset-0 bg-white z-[90] flex flex-col items-center justify-center p-6 animate-[slideUp_0.3s_ease-out]" role="dialog" aria-modal="true">
         <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2" aria-label="關閉追蹤"><span class="material-icons-round text-4xl" aria-hidden="true">close</span></button>
-        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入手機號碼後三碼</h2>
+        <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
         <p class="text-stone-400 text-base mb-8 text-center">找回您的訂單明細與狀態<br>(包含現場櫃檯為您點的單)</p>
         
-        <input type="text" inputmode="numeric" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="輸入號碼" 
+        <input type="text" inputmode="numeric" maxlength="3" v-model="tempTrackInput" @input="trackError=''" placeholder="888" 
             class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40"
             aria-label="輸入取餐號碼">
         <p v-if="trackError" class="text-brick font-bold mb-6 h-6 animate-[fadeIn_0.3s_ease-out]" role="alert">{{ trackError }}</p>
         <div v-else class="h-6 mb-6"></div>
         <button @click="startTracking" :disabled="tempTrackInput.toString().trim().length === 0" class="w-full max-w-xs py-5 bg-brick text-white rounded-xl font-bold text-2xl shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
-            訂單追蹤
+            尋找訂單
         </button>
     </div>
 
-    <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false" role="dialog" aria-modal="true">
+    <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false" role="dialog" aria-modal="true">
         <section class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
             <h3 class="text-2xl font-bold text-stone-800 mb-4 serif text-center border-b border-stone-100 pb-4">{{ isAppending ? '確認加點內容' : '確認餐點內容' }}</h3>
             <div class="space-y-4 max-h-[40vh] overflow-y-auto mb-6 px-1">
@@ -415,28 +469,38 @@
             
             const marqueeData = ref({ text: '', showCount: false, count: 0 });
             
+            // ✨ 看板抽屜狀態與資料 ✨
+            const showBoardDrawer = ref(false);
+            const readyOrders = ref([]);
+            
             const isStaffMode = ref(false);
             let tapCount = 0;
             let tapTimeout = null;
 
             onMounted(() => {
-                onValue(dbRef(db, 'currentCallingNumber'), (snapshot) => { 
-                    currentCallingNumber.value = snapshot.val(); 
-                });
+                onValue(dbRef(db, 'currentCallingNumber'), (snapshot) => { currentCallingNumber.value = snapshot.val(); });
+                onValue(dbRef(db, 'shopStatus'), (snapshot) => { const val = snapshot.val(); shopIsOpen.value = (val === null) ? true : val; });
+                onValue(dbRef(db, 'menu'), (snapshot) => { const data = snapshot.val(); menu.value = data ? data.filter(item => item.active) : defaultMenu; });
+                onValue(dbRef(db, 'marqueeData'), (snapshot) => { const data = snapshot.val(); if (data) marqueeData.value = data; });
 
-                onValue(dbRef(db, 'shopStatus'), (snapshot) => {
-                    const val = snapshot.val();
-                    shopIsOpen.value = (val === null) ? true : val;
-                });
-
-                onValue(dbRef(db, 'menu'), (snapshot) => {
+                // ✨ 默默在背景監聽所有可取餐的號碼，準備隨時顯示在看板上 ✨
+                const doneQuery = query(dbRef(db, 'orders'), orderByChild('status'), equalTo('done'));
+                onValue(doneQuery, (snapshot) => {
                     const data = snapshot.val();
-                    menu.value = data ? data.filter(item => item.active) : defaultMenu;
-                });
-
-                onValue(dbRef(db, 'marqueeData'), (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) marqueeData.value = data;
+                    let temp = [];
+                    if (data) {
+                        const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
+                        Object.keys(data).forEach(key => {
+                            if (data[key].dateString === todayStr && !data[key].isAddon) {
+                                temp.push({ ...data[key], key: key });
+                            }
+                        });
+                    }
+                    const uniqueNumbers = new Map();
+                    temp.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(o => {
+                        if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o);
+                    });
+                    readyOrders.value = Array.from(uniqueNumbers.values());
                 });
 
                 const savedOrderKey = localStorage.getItem('jiantou_order_key');
@@ -457,26 +521,20 @@
                 if (savedAddonKey) {
                     onValue(dbRef(db, `orders/${savedAddonKey}`), (snapshot) => {
                         const data = snapshot.val();
-                        if (data) {
-                            myAddonOrder.value = { ...data, key: snapshot.key };
-                        } else {
-                            myAddonOrder.value = null;
-                            localStorage.removeItem('jiantou_addon_key');
-                        }
+                        if (data) { myAddonOrder.value = { ...data, key: snapshot.key }; } 
+                        else { myAddonOrder.value = null; localStorage.removeItem('jiantou_addon_key'); }
                     });
                 }
             });
 
-            // ✨ 修正語病，不再把客人自己的單算在前面 ✨
             const finalMarqueeText = computed(() => {
                 let text = marqueeData.value.text || '';
                 let showCount = marqueeData.value.showCount;
                 let count = marqueeData.value.count || 0;
-
                 let parts = [];
                 if (text) parts.push(text);
                 if (showCount) {
-                    if (count > 0) parts.push(`🧑‍🍳 目前共有 ${count} 張訂單製作中，感謝您的耐心等候`);
+                    if (count > 0) parts.push(`🧑‍🍳 廚房目前有 ${count} 張訂單製作中，感謝您的耐心等候`);
                     else parts.push(`✨ 目前無需等候，速速為您出餐`);
                 }
                 return parts.join(' ｜ ');
@@ -486,40 +544,31 @@
                 tapCount++;
                 if (tapTimeout) clearTimeout(tapTimeout);
                 tapTimeout = setTimeout(() => { tapCount = 0; }, 1000);
-
                 if (tapCount >= 5) {
-                    isStaffMode.value = true;
-                    tapCount = 0;
+                    isStaffMode.value = true; tapCount = 0;
                     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                     alert('✨ 叮咚！店長專屬點餐模式已解鎖 ✨');
                 }
             };
 
-            const enterShop = () => {
-                if (shopIsOpen.value || isStaffMode.value || myOrder.value) {
-                    hasEnteredShop.value = true;
-                }
-            };
+            const enterShop = () => { if (shopIsOpen.value || isStaffMode.value || myOrder.value) hasEnteredShop.value = true; };
 
             watch(() => myOrder.value?.status, (newStatus, oldStatus) => {
                 if (newStatus === 'done' && oldStatus !== 'done') {
                     const audio = document.getElementById('pickupSound');
-                    if (audio) {
-                        audio.volume = 1.0;
-                        audio.play().catch(() => {});
-                    }
+                    if (audio) { audio.volume = 1.0; audio.play().catch(() => {}); }
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+                    
+                    // ✨ 如果客人剛好在看隱形看板，瞬間幫他把看板關掉，強制顯示超大綠色取餐證！ ✨
+                    showBoardDrawer.value = false;
                 }
             });
 
-            const getItemCount = (id) => {
-                return Object.values(cart.value).filter(c => c.item.id === id).reduce((sum, c) => sum + c.qty, 0);
-            };
+            const getItemCount = (id) => { return Object.values(cart.value).filter(c => c.item.id === id).reduce((sum, c) => sum + c.qty, 0); };
 
             const addToCart = (item) => {
                 if (item.options && item.options.length > 0) {
-                    selectedItemForOptions.value = item;
-                    selectedOptionsArr.value = [];
+                    selectedItemForOptions.value = item; selectedOptionsArr.value = [];
                 } else {
                     const cartKey = `item_${item.id}`;
                     if (!cart.value[cartKey]) cart.value[cartKey] = { item: item, options: [], qty: 0 };
@@ -532,7 +581,6 @@
                 const opts = selectedOptionsArr.value;
                 const optIds = opts.map(o => o.name).sort().join('_');
                 const cartKey = `item_${item.id}_${optIds}`;
-
                 if (!cart.value[cartKey]) cart.value[cartKey] = { item: item, options: [...opts], qty: 0 };
                 cart.value[cartKey].qty++;
                 selectedItemForOptions.value = null;
@@ -566,36 +614,26 @@
             const cancelAddon = () => {
                 if(confirm('確定要取消這次的加點嗎？')) {
                     if (myAddonOrder.value?.key) remove(dbRef(db, `orders/${myAddonOrder.value.key}`));
-                    myAddonOrder.value = null;
-                    localStorage.removeItem('jiantou_addon_key');
+                    myAddonOrder.value = null; localStorage.removeItem('jiantou_addon_key');
                 }
             };
 
             const submitOrder = async () => {
                 const suffixStr = phoneSuffix.value.toString().trim();
-                if (!isAppending.value && suffixStr.length !== 3) {
-                    alert('為了方便取餐，請輸入完整的手機末三碼喔！');
-                    return;
-                }
-
+                if (!isAppending.value && suffixStr.length !== 3) { alert('為了方便取餐，請輸入完整的手機末三碼喔！'); return; }
                 if (isSubmitting.value) return;
                 
                 const audio = document.getElementById('pickupSound');
-                if (audio) {
-                    audio.volume = 0; 
-                    audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
-                }
+                if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
 
                 isSubmitting.value = true;
                 const newCartItems = [];
                 for (const cartKey in cart.value) {
                     const cItem = cart.value[cartKey];
                     newCartItems.push({
-                        id: cItem.item.id,
-                        name: cItem.item.name,
+                        id: cItem.item.id, name: cItem.item.name,
                         price: cItem.item.price + cItem.options.reduce((s, o) => s + o.price, 0),
-                        qty: cItem.qty,
-                        options: cItem.options.map(o => o.name)
+                        qty: cItem.qty, options: cItem.options.map(o => o.name)
                     });
                 }
                 
@@ -605,72 +643,43 @@
 
                 if (isAppending.value && myOrder.value?.key) {
                     const addonData = {
-                        number: myOrder.value.number,
-                        parentKey: myOrder.value.key,
-                        isAddon: true,
-                        items: newCartItems,
-                        total: cartTotal.value,
-                        status: 'pending',
-                        createdAt: serverTimestamp(),
-                        timeString: timeString,
-                        dateString: dateString
+                        number: myOrder.value.number, parentKey: myOrder.value.key, isAddon: true,
+                        items: newCartItems, total: cartTotal.value, status: 'pending',
+                        createdAt: serverTimestamp(), timeString: timeString, dateString: dateString
                     };
-                    
                     const newRef = push(dbRef(db, 'orders'), addonData);
                     localStorage.setItem('jiantou_addon_key', newRef.key);
-                    
                     onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
                         const data = snapshot.val();
                         myAddonOrder.value = data ? { ...data, key: snapshot.key } : null;
                         if (!data) localStorage.removeItem('jiantou_addon_key');
                     });
-
-                    isAppending.value = false;
-                    cart.value = {};
-                    isConfirming.value = false;
-                    isSubmitting.value = false;
+                    isAppending.value = false; cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
                     return; 
                 }
                 
                 const newOrderData = {
-                    number: suffixStr, 
-                    items: newCartItems, 
-                    total: cartTotal.value, 
-                    status: 'pending',
-                    createdAt: serverTimestamp(), 
-                    timeString: timeString, 
-                    dateString: dateString
+                    number: suffixStr, items: newCartItems, total: cartTotal.value, status: 'pending',
+                    createdAt: serverTimestamp(), timeString: timeString, dateString: dateString
                 };
 
                 const newRef = push(dbRef(db, 'orders'), newOrderData);
                 localStorage.setItem('jiantou_order_key', newRef.key);
 
                 myOrder.value = { ...newOrderData, key: newRef.key };
-                cart.value = {};
-                isConfirming.value = false;
-                isSubmitting.value = false;
+                cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
 
                 onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
                     const data = snapshot.val();
-                    if (data && data.status !== 'archived') {
-                        myOrder.value = { ...data, key: snapshot.key };
-                    } else {
-                        myOrder.value = null;
-                        localStorage.removeItem('jiantou_order_key');
-                    }
+                    if (data && data.status !== 'archived') { myOrder.value = { ...data, key: snapshot.key }; } 
+                    else { myOrder.value = null; localStorage.removeItem('jiantou_order_key'); }
                 });
             };
 
-            const resetOrder = () => {
-                myOrder.value = null;
-                localStorage.removeItem('jiantou_order_key');
-            };
-
+            const resetOrder = () => { myOrder.value = null; localStorage.removeItem('jiantou_order_key'); };
             const cancelOrder = () => {
                 if(confirm('確定要取消這筆訂單嗎？')) {
-                    if (myOrder.value?.key) {
-                        remove(dbRef(db, `orders/${myOrder.value.key}`));
-                    }
+                    if (myOrder.value?.key) remove(dbRef(db, `orders/${myOrder.value.key}`));
                     resetOrder();
                 }
             };
@@ -680,49 +689,28 @@
                 if (valStr) {
                     trackError.value = '';
                     const q = query(dbRef(db, 'orders'), orderByChild('number'), equalTo(valStr));
-                    
                     try {
                         const snapshot = await get(q);
-                        let foundOrder = null;
-                        let foundKey = null;
+                        let foundOrder = null; let foundKey = null;
                         if (snapshot.exists()) {
                             snapshot.forEach((child) => {
                                 const order = child.val();
-                                if (order.status !== 'archived' && !order.isAddon) {
-                                    foundOrder = order;
-                                    foundKey = child.key;
-                                }
+                                if (order.status !== 'archived' && !order.isAddon) { foundOrder = order; foundKey = child.key; }
                             });
                         }
-                        
-                        if (!foundOrder) {
-                            trackError.value = '目前沒有這個號碼喔，是不是記錯了呢';
-                            return;
-                        }
+                        if (!foundOrder) { trackError.value = '目前沒有這個號碼喔，是不是記錯了呢'; return; }
                         
                         const audio = document.getElementById('pickupSound');
-                        if (audio) {
-                            audio.volume = 0; 
-                            audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
-                        }
+                        if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
 
                         localStorage.setItem('jiantou_order_key', foundKey);
                         onValue(dbRef(db, `orders/${foundKey}`), (snap) => {
                             const data = snap.val();
-                            if (data && data.status !== 'archived') {
-                                myOrder.value = { ...data, key: snap.key };
-                            } else {
-                                myOrder.value = null;
-                                localStorage.removeItem('jiantou_order_key');
-                            }
+                            if (data && data.status !== 'archived') { myOrder.value = { ...data, key: snap.key }; } 
+                            else { myOrder.value = null; localStorage.removeItem('jiantou_order_key'); }
                         });
-
-                        isTrackingMode.value = false;
-                        tempTrackInput.value = '';
-                        hasEnteredShop.value = true;
-                    } catch (error) {
-                        trackError.value = '系統提示: ' + error.message;
-                    }
+                        isTrackingMode.value = false; tempTrackInput.value = ''; hasEnteredShop.value = true;
+                    } catch (error) { trackError.value = '系統提示: ' + error.message; }
                 }
             };
 
@@ -740,12 +728,11 @@
                 hasEnteredShop, enterShop,
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
                 phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon,
-                isStaffMode, secretTap, finalMarqueeText 
+                isStaffMode, secretTap, finalMarqueeText,
+                showBoardDrawer, readyOrders // ✨ 釋出看板抽屜狀態
             };
         }
     }).mount('#app');
 </script>
 </body>
 </html>
-
-
