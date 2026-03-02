@@ -20,6 +20,9 @@
         [v-cloak] { display: none !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; position: relative; }
+        .marquee-content { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
 <body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
@@ -35,22 +38,25 @@
         <button @click="toggleFullScreen" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
             <span class="material-icons-round text-2xl">fullscreen</span>
         </button>
-        <button @click="clearAll" class="p-3 rounded-full bg-brick/90 text-white hover:bg-red-800 transition-colors border border-red-900 shadow-lg active:scale-95 flex items-center justify-center" aria-label="一鍵清除所有畫面號碼">
+        <button @click="clearAll" class="p-3 rounded-full bg-brick/80 text-white hover:bg-brick transition-colors border border-red-900/50 shadow-lg active:scale-95 flex items-center gap-1" aria-label="一鍵清空所有號碼">
             <span class="material-icons-round text-2xl">delete_sweep</span>
         </button>
     </div>
 
     <div @click="completeCurrent" class="w-[65%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group">
         <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
-        <p class="text-3xl mb-2 font-light tracking-widest text-stone-500">現點現做，感謝耐心等候🙌🙇‍♀️</p>
+        <p class="text-xl mb-2 font-light tracking-widest text-stone-500">現點現做，感謝耐心等候🙇‍♀️🙌</p>
         
-        <h1 :key="currentNumber" class="text-[28vw] leading-none font-bold serif text-yellow-400 number-pop group-hover:scale-105 transition-transform" 
-            style="text-shadow: 0 0 60px rgba(250, 204, 21, 0.6);">
-            {{ currentNumber || '--' }}
-        </h1>
+        <div :key="currentNumber" class="number-pop">
+            <h1 class="text-[25vw] leading-none font-bold serif text-yellow-400 group-hover:scale-105 transition-transform" 
+                :class="currentNumber ? 'animate-pulse' : ''"
+                style="text-shadow: 0 0 60px rgba(250, 204, 21, 0.6);">
+                {{ currentNumber || '--' }}
+            </h1>
+        </div>
         
         <div class="mt-8">
-            <span v-if="currentNumber" class="text-4xl text-stone-200 bg-white/10 px-12 py-5 rounded-full backdrop-blur-md animate-pulse flex items-center gap-3 shadow-lg">
+            <span v-if="currentNumber" class="text-4xl text-stone-200 bg-white/10 px-12 py-5 rounded-full backdrop-blur-md flex items-center gap-3">
                 <span class="material-icons-round text-yellow-400 text-4xl">lightbulb</span>請至櫃台取餐
             </span>
             <span v-else class="text-3xl text-stone-600 tracking-wider">
@@ -61,41 +67,42 @@
 
     <div class="w-[35%] h-full bg-stone-950 flex flex-col min-h-0">
         <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20 flex-shrink-0">
-            <h2 class="text-2xl font-bold text-white tracking-wider flex items-center gap-3">
+            <h2 class="text-2xl font-bold text-white tracking-wider flex items-center gap-3 mb-1">
                 <span class="material-icons-round text-brick">restaurant_menu</span>以下號碼皆可取餐
             </h2>
-            <p class="text-sm text-stone-500 tracking-wider flex items-center gap-1 mt-3 bg-stone-800/50 w-max px-3 py-1.5 rounded-lg border border-stone-700/50"> 
-                <span class="material-icons-round text-[16px] text-stone-400">touch_app</span> 也可至自己的手機點餐畫面確認
+            <p class="text-sm text-stone-500 tracking-wider flex items-center gap-1 mt-2">
+                <span class="star text-[16px]">touch_app</span> 手機點餐畫面也可以確認喔！亮綠燈即可取餐
             </p>
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 relative no-scrollbar">
             <transition-group name="list" tag="div" class="grid grid-cols-1 gap-4">
                 <div v-for="order in recentDoneOrders" :key="order.key" 
-                    @click="handleCardTap(order)"
-                    class="group bg-stone-800/80 border border-stone-700 rounded-2xl p-5 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0 active:scale-95 duration-200 shadow-sm">
+                    @click="handleOrderClick(order)"
+                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-5 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0 active:scale-95 duration-200">
                     
-                    <div class="flex flex-col px-1">
-                        <span class="text-6xl font-bold text-stone-200 serif mb-2 tracking-tighter">#{{ order.number }}</span>
-                        <span class="text-xs text-stone-500 bg-stone-900 px-3 py-1 rounded-full border border-stone-800 w-max tracking-widest">{{ order.timeString }}</span>
+                    <div class="flex-1 flex items-center justify-between px-2">
+                        <span class="text-6xl font-bold text-stone-200 serif">#{{ order.number }}</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-stone-500 bg-stone-900 px-4 py-1.5 rounded-full border border-stone-800">{{ order.timeString }}</span>
+                            <span @click.stop="reCall(order.number)" class="material-icons-round text-stone-500 opacity-20 group-hover:opacity-100 group-hover:text-brick transition-opacity text-3xl hover:scale-110 active:scale-90">campaign</span>
+                        </div>
                     </div>
-
-                    <button @click.stop="reCall(order.number)" class="w-16 h-16 bg-stone-700/50 hover:bg-stone-600 rounded-full transition-colors flex items-center justify-center border border-stone-600 shadow-md active:scale-90">
-                        <span class="material-icons-round text-4xl text-stone-300">campaign</span>
-                    </button>
 
                 </div>
             </transition-group>
             
             <div v-if="recentDoneOrders.length === 0" class="absolute inset-0 flex items-center justify-center text-stone-600">
-                <p class="text-xl tracking-widest font-bold">目前無待取餐號碼</p>
+                <p class="text-xl tracking-widest">目前無待取餐號碼</p>
             </div>
             <div class="h-20"></div>
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-[65%] bg-brick/10 border-t border-brick/20 py-3 z-20 pointer-events-none backdrop-blur-sm">
-        <p class="text-center text-lg tracking-widest text-stone-400">現點現做，請耐心等候 🥣</p>
+    <div class="fixed bottom-0 left-0 w-[65%] bg-stone-950/80 border-t border-stone-800/50 py-4 z-20 pointer-events-none backdrop-blur-sm shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div class="marquee-container">
+            <span class="marquee-content text-3xl tracking-widest text-yellow-500/90 font-light">{{ finalMarqueeText }}</span>
+        </div>
     </div>
 
 </div>
@@ -120,12 +127,13 @@
     createApp({
         setup() {
             const currentNumber = ref(null);
+            // ✨ 新增：我們把「原始且完整的單」跟「畫面顯示的單」分開存 ✨
+            const allRawDoneOrders = ref([]); 
             const doneOrders = ref([]);
-            const isMuted = ref(true);
             
-            // 用來辨識雙擊魔法的計時器
-            let globalTapTimer = null;
-            let globalTapTarget = null;
+            const isMuted = ref(true);
+            const marqueeData = ref({ text: '', showCount: false, count: 0 });
+            let clickTimer = null;
 
             const toggleMute = () => {
                 isMuted.value = !isMuted.value;
@@ -147,12 +155,15 @@
                 const callRef = dbRef(db, 'currentCallingNumber');
                 onValue(callRef, (snapshot) => { currentNumber.value = snapshot.val(); });
 
+                onValue(dbRef(db, 'marqueeData'), (snapshot) => { 
+                    const data = snapshot.val();
+                    if (data) marqueeData.value = data; 
+                });
+
                 const ordersRef = dbRef(db, 'orders');
                 onValue(ordersRef, (snapshot) => {
                     const data = snapshot.val();
                     const list = [];
-                    
-                    // ✨ 嚴格限制：只抓取今天的訂單（隔天自動清空） ✨
                     const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
 
                     if (data) {
@@ -165,13 +176,31 @@
                     }
                     list.sort((a, b) => b.createdAt - a.createdAt);
                     
-                    // 去除重複顯示的同號碼
+                    // ✨ 儲存最完整、沒有被過濾的清單（刪除時要用這個來趕盡殺絕）
+                    allRawDoneOrders.value = list;
+                    
+                    // 為了畫面乾淨，把重複的號碼隱藏起來
                     const uniqueNumbers = new Map();
                     list.forEach(o => {
                         if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o);
                     });
                     doneOrders.value = Array.from(uniqueNumbers.values());
                 });
+            });
+
+            const finalMarqueeText = computed(() => {
+                let text = marqueeData.value.text || '';
+                let showCount = marqueeData.value.showCount;
+                let count = marqueeData.value.count || 0;
+
+                let parts = [];
+                if (text) parts.push(text);
+                if (showCount) {
+                    if (count > 0) parts.push(`🧑‍🍳 廚房目前有 ${count} 張訂單製作中，感謝您的耐心等候`);
+                    else parts.push(`✨ 目前無需等候，速速為您出餐`);
+                }
+                if (parts.length === 0) return '現點現做，請耐心等候 🥣';
+                return parts.join(' ｜ ');
             });
 
             watch(currentNumber, (newVal) => {
@@ -192,43 +221,37 @@
             });
 
             const recentDoneOrders = computed(() => {
-                return doneOrders.value.filter(o => o.number != currentNumber.value);
+                return doneOrders.value.filter(o => String(o.number) !== String(currentNumber.value));
             });
 
             const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
 
+            // ✨ 地毯式搜索刪除：只要號碼對了，全部揪出來改為 archived ✨
             const finishOrder = (order) => {
                 const updates = {};
-                doneOrders.value.forEach(o => {
-                    if (o.number === order.number) {
-                        updates[`orders/${o.key}/status`] = 'archived';
-                    }
+                const targets = allRawDoneOrders.value.filter(o => String(o.number) === String(order.number));
+                targets.forEach(o => {
+                    updates[`orders/${o.key}/status`] = 'archived';
                 });
                 update(dbRef(db), updates);
             };
 
-            // ✨ 魔法雙擊判定邏輯 ✨
-            const handleCardTap = (order) => {
-                // 如果短時間內點了第二次同一個卡片，就觸發刪除
-                if (globalTapTimer && globalTapTarget === order.key) {
-                    clearTimeout(globalTapTimer);
-                    globalTapTimer = null;
-                    globalTapTarget = null;
+            const handleOrderClick = (order) => {
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
                     finishOrder(order);
                 } else {
-                    // 點第一次，啟動 0.3 秒的計時器
-                    globalTapTarget = order.key;
-                    globalTapTimer = setTimeout(() => {
-                        globalTapTimer = null;
-                        globalTapTarget = null;
-                        // 單擊什麼都不做，因為廣播功能已經移到專屬喇叭按鈕了
-                    }, 300); 
+                    clickTimer = setTimeout(() => {
+                        clickTimer = null;
+                    }, 250); 
                 }
             };
 
+            // ✨ 點擊左邊大號碼的地毯式結案 ✨
             const completeCurrent = () => {
                 if (!currentNumber.value) return;
-                const targets = doneOrders.value.filter(o => o.number == currentNumber.value);
+                const targets = allRawDoneOrders.value.filter(o => String(o.number) === String(currentNumber.value));
                 if (targets.length > 0) {
                     const updates = {};
                     targets.forEach(order => { updates[`orders/${order.key}/status`] = 'archived'; });
@@ -239,13 +262,13 @@
                 }
             };
 
-            // ✨ 一鍵清空大掃把 (左右兩邊全部一起清) ✨
+            // ✨ 大掃把：把完整清單裡的所有人一起掃掉 ✨
             const clearAll = () => {
-                if(confirm("確定要清除畫面上所有的取餐號碼嗎？\n（包含左邊正在叫的，與右邊等待的，都會一起結案清除喔！）")) {
+                if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取餐）")) {
                     const updates = {};
-                    updates['currentCallingNumber'] = null; // 清除左邊
-                    doneOrders.value.forEach(o => {
-                        updates[`orders/${o.key}/status`] = 'archived'; // 清除右邊
+                    updates['currentCallingNumber'] = null;
+                    allRawDoneOrders.value.forEach(o => {
+                        updates[`orders/${o.key}/status`] = 'archived';
                     });
                     update(dbRef(db), updates).then(() => {
                         currentNumber.value = null;
@@ -268,7 +291,8 @@
 
             return { 
                 currentNumber, recentDoneOrders, reCall, completeCurrent, 
-                isMuted, finishOrder, toggleFullScreen, toggleMute, clearAll, handleCardTap
+                isMuted, finishOrder, toggleFullScreen, toggleMute, clearAll, handleOrderClick,
+                finalMarqueeText
             };
         }
     }).mount('#app');
