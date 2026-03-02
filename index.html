@@ -53,15 +53,6 @@
 
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
-        /* ✨ 專屬的溫柔閃爍動畫 ✨ */
-        @keyframes gentle-pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.03); }
-        }
-        .animate-gentle-pulse {
-            animation: gentle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
         .marquee-container {
             width: 100%;
             overflow: hidden;
@@ -76,6 +67,15 @@
         @keyframes marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-100%); }
+        }
+
+        /* ✨ 專屬的溫柔閃爍動畫 ✨ */
+        @keyframes gentle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.03); }
+        }
+        .animate-gentle-pulse {
+            animation: gentle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
 </head>
@@ -325,11 +325,11 @@
                 <div v-if="readyOrders.length > 0" class="grid grid-cols-2 gap-4">
                     <article v-for="order in readyOrders" :key="order.number" 
                         class="py-5 rounded-2xl text-center border-2 shadow-sm transition-all duration-500"
-                        :class="(myOrder && order.number === myOrder.number) ? 'bg-green-50 border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.3)] animate-gentle-pulse' : 'bg-white border-stone-100'">
-                        <p class="text-[10px] font-bold tracking-widest mb-1" :class="(myOrder && order.number === myOrder.number) ? 'text-green-600' : 'text-stone-400'">
-                            {{ (myOrder && order.number === myOrder.number) ? '🎉 您的餐點好囉' : 'PLEASE PICKUP' }}
+                        :class="(myOrder && myOrder.status === 'done' && order.number === myOrder.number) ? 'bg-green-50 border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.3)] animate-gentle-pulse' : 'bg-white border-stone-100'">
+                        <p class="text-[10px] font-bold tracking-widest mb-1" :class="(myOrder && myOrder.status === 'done' && order.number === myOrder.number) ? 'text-green-600' : 'text-stone-400'">
+                            {{ (myOrder && myOrder.status === 'done' && order.number === myOrder.number) ? '🎉 您的餐點好囉' : 'PLEASE PICKUP' }}
                         </p>
-                        <p class="text-4xl font-bold serif tracking-tighter" :class="(myOrder && order.number === myOrder.number) ? 'text-green-600' : 'text-stone-700'">
+                        <p class="text-4xl font-bold serif tracking-tighter" :class="(myOrder && myOrder.status === 'done' && order.number === myOrder.number) ? 'text-green-600' : 'text-stone-700'">
                             #{{ order.number }}
                         </p>
                     </article>
@@ -534,7 +534,7 @@
                 let parts = [];
                 if (text) parts.push(text);
                 if (showCount) {
-                    if (count > 0) parts.push(`🧑‍🍳 廚房目前有 ${count} 張訂單製作中，感謝您的耐心等候`);
+                    if (count > 0) parts.push(`🧑‍🍳 目前共有 ${count} 張訂單製作中，感謝您的耐心等候`);
                     else parts.push(`✨ 目前無需等候，速速為您出餐`);
                 }
                 return parts.join(' ｜ ');
@@ -729,7 +729,7 @@
                 selectedItemForOptions, selectedOptionsArr, confirmAddOptions,
                 phoneSuffix, isAppending, startAppend, myAddonOrder, cancelAddon,
                 isStaffMode, secretTap, finalMarqueeText,
-                showBoardDrawer, readyOrders // ✨ 釋出看板抽屜狀態
+                showBoardDrawer, readyOrders
             };
         }
     }).mount('#app');
