@@ -20,6 +20,11 @@
         [v-cloak] { display: none !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ✨ 跑馬燈專屬動畫 ✨ */
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; position: relative; }
+        .marquee-content { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
 <body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
@@ -44,13 +49,16 @@
         <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
         <p class="text-3xl mb-2 font-light tracking-widest text-stone-500">最新取餐</p>
         
-        <h1 :key="currentNumber" class="text-[25vw] leading-none font-bold serif text-yellow-400 number-pop group-hover:scale-105 transition-transform" 
-            style="text-shadow: 0 0 60px rgba(250, 204, 21, 0.6);">
-            {{ currentNumber || '--' }}
-        </h1>
+        <div :key="currentNumber" class="number-pop">
+            <h1 class="text-[25vw] leading-none font-bold serif text-yellow-400 group-hover:scale-105 transition-transform" 
+                :class="currentNumber ? 'animate-pulse' : ''"
+                style="text-shadow: 0 0 60px rgba(250, 204, 21, 0.6);">
+                {{ currentNumber || '--' }}
+            </h1>
+        </div>
         
         <div class="mt-8">
-            <span v-if="currentNumber" class="text-4xl text-stone-200 bg-white/10 px-12 py-5 rounded-full backdrop-blur-md animate-pulse flex items-center gap-3">
+            <span v-if="currentNumber" class="text-4xl text-stone-200 bg-white/10 px-12 py-5 rounded-full backdrop-blur-md flex items-center gap-3">
                 <span class="material-icons-round text-yellow-400 text-4xl">lightbulb</span>請至櫃台取餐
             </span>
             <span v-else class="text-3xl text-stone-600 tracking-wider">
@@ -93,8 +101,10 @@
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-[65%] bg-brick/10 py-3 z-20 pointer-events-none">
-        <p class="text-center text-lg tracking-widest text-stone-400">現點現做，請耐心等候 🥣</p>
+    <div class="fixed bottom-0 left-0 w-[65%] bg-stone-950/80 border-t border-stone-800/50 py-4 z-20 pointer-events-none backdrop-blur-sm shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div class="marquee-container">
+            <span class="marquee-content text-3xl tracking-widest text-yellow-500/90 font-light">{{ finalMarqueeText }}</span>
+        </div>
     </div>
 
 </div>
@@ -121,7 +131,8 @@
             const currentNumber = ref(null);
             const doneOrders = ref([]);
             const isMuted = ref(true);
-            let clickTimer = null; // 用來分辨單擊與雙擊的計時器
+            const marqueeData = ref({ text: '', showCount: false, count: 0 });
+            let clickTimer = null;
 
             const toggleMute = () => {
                 isMuted.value = !isMuted.value;
@@ -140,14 +151,21 @@
             };
 
             onMounted(() => {
+                // 監聽目前叫號
                 const callRef = dbRef(db, 'currentCallingNumber');
                 onValue(callRef, (snapshot) => { currentNumber.value = snapshot.val(); });
 
+                // 監聽跑馬燈資料
+                onValue(dbRef(db, 'marqueeData'), (snapshot) => { 
+                    const data = snapshot.val();
+                    if (data) marqueeData.value = data; 
+                });
+
+                // 監聽訂單
                 const ordersRef = dbRef(db, 'orders');
                 onValue(ordersRef, (snapshot) => {
                     const data = snapshot.val();
                     const list = [];
-                    // ✨ 嚴格限制：只抓取今天的訂單 ✨
                     const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
 
                     if (data) {
@@ -160,13 +178,30 @@
                     }
                     list.sort((a, b) => b.createdAt - a.createdAt);
                     
-                    // 去除重複顯示的號碼
                     const uniqueNumbers = new Map();
                     list.forEach(o => {
                         if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o);
                     });
                     doneOrders.value = Array.from(uniqueNumbers.values());
                 });
+            });
+
+            // ✨ 合成跑馬燈文字 ✨
+            const finalMarqueeText = computed(() => {
+                let text = marqueeData.value.text || '';
+                let showCount = marqueeData.value.showCount;
+                let count = marqueeData.value.count || 0;
+
+                let parts = [];
+                if (text) parts.push(text);
+                if (showCount) {
+                    if (count > 0) parts.push(`🧑‍🍳 廚房目前有 ${count} 張訂單製作中，感謝您的耐心等候`);
+                    else parts.push(`✨ 目前無需等候，速速為您出餐`);
+                }
+                
+                // 如果什麼都沒設定，給一個溫馨的預設值
+                if (parts.length === 0) return '現點現做，請耐心等候 🥣';
+                return parts.join(' ｜ ');
             });
 
             watch(currentNumber, (newVal) => {
@@ -193,7 +228,6 @@
             const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
 
             const finishOrder = (order) => {
-                // 將該號碼的所有狀態改為 archived
                 const updates = {};
                 doneOrders.value.forEach(o => {
                     if (o.number === order.number) {
@@ -203,15 +237,12 @@
                 update(dbRef(db), updates);
             };
 
-            // ✨ 魔法點擊：分辨點一下還是點兩下 ✨
             const handleOrderClick = (order) => {
                 if (clickTimer) {
-                    // 如果計時器還在，代表這是短時間內的第二次點擊 ＝ 雙擊清除！
                     clearTimeout(clickTimer);
                     clickTimer = null;
                     finishOrder(order);
                 } else {
-                    // 如果沒有計時器，先等個 0.25 秒，如果沒按第二下，就執行單擊廣播
                     clickTimer = setTimeout(() => {
                         reCall(order.number);
                         clickTimer = null;
@@ -232,7 +263,6 @@
                 }
             };
 
-            // ✨ 一鍵清空大掃把 ✨
             const clearAll = () => {
                 if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取餐）")) {
                     const updates = {};
@@ -261,7 +291,8 @@
 
             return { 
                 currentNumber, recentDoneOrders, reCall, completeCurrent, 
-                isMuted, finishOrder, toggleFullScreen, toggleMute, clearAll, handleOrderClick
+                isMuted, finishOrder, toggleFullScreen, toggleMute, clearAll, handleOrderClick,
+                finalMarqueeText // ✨ 釋出跑馬燈文字
             };
         }
     }).mount('#app');
