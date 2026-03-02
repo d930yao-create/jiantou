@@ -15,7 +15,7 @@
         .text-brick { color: #9E5A5A; }
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
+        .list-enter-active, .list-leave-active { transition: all 0.4s ease; }
         .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
         [v-cloak] { display: none !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -28,72 +28,73 @@
     
     <audio id="dingSound" src="https://github.com/d930yao-create/jiantou/raw/refs/heads/main/image/mixkit-home-standard-ding-dong-109.wav" preload="auto"></audio>
 
-    <button @click="toggleMute" class="absolute top-4 left-4 z-50 p-2 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600">
-        <span class="material-icons-round text-xl">{{ isMuted ? 'volume_off' : 'volume_up' }}</span>
-    </button>
+    <div class="absolute top-4 left-4 z-50 flex gap-3">
+        <button @click="toggleMute" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
+            <span class="material-icons-round text-2xl">{{ isMuted ? 'volume_off' : 'volume_up' }}</span>
+        </button>
+        <button @click="toggleFullScreen" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
+            <span class="material-icons-round text-2xl">fullscreen</span>
+        </button>
+        <button @click="clearAll" class="p-3 rounded-full bg-brick/80 text-white hover:bg-brick transition-colors border border-red-900/50 shadow-lg active:scale-95 flex items-center gap-1" aria-label="一鍵清空所有號碼">
+            <span class="material-icons-round text-2xl">delete_sweep</span>
+        </button>
+    </div>
 
-    <button @click="toggleFullScreen" class="absolute top-4 left-16 z-50 p-2 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600">
-        <span class="material-icons-round text-xl">fullscreen</span>
-    </button>
-
-    <div @click="completeCurrent" class="w-[60%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group">
+    <div @click="completeCurrent" class="w-[65%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group">
         <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
-        <p class="text-2xl mb-4 font-light tracking-widest text-stone-500">最新取餐</p>
+        <p class="text-3xl mb-2 font-light tracking-widest text-stone-500">最新取餐</p>
         
-        <h1 :key="currentNumber" class="text-[15rem] leading-none font-bold serif text-yellow-400 number-pop group-hover:scale-105 transition-transform" 
-            style="text-shadow: 0 0 50px rgba(250, 204, 21, 0.6);">
+        <h1 :key="currentNumber" class="text-[25vw] leading-none font-bold serif text-yellow-400 number-pop group-hover:scale-105 transition-transform" 
+            style="text-shadow: 0 0 60px rgba(250, 204, 21, 0.6);">
             {{ currentNumber || '--' }}
         </h1>
         
-        <div class="mt-12">
-            <span v-if="currentNumber" class="text-3xl text-stone-200 bg-white/10 px-10 py-4 rounded-full backdrop-blur-md animate-pulse flex items-center gap-3">
-                <span class="material-icons-round text-yellow-400">lightbulb</span>請至櫃台取餐
+        <div class="mt-8">
+            <span v-if="currentNumber" class="text-4xl text-stone-200 bg-white/10 px-12 py-5 rounded-full backdrop-blur-md animate-pulse flex items-center gap-3">
+                <span class="material-icons-round text-yellow-400 text-4xl">lightbulb</span>請至櫃台取餐
             </span>
-            <span v-else class="text-2xl text-stone-600 tracking-wider">
+            <span v-else class="text-3xl text-stone-600 tracking-wider">
                 美味準備中...
             </span>
         </div>
     </div>
 
-    <div class="w-[40%] h-full bg-stone-950 flex flex-col min-h-0">
+    <div class="w-[35%] h-full bg-stone-950 flex flex-col min-h-0">
         <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20 flex-shrink-0">
-            <h2 class="text-xl font-bold text-white tracking-wider flex items-center gap-3">
+            <h2 class="text-2xl font-bold text-white tracking-wider flex items-center gap-3 mb-1">
                 <span class="material-icons-round text-brick">restaurant_menu</span>以下號碼皆可取餐
             </h2>
-             <h2 class="text-xl font-bold text-white tracking-wider flex items-center gap-3 mt-2"> 
-                也可至點餐畫面確認
-            </h2>
+            <p class="text-sm text-stone-500 tracking-wider flex items-center gap-1 mt-2">
+                <span class="material-icons-round text-[16px]">touch_app</span> 點1下廣播 ｜ 快速點2下刪除
+            </p>
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 relative no-scrollbar">
             <transition-group name="list" tag="div" class="grid grid-cols-1 gap-4">
                 <div v-for="order in recentDoneOrders" :key="order.key" 
-                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-3 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0">
+                    @click="handleOrderClick(order)"
+                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-5 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0 active:scale-95 duration-200">
                     
-                    <div class="flex-1 flex items-center justify-between px-2 pr-4 border-r border-stone-700" @click.stop="reCall(order.number)">
-                        <span class="text-5xl font-bold text-stone-200 serif">#{{ order.number }}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-stone-500 bg-stone-900 px-3 py-1 rounded-full border border-stone-800">{{ order.timeString }}</span>
-                            <span class="material-icons-round text-stone-500 opacity-20 group-hover:opacity-100 group-hover:text-brick transition-opacity">campaign</span>
+                    <div class="flex-1 flex items-center justify-between px-2">
+                        <span class="text-6xl font-bold text-stone-200 serif">#{{ order.number }}</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-stone-500 bg-stone-900 px-4 py-1.5 rounded-full border border-stone-800">{{ order.timeString }}</span>
+                            <span class="material-icons-round text-stone-500 opacity-20 group-hover:opacity-100 group-hover:text-brick transition-opacity text-3xl">campaign</span>
                         </div>
                     </div>
-
-                    <button @click.stop="finishOrder(order)" class="pl-4 pr-2 hover:text-green-400 transition-colors text-stone-600 flex items-center justify-center">
-                        <span class="material-icons-round text-4xl">check_circle</span>
-                    </button>
 
                 </div>
             </transition-group>
             
             <div v-if="recentDoneOrders.length === 0" class="absolute inset-0 flex items-center justify-center text-stone-600">
-                <p>目前無待取餐號碼</p>
+                <p class="text-xl tracking-widest">目前無待取餐號碼</p>
             </div>
             <div class="h-20"></div>
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-[60%] bg-brick/10 py-2 z-20 pointer-events-none">
-        <p class="text-center">現點現做，請耐心等候 🥣</p>
+    <div class="fixed bottom-0 left-0 w-[65%] bg-brick/10 py-3 z-20 pointer-events-none">
+        <p class="text-center text-lg tracking-widest text-stone-400">現點現做，請耐心等候 🥣</p>
     </div>
 
 </div>
@@ -101,7 +102,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
@@ -120,6 +121,7 @@
             const currentNumber = ref(null);
             const doneOrders = ref([]);
             const isMuted = ref(true);
+            let clickTimer = null; // 用來分辨單擊與雙擊的計時器
 
             const toggleMute = () => {
                 isMuted.value = !isMuted.value;
@@ -132,7 +134,6 @@
                             audio.currentTime = 0;
                         }).catch(e => console.log('解鎖音效失敗', e));
                     }
-                    
                     const unlockSpeech = new SpeechSynthesisUtterance(' ');
                     window.speechSynthesis.speak(unlockSpeech);
                 }
@@ -146,71 +147,108 @@
                 onValue(ordersRef, (snapshot) => {
                     const data = snapshot.val();
                     const list = [];
-                    const nowTs = Date.now();
-                    const twelveHours = 12 * 60 * 60 * 1000;
+                    // ✨ 嚴格限制：只抓取今天的訂單 ✨
+                    const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
 
                     if (data) {
                         Object.keys(data).forEach(key => {
                             const order = data[key];
-                            let isRecent = true;
-                            if (order.createdAt) { isRecent = (nowTs - order.createdAt) < twelveHours; }
-                            if (order.status === 'done' && isRecent) {
+                            if (order.status === 'done' && order.dateString === todayStr && !order.isAddon) {
                                 list.push({ ...order, key: key });
                             }
                         });
                     }
                     list.sort((a, b) => b.createdAt - a.createdAt);
-                    doneOrders.value = list;
+                    
+                    // 去除重複顯示的號碼
+                    const uniqueNumbers = new Map();
+                    list.forEach(o => {
+                        if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o);
+                    });
+                    doneOrders.value = Array.from(uniqueNumbers.values());
                 });
             });
 
             watch(currentNumber, (newVal) => {
                 if (newVal && !isMuted.value) {
                     const audio = document.getElementById('dingSound');
-                    if(audio) {
-                        audio.play().catch(() => {});
-                    }
+                    if(audio) { audio.play().catch(() => {}); }
 
                     setTimeout(() => {
-                        // ✨ 把號碼拆開，讓 iPad 聰明地唸出「八、五、七」而不是八百五十七
                         const spacedNumber = String(newVal).split('').join(' ');
                         const speechText = `${spacedNumber} 號，請至櫃檯取餐`;
                         const utterance = new SpeechSynthesisUtterance(speechText);
-                        
                         utterance.lang = 'zh-TW';
                         utterance.rate = 0.85;  
                         utterance.pitch = 1.2;  
-                        
                         window.speechSynthesis.speak(utterance);
                     }, 1000); 
                 }
             });
 
             const recentDoneOrders = computed(() => {
-                const filtered = doneOrders.value.filter(o => o.number != currentNumber.value);
-                return filtered; 
+                return doneOrders.value.filter(o => o.number != currentNumber.value);
             });
 
             const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
+
+            const finishOrder = (order) => {
+                // 將該號碼的所有狀態改為 archived
+                const updates = {};
+                doneOrders.value.forEach(o => {
+                    if (o.number === order.number) {
+                        updates[`orders/${o.key}/status`] = 'archived';
+                    }
+                });
+                update(dbRef(db), updates);
+            };
+
+            // ✨ 魔法點擊：分辨點一下還是點兩下 ✨
+            const handleOrderClick = (order) => {
+                if (clickTimer) {
+                    // 如果計時器還在，代表這是短時間內的第二次點擊 ＝ 雙擊清除！
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                    finishOrder(order);
+                } else {
+                    // 如果沒有計時器，先等個 0.25 秒，如果沒按第二下，就執行單擊廣播
+                    clickTimer = setTimeout(() => {
+                        reCall(order.number);
+                        clickTimer = null;
+                    }, 250); 
+                }
+            };
 
             const completeCurrent = () => {
                 if (!currentNumber.value) return;
                 const targets = doneOrders.value.filter(o => o.number == currentNumber.value);
                 if (targets.length > 0) {
-                    if(confirm(`確定 #${currentNumber.value} 已取餐？`)) {
-                        targets.forEach(order => { set(dbRef(db, `orders/${order.key}/status`), 'archived'); });
-                        set(dbRef(db, 'currentCallingNumber'), null);
-                    }
+                    const updates = {};
+                    targets.forEach(order => { updates[`orders/${order.key}/status`] = 'archived'; });
+                    updates['currentCallingNumber'] = null;
+                    update(dbRef(db), updates);
                 } else {
                     set(dbRef(db, 'currentCallingNumber'), null);
                 }
             };
 
-            // ✨ 加入蘋果 WebKit 復古語法，讓 iPad 也能順利全螢幕
+            // ✨ 一鍵清空大掃把 ✨
+            const clearAll = () => {
+                if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取餐）")) {
+                    const updates = {};
+                    updates['currentCallingNumber'] = null;
+                    doneOrders.value.forEach(o => {
+                        updates[`orders/${o.key}/status`] = 'archived';
+                    });
+                    update(dbRef(db), updates).then(() => {
+                        currentNumber.value = null;
+                    });
+                }
+            };
+
             const toggleFullScreen = () => {
                 const doc = window.document;
                 const docEl = doc.documentElement;
-
                 const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
                 const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
 
@@ -221,15 +259,9 @@
                 }
             };
 
-            const finishOrder = (order) => {
-                if(confirm(`確定 #${order.number} 已取餐？`)) {
-                    set(dbRef(db, `orders/${order.key}/status`), 'archived');
-                }
-            };
-
             return { 
                 currentNumber, recentDoneOrders, reCall, completeCurrent, 
-                isMuted, finishOrder, toggleFullScreen, toggleMute 
+                isMuted, finishOrder, toggleFullScreen, toggleMute, clearAll, handleOrderClick
             };
         }
     }).mount('#app');
