@@ -99,14 +99,15 @@
         </header>
 
         <nav class="flex md:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0 overflow-x-auto nav-scrollbar" aria-label="主要分頁">
-            <button @click="currentTab='pending'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors flex-1" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'pending' ? 'page' : false">待結帳 ({{ pendingOrders.length }})</button>
-            <button @click="currentTab='processing'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors flex-1" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'processing' ? 'page' : false">製作中 ({{ processingOrders.length }})</button>
-            <button @click="currentTab='pos'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors flex-1" :class="currentTab==='pos' ? 'bg-white shadow text-stone-800' : 'text-stone-400'" :aria-current="currentTab === 'pos' ? 'page' : false">現場點餐</button>
+            <button @click="currentTab='pending'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">待結帳 ({{ pendingOrders.length }})</button>
+            <button @click="currentTab='processing'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">製作中 ({{ processingOrders.length }})</button>
+            <button @click="currentTab='history'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap" :class="currentTab==='history' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">已出餐 ({{ historyOrders.length }})</button>
+            <button @click="currentTab='pos'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap" :class="currentTab==='pos' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">現場點餐</button>
         </nav>
 
         <main class="flex-1 overflow-hidden relative flex flex-col md:flex-row p-2 gap-2 min-h-0">
             
-            <section v-show="currentTab === 'pending' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0 md:flex" aria-label="待結帳清單">
+            <section v-show="currentTab === 'pending' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0 md:flex" aria-label="待結帳清單">
                 <header class="p-2 bg-gray-100 font-bold text-stone-500 text-xs text-center flex justify-between px-2 flex-shrink-0">
                     <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-[10px]">{{ pendingOrders.length }}</span>
                 </header>
@@ -145,7 +146,7 @@
                             <div class="mt-2 pt-2 border-t border-dashed border-stone-200" @click.stop>
                                 <div class="flex items-center bg-stone-50 hover:bg-yellow-50 focus-within:bg-yellow-50 border border-transparent hover:border-yellow-200 focus-within:border-yellow-400 rounded p-1.5 gap-1.5 transition-colors">
                                     <span class="material-icons-round text-stone-400 text-xs">edit_note</span>
-                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增或修改備註..." class="w-full bg-transparent text-xs text-stone-600 outline-none placeholder-stone-300">
+                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增備註..." class="w-full bg-transparent text-xs text-stone-600 outline-none placeholder-stone-300">
                                 </div>
                             </div>
 
@@ -156,7 +157,7 @@
                 </div>
             </section>
 
-            <section v-show="currentTab === 'processing' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden min-h-0 md:flex" aria-label="製作中清單">
+            <section v-show="currentTab === 'processing' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-brick overflow-hidden min-h-0 md:flex" aria-label="製作中清單">
                 <header class="p-2 bg-red-50 font-bold text-brick text-xs text-center flex justify-between px-2 flex-shrink-0">
                     <span>製作中</span><span class="bg-red-100 px-2 rounded-full text-[10px]">{{ processingOrders.length }}</span>
                 </header>
@@ -192,7 +193,7 @@
                             <div class="mt-2 pt-2 border-t border-dashed border-red-100" @click.stop>
                                 <div class="flex items-center bg-white/80 hover:bg-yellow-50 focus-within:bg-yellow-50 border border-transparent hover:border-yellow-200 focus-within:border-yellow-400 rounded p-1.5 gap-1.5 transition-colors">
                                     <span class="material-icons-round text-brick/50 text-xs">edit_note</span>
-                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增或修改備註..." class="w-full bg-transparent text-xs text-stone-700 outline-none placeholder-stone-300 font-medium">
+                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增備註..." class="w-full bg-transparent text-xs text-stone-700 outline-none placeholder-stone-300 font-medium">
                                 </div>
                             </div>
 
@@ -205,7 +206,43 @@
                 </div>
             </section>
 
-            <section v-show="currentTab === 'pos' || isDesktop" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-800 overflow-hidden min-h-0 md:flex" aria-label="現場點餐系統">
+            <section v-show="currentTab === 'history' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-300 overflow-hidden min-h-0 md:flex" aria-label="已出餐清單">
+                <header class="p-2 bg-stone-200 font-bold text-stone-600 text-xs text-center flex justify-between px-2 flex-shrink-0">
+                    <span>已出餐 / 歷史</span><span class="bg-stone-300 px-2 rounded-full text-[10px] text-stone-700">{{ historyOrders.length }}</span>
+                </header>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
+                    <article v-for="order in historyOrders" :key="order.key" class="p-3 bg-white rounded-lg border border-stone-200 shadow-sm text-sm opacity-90 hover:opacity-100 transition-opacity">
+                        <div class="flex justify-between items-center pb-2 border-b border-stone-100 mb-2">
+                            <div class="flex items-baseline gap-2">
+                                <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
+                                <span class="text-[10px] text-stone-400">{{ order.timeString }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-brick mr-1">${{ order.total }}</span>
+                                <button @click="recallOrder(order.number)" class="text-[10px] bg-stone-100 text-stone-600 px-2 py-1 rounded-full border border-stone-200 shadow-sm active:scale-95 transition-transform flex items-center gap-1">
+                                    <span class="material-icons-round text-[10px]">campaign</span> 再叫
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-start text-xs">
+                                <div class="flex flex-col leading-tight">
+                                    <span class="font-medium text-stone-600">{{ item.name }}</span>
+                                    <span v-if="item.options && item.options.length" class="text-[9px] text-stone-400">{{ item.options.join(', ') }}</span>
+                                </div>
+                                <span class="text-stone-400 font-bold">x{{ item.qty }}</span>
+                            </div>
+                            <div v-if="order.note" class="mt-1 pt-1 border-t border-dashed border-stone-100 flex items-start gap-1">
+                                <span class="material-icons-round text-yellow-600 text-[12px] mt-0.5">edit_note</span>
+                                <span class="text-[10px] text-stone-500 font-medium">{{ order.note }}</span>
+                            </div>
+                        </div>
+                    </article>
+                    <div v-if="historyOrders.length === 0" class="text-center text-stone-400 text-[10px] py-10">目前沒有已出餐紀錄</div>
+                </div>
+            </section>
+
+            <section v-show="currentTab === 'pos' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-800 overflow-hidden min-h-0 md:flex" aria-label="現場點餐系統">
                 <header class="p-2 bg-stone-100 font-bold text-stone-600 text-xs text-center flex-shrink-0 border-b border-stone-200">
                     現場點餐 (POS)
                 </header>
@@ -249,14 +286,14 @@
                     <div class="mb-3 pt-2 border-t border-stone-100">
                         <div class="flex items-center bg-yellow-50/50 border border-yellow-200 rounded-lg p-2 gap-2 focus-within:bg-yellow-50 focus-within:border-yellow-400 transition-colors">
                             <span class="material-icons-round text-yellow-600 text-sm">edit_note</span>
-                            <input type="text" v-model="posNote" placeholder="訂單備註 (例如：不要香菜、飯少一點)" class="w-full bg-transparent text-sm text-stone-700 outline-none placeholder-stone-400 font-medium">
+                            <input type="text" v-model="posNote" placeholder="備註(選填)" class="w-full bg-transparent text-sm text-stone-700 outline-none placeholder-stone-400 font-medium">
                         </div>
                     </div>
 
                     <div class="flex gap-2">
                         <input type="text" inputmode="numeric" maxlength="3" v-model="posPhoneSuffix" placeholder="末三碼" class="w-20 bg-stone-100 border border-stone-200 rounded-lg text-center font-bold text-stone-700 outline-none focus:border-stone-400">
                         <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.toString().trim().length !== 3" class="flex-1 bg-stone-800 text-white font-bold py-2.5 rounded-lg disabled:opacity-30 active:scale-95 transition-transform flex items-center justify-center gap-1">
-                            <span class="material-icons-round text-sm">point_of_sale</span> 送單製作 (已收錢)
+                            <span class="material-icons-round text-sm">point_of_sale</span> 送單製作
                         </button>
                         <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''; posNote=''" class="px-3 bg-stone-200 text-stone-500 rounded-lg active:scale-95"><span class="material-icons-round text-sm">delete</span></button>
                     </div>
@@ -278,8 +315,8 @@
             <button @click="currentTab='menu'" class="text-xs text-stone-500 font-bold hover:text-brick flex items-center gap-1 transition-colors px-3 py-2 bg-stone-100 rounded-full active:scale-95">
                 <span class="material-icons-round text-sm" aria-hidden="true">edit_note</span> 前台管理
             </button>
-            <button @click="showToolbox = true" class="text-xs text-stone-600 font-bold hover:text-stone-800 flex items-center gap-1 transition-colors px-4 py-2 bg-stone-200 rounded-full shadow-sm active:scale-95">
-                <span class="material-icons-round text-sm" aria-hidden="true">handyman</span> 萬用工具箱
+            <button @click="showManualModal = true" class="text-xs text-stone-600 font-bold hover:text-stone-800 flex items-center gap-1 transition-colors px-4 py-2 bg-stone-200 rounded-full shadow-sm active:scale-95">
+                <span class="material-icons-round text-sm" aria-hidden="true">campaign</span> 快速叫號
             </button>
             <button @click="logout" class="text-xs text-stone-400 underline hover:text-stone-600 px-3 py-2">登出</button>
         </footer>
@@ -308,93 +345,48 @@
         </section>
     </div>
 
-    <div v-if="showToolbox" class="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="showToolbox=false" role="dialog" aria-modal="true">
-        <section class="bg-[#FDFBF7] w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col h-[85vh] sm:h-[75vh] shadow-2xl animate-[slideUp_0.3s_ease-out] overflow-hidden">
+    <div v-if="showManualModal" class="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="showManualModal=false" role="dialog" aria-modal="true">
+        <section class="bg-[#FDFBF7] w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col h-[70vh] sm:h-[60vh] shadow-2xl animate-[slideUp_0.3s_ease-out] overflow-hidden">
             <header class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0">
-                <h2 class="text-lg font-bold flex items-center gap-2"><span class="material-icons-round">handyman</span> 萬用工具箱</h2>
-                <button @click="showToolbox=false" class="text-stone-300 hover:text-white transition-colors" aria-label="關閉工具箱"><span class="material-icons-round">close</span></button>
+                <h2 class="text-lg font-bold flex items-center gap-2"><span class="material-icons-round">campaign</span> 快速叫號</h2>
+                <button @click="showManualModal=false" class="text-stone-300 hover:text-white transition-colors" aria-label="關閉"><span class="material-icons-round">close</span></button>
             </header>
-            
-            <div class="flex bg-stone-200 p-1.5 gap-1 flex-shrink-0">
-                <button @click="toolboxTab='history'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1" :class="toolboxTab==='history' ? 'bg-white shadow-sm text-stone-800' : 'text-stone-500 hover:bg-stone-300'">
-                    <span class="material-icons-round text-base">history</span> 最近出餐
-                </button>
-                <button @click="toolboxTab='manual'" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1" :class="toolboxTab==='manual' ? 'bg-white shadow-sm text-brick' : 'text-stone-500 hover:bg-stone-300'">
-                    <span class="material-icons-round text-base">campaign</span> 快速叫號
-                </button>
-            </div>
 
-            <div class="flex-1 overflow-y-auto p-4 bg-stone-100">
-                
-                <div v-if="toolboxTab === 'history'" class="space-y-3">
-                    <p class="text-xs text-stone-400 text-center mb-2">已出餐的訂單會收納在這裡，方便隨時查詢。</p>
-                    <article v-for="order in historyOrders" :key="order.key" class="p-3 bg-white rounded-xl border border-stone-200 shadow-sm text-sm">
-                        <div class="flex justify-between items-center pb-2 border-b border-stone-100 mb-2">
-                            <div class="flex items-baseline gap-2">
-                                <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
-                                <span class="text-[10px] text-stone-400">{{ order.timeString }}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold text-brick mr-2">${{ order.total }}</span>
-                                <button @click="recallOrder(order.number)" class="text-[11px] bg-stone-100 text-stone-600 px-3 py-1.5 rounded-full border border-stone-200 shadow-sm active:scale-95 transition-transform flex items-center gap-1">
-                                    <span class="material-icons-round text-xs">campaign</span> 再叫一次
-                                </button>
-                            </div>
+            <div class="flex-1 overflow-y-auto p-4 bg-stone-100 flex flex-col">
+                <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex-shrink-0 mb-4">
+                    <div class="flex gap-2 mb-3">
+                        <div class="flex-1 text-center">
+                            <label class="text-[10px] font-bold text-stone-400 block mb-1">叫號號碼</label>
+                            <input type="text" inputmode="numeric" v-model="manualInput" placeholder="666" aria-label="輸入叫號號碼" class="w-full bg-stone-50 text-center text-2xl font-bold py-2 rounded-lg border border-stone-200 outline-none focus:border-brick">
                         </div>
-                        <div class="space-y-1.5">
-                            <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-start">
-                                <div class="flex flex-col leading-tight">
-                                    <span class="font-medium text-stone-700">{{ item.name }}</span>
-                                    <span v-if="item.options && item.options.length" class="text-[10px] text-stone-400">{{ item.options.join(', ') }}</span>
-                                </div>
-                                <span class="text-stone-500 font-bold">x{{ item.qty }}</span>
-                            </div>
-                            <div v-if="order.note" class="mt-2 pt-2 border-t border-dashed border-stone-100 flex items-start gap-1">
-                                <span class="material-icons-round text-yellow-600 text-[14px] mt-0.5">edit_note</span>
-                                <span class="text-xs text-stone-500 font-medium">{{ order.note }}</span>
-                            </div>
+                        <div class="flex-1 text-center">
+                            <label class="text-[10px] font-bold text-stone-400 block mb-1">金額 (選填)</label>
+                            <input type="number" inputmode="numeric" v-model="manualPrice" placeholder="0" aria-label="輸入金額(選填)" class="w-full bg-stone-50 text-center text-2xl font-bold py-2 rounded-lg border border-stone-200 outline-none text-brick focus:border-brick">
+                        </div>
+                    </div>
+                    <button @click="addToManualQueue" :disabled="!manualInput || manualInput.toString().trim() === ''" class="w-full bg-stone-800 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition-transform disabled:opacity-30">
+                        加入待叫列表
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto space-y-2">
+                    <p class="text-xs text-stone-400 font-bold px-1">待叫列表</p>
+                    <article v-for="(item, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-white rounded-xl border border-stone-200 shadow-sm">
+                        <div class="flex flex-col">
+                            <span class="text-2xl font-bold text-stone-700">#{{ item.n }}</span>
+                            <span v-if="item.p > 0" class="text-sm text-brick font-bold">${{ item.p }}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="callManualNumber(item, key)" class="bg-brick text-white px-4 py-3 rounded-xl font-bold text-sm shadow active:scale-95 transition-transform flex items-center gap-1">
+                                <span class="material-icons-round text-base" aria-hidden="true">campaign</span> 呼叫
+                            </button>
+                            <button @click="removeManualNumber(key)" class="bg-stone-100 text-stone-400 hover:text-red-500 px-3 py-3 rounded-xl active:scale-95 transition-colors" aria-label="移除此號碼">
+                                <span class="material-icons-round text-base" aria-hidden="true">delete</span>
+                            </button>
                         </div>
                     </article>
-                    <div v-if="historyOrders.length === 0" class="text-center text-stone-400 text-xs py-10">目前沒有已出餐的紀錄</div>
+                    <div v-if="Object.keys(manualQueue).length === 0" class="text-center text-stone-400 text-xs py-4">列表是空的</div>
                 </div>
-
-                <div v-if="toolboxTab === 'manual'" class="flex flex-col h-full">
-                    <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex-shrink-0 mb-4">
-                        <div class="flex gap-2 mb-3">
-                            <div class="flex-1 text-center">
-                                <label class="text-[10px] font-bold text-stone-400 block mb-1">叫號號碼</label>
-                                <input type="text" inputmode="numeric" v-model="manualInput" placeholder="666" aria-label="輸入叫號號碼" class="w-full bg-stone-50 text-center text-2xl font-bold py-2 rounded-lg border border-stone-200 outline-none focus:border-brick">
-                            </div>
-                            <div class="flex-1 text-center">
-                                <label class="text-[10px] font-bold text-stone-400 block mb-1">金額 (選填)</label>
-                                <input type="number" inputmode="numeric" v-model="manualPrice" placeholder="0" aria-label="輸入金額(選填)" class="w-full bg-stone-50 text-center text-2xl font-bold py-2 rounded-lg border border-stone-200 outline-none text-brick focus:border-brick">
-                            </div>
-                        </div>
-                        <button @click="addToManualQueue" :disabled="!manualInput || manualInput.toString().trim() === ''" class="w-full bg-stone-800 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition-transform disabled:opacity-30">
-                            加入待叫列表
-                        </button>
-                    </div>
-                    
-                    <div class="flex-1 overflow-y-auto space-y-2">
-                        <p class="text-xs text-stone-400 font-bold px-1">待叫列表</p>
-                        <article v-for="(item, key) in manualQueue" :key="key" class="flex items-center justify-between p-3 bg-white rounded-xl border border-stone-200 shadow-sm">
-                            <div class="flex flex-col">
-                                <span class="text-2xl font-bold text-stone-700">#{{ item.n }}</span>
-                                <span v-if="item.p > 0" class="text-sm text-brick font-bold">${{ item.p }}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button @click="callManualNumber(item, key)" class="bg-brick text-white px-4 py-3 rounded-xl font-bold text-sm shadow active:scale-95 transition-transform flex items-center gap-1">
-                                    <span class="material-icons-round text-base" aria-hidden="true">campaign</span> 呼叫
-                                </button>
-                                <button @click="removeManualNumber(key)" class="bg-stone-100 text-stone-400 hover:text-red-500 px-3 py-3 rounded-xl active:scale-95 transition-colors" aria-label="移除此號碼">
-                                    <span class="material-icons-round text-base" aria-hidden="true">delete</span>
-                                </button>
-                            </div>
-                        </article>
-                        <div v-if="Object.keys(manualQueue).length === 0" class="text-center text-stone-400 text-xs py-4">列表是空的</div>
-                    </div>
-                </div>
-
             </div>
         </section>
     </div>
@@ -515,7 +507,12 @@
         <section class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-[slideUp_0.2s_ease-out]">
             <header class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0">
                 <h3 class="font-bold text-sm">{{ formattedDateString }} 銷售報表</h3>
-                <button @click="showReport=false" class="text-stone-300 hover:text-white transition-colors" aria-label="關閉報表">✕</button>
+                <div class="flex items-center gap-3">
+                    <button @click="exportReport" class="flex items-center gap-1 bg-stone-700 hover:bg-stone-600 px-2 py-1 rounded text-[10px] font-bold transition-colors border border-stone-500">
+                        <span class="material-icons-round text-[12px]">download</span> 匯出CSV
+                    </button>
+                    <button @click="showReport=false" class="text-stone-300 hover:text-white transition-colors" aria-label="關閉報表">✕</button>
+                </div>
             </header>
             <div class="flex-1 overflow-y-auto p-4 space-y-6">
                 <div class="flex justify-between items-end pb-4 border-b border-dashed border-stone-200">
@@ -544,7 +541,7 @@
                 </table>
                 <div class="pt-4 border-t border-stone-100">
                     <button @click="deleteAllOrdersByDate" class="w-full py-2.5 text-[10px] text-red-400 bg-transparent border border-red-100 rounded-lg font-bold hover:bg-red-50 transition-colors">
-                        ⚠️ 清空所有訂單
+                        ⚠️ 清空此日所有訂單
                     </button>
                 </div>
             </div>
@@ -593,8 +590,7 @@
             const marqueeSettings = ref({ text: '', showCount: false });
             const showKitchenStatsModal = ref(false);
 
-            const showToolbox = ref(false);
-            const toolboxTab = ref('history');
+            const showManualModal = ref(false);
 
             const posCart = ref({});
             const posPhoneSuffix = ref('');
@@ -689,7 +685,6 @@
             const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
             const completedOrdersCount = computed(() => validOrders.value.filter(o => o.total > 0).length);
             
-            // ✨ 修正跑馬燈計算：只計算「真正進廚房」的單 ✨
             const waitingOrdersCount = computed(() => {
                 const todayOrders = allOrders.value.filter(order => order.dateString === `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`);
                 return todayOrders.filter(o => o.status === 'paid').length;
@@ -729,6 +724,28 @@
                 });
                 return Object.values(report).sort((a, b) => b.total - a.total);
             });
+
+            // ✨ CSV 報表匯出功能 ✨
+            const exportReport = () => {
+                let csvContent = "\uFEFF"; // 加上 BOM 讓 Excel 不會亂碼
+                csvContent += `日期,${formattedDateString.value}\n`;
+                csvContent += `總訂單數,${completedOrdersCount.value} 筆\n`;
+                csvContent += `總營業額,$${dailyRevenue.value}\n\n`;
+                csvContent += "品項,數量,總金額\n";
+                
+                salesReport.value.forEach(item => {
+                    csvContent += `${item.name},${item.count},$${item.total}\n`;
+                });
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `尖頭油飯銷售報表_${selectedDate.value}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
 
             const posCartCount = computed(() => Object.values(posCart.value).reduce((a, b) => a + b.qty, 0));
             const posCartTotal = computed(() => {
@@ -868,7 +885,17 @@
             const removeManualNumber = (key) => { remove(dbRef(db, `manualQueue/${key}`)); };
 
             const updateStatus = (order, newStatus) => {
-                if (!isToday.value) return;
+                if (!isToday.value && newStatus !== 'archived') return; 
+                
+                // ✨ 單純的秒殺魔法：一鍵完成就變 done（前台會跳綠卡），並且立刻從製作中消失變成已出餐
+                if (newStatus === 'done') {
+                    const updates = {}; 
+                    updates[`/orders/${order.key}/status`] = 'done'; 
+                    update(dbRef(db), updates);
+                    set(dbRef(db, 'currentCallingNumber'), order.number);
+                    return;
+                }
+
                 if (order.isAddon && newStatus === 'paid') {
                     const parent = filteredOrders.value.find(o => o.key === order.parentKey);
                     if (parent) {
@@ -889,7 +916,6 @@
                 const updates = {}; 
                 updates[`/orders/${order.key}/status`] = newStatus; 
                 update(dbRef(db), updates);
-                if (newStatus === 'done') set(dbRef(db, 'currentCallingNumber'), order.number);
             };
 
             const recallOrder = (number) => {
@@ -933,7 +959,7 @@
             return { 
                 isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout, 
                 selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders,
-                dailyRevenue, completedOrdersCount, salesReport, showReport, updateStatus, 
+                dailyRevenue, completedOrdersCount, salesReport, showReport, updateStatus, exportReport,
                 shopIsOpen, toggleShopStatus, deleteOrder, deleteOrderItem, toggleItemReady, 
                 deleteAllOrdersByDate, currentTab, isDesktop, menuSettings, 
                 saveFrontEndSettings, addMenuItem, moveMenuUp, 
@@ -942,7 +968,7 @@
                 posCart, posPhoneSuffix, posNote, posSelectedItem, posSelectedOptions, activeMenuSettings,
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, increasePosCart, decreasePosCart, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, 
-                showToolbox, toolboxTab, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber
+                showManualModal, manualInput, manualPrice, manualQueue, addToManualQueue, callManualNumber, removeManualNumber
             };
         }
     }).mount('#app');
