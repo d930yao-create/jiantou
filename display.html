@@ -71,7 +71,7 @@
                 <span class="material-icons-round text-brick">restaurant_menu</span>以下號碼皆可取餐
             </h2>
             <p class="text-sm text-stone-500 tracking-wider flex items-center gap-1 mt-2">
-                <span class="material-icons-round text-[16px]">phone_iphone</span> 也可至手機點餐畫面確認，綠燈亮起即可取餐
+                <span class="material-icons-round text-[16px]">smartphone</span> 也可至手機點餐畫面確認，綠燈亮起即可取餐
             </p>
         </div>
 
@@ -127,7 +127,6 @@
     createApp({
         setup() {
             const currentNumber = ref(null);
-            // ✨ 新增：我們把「原始且完整的單」跟「畫面顯示的單」分開存 ✨
             const allRawDoneOrders = ref([]); 
             const doneOrders = ref([]);
             
@@ -176,10 +175,8 @@
                     }
                     list.sort((a, b) => b.createdAt - a.createdAt);
                     
-                    // ✨ 儲存最完整、沒有被過濾的清單（刪除時要用這個來趕盡殺絕）
                     allRawDoneOrders.value = list;
                     
-                    // 為了畫面乾淨，把重複的號碼隱藏起來
                     const uniqueNumbers = new Map();
                     list.forEach(o => {
                         if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o);
@@ -226,7 +223,6 @@
 
             const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
 
-            // ✨ 地毯式搜索刪除：只要號碼對了，全部揪出來改為 archived ✨
             const finishOrder = (order) => {
                 const updates = {};
                 const targets = allRawDoneOrders.value.filter(o => String(o.number) === String(order.number));
@@ -248,7 +244,6 @@
                 }
             };
 
-            // ✨ 點擊左邊大號碼的地毯式結案 ✨
             const completeCurrent = () => {
                 if (!currentNumber.value) return;
                 const targets = allRawDoneOrders.value.filter(o => String(o.number) === String(currentNumber.value));
@@ -262,7 +257,6 @@
                 }
             };
 
-            // ✨ 大掃把：把完整清單裡的所有人一起掃掉 ✨
             const clearAll = () => {
                 if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取餐）")) {
                     const updates = {};
