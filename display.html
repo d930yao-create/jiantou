@@ -15,23 +15,35 @@
         .text-brick { color: #9E5A5A; }
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .list-enter-active, .list-leave-active { transition: all 0.4s ease; }
-        .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
         [v-cloak] { display: none !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 跑馬燈共用設定 */
         .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; position: relative; }
-        .marquee-content { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        
+        /* 頂部公告跑馬燈 (較慢) */
+        .marquee-content-top { display: inline-block; padding-left: 100%; animation: marquee-top 25s linear infinite; }
+        @keyframes marquee-top { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        /* 底部取餐跑馬燈 (適中速度) */
+        .marquee-content-bottom { display: inline-block; padding-left: 100%; animation: marquee-bottom 20s linear infinite; }
+        @keyframes marquee-bottom { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
 <body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
 
-<div id="app" v-cloak class="h-full flex relative">
+<div id="app" v-cloak class="h-full flex flex-col relative">
     
     <audio id="dingSound" src="https://github.com/d930yao-create/jiantou/raw/refs/heads/main/image/mixkit-home-standard-ding-dong-109.wav" preload="auto"></audio>
 
-    <div class="absolute top-4 left-4 z-50 flex gap-3">
+    <div class="absolute top-0 left-0 w-full bg-stone-950/90 border-b border-stone-800/50 py-3 z-30 pointer-events-none backdrop-blur-sm shadow-md">
+        <div class="marquee-container">
+            <span class="marquee-content-top text-xl tracking-widest text-stone-300 font-light">{{ topMarqueeText }}</span>
+        </div>
+    </div>
+
+    <div class="absolute top-16 left-4 z-50 flex gap-3">
         <button @click="toggleMute" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
             <span class="material-icons-round text-2xl">{{ isMuted ? 'volume_off' : 'volume_up' }}</span>
         </button>
@@ -43,65 +55,33 @@
         </button>
     </div>
 
-    <div @click="completeCurrent" class="w-[65%] h-full flex flex-col items-center justify-center border-r border-stone-800 relative bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group">
-        <div class="absolute top-10 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
-        <p class="text-xl mb-2 font-light tracking-widest text-stone-500">🙌餐點現點現做，感謝耐心等候🙌🙇‍♀️</p>
+    <div @click="completeCurrent" class="w-full h-full flex flex-col items-center justify-center bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group pt-10 pb-16">
+        <div class="absolute top-24 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
+        <p class="text-xl mb-4 font-light tracking-widest text-stone-500">🙌餐點現點現做，感謝耐心等候🙌🙇‍♀️</p>
         
         <div :key="currentNumber" class="number-pop">
-            <h1 class="text-[25vw] leading-none font-bold serif text-yellow-400 group-hover:scale-105 transition-transform" 
+            <h1 class="text-[30vw] leading-none font-bold serif text-yellow-400 group-hover:scale-105 transition-transform" 
                 :class="currentNumber ? 'animate-pulse' : ''"
-                style="text-shadow: 0 0 60px rgba(250, 204, 21, 0.6);">
+                style="text-shadow: 0 0 80px rgba(250, 204, 21, 0.5);">
                 {{ currentNumber || '--' }}
             </h1>
         </div>
         
-        <div class="mt-8">
-            <span v-if="currentNumber" class="text-4xl text-stone-200 bg-white/10 px-12 py-5 rounded-full backdrop-blur-md flex items-center gap-3">
-                <span class="material-icons-round text-yellow-400 text-4xl">lightbulb</span>請至櫃台取餐
+        <div class="mt-12">
+            <span v-if="currentNumber" class="text-5xl text-stone-200 bg-white/10 px-16 py-6 rounded-full backdrop-blur-md flex items-center gap-4 shadow-xl">
+                <span class="material-icons-round text-yellow-400 text-5xl">lightbulb</span>請至櫃台取餐
             </span>
-            <span v-else class="text-3xl text-stone-600 tracking-wider">
+            <span v-else class="text-4xl text-stone-600 tracking-wider">
                 美味準備中...
             </span>
         </div>
     </div>
 
-    <div class="w-[35%] h-full bg-stone-950 flex flex-col min-h-0">
-        <div class="p-6 bg-stone-900 border-b border-stone-800 shadow-md z-20 flex-shrink-0">
-            <h2 class="text-2xl font-bold text-white tracking-wider flex items-center gap-3 mb-1">
-                <span class="material-icons-round text-brick">restaurant_menu</span>以下號碼皆可取餐
-            </h2>
-            <p class="text-sm text-stone-500 tracking-wider flex items-center gap-1 mt-2">
-                <span class="material-icons-round text-[16px]">smartphone</span> 也可至手機點餐畫面確認，綠燈亮起即可取餐
-            </p>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-6 relative no-scrollbar">
-            <transition-group name="list" tag="div" class="grid grid-cols-1 gap-4">
-                <div v-for="order in recentDoneOrders" :key="order.key" 
-                    @click="handleOrderClick(order)"
-                    class="group bg-stone-800/80 border border-stone-700 rounded-xl p-5 flex items-center justify-between hover:bg-stone-800 transition-colors w-full cursor-pointer relative overflow-hidden flex-shrink-0 active:scale-95 duration-200">
-                    
-                    <div class="flex-1 flex items-center justify-between px-2">
-                        <span class="text-6xl font-bold text-stone-200 serif">#{{ order.number }}</span>
-                        <div class="flex items-center gap-3">
-                            <span class="text-sm text-stone-500 bg-stone-900 px-4 py-1.5 rounded-full border border-stone-800">{{ order.timeString }}</span>
-                            <span @click.stop="reCall(order.number)" class="material-icons-round text-stone-500 opacity-20 group-hover:opacity-100 group-hover:text-brick transition-opacity text-3xl hover:scale-110 active:scale-90">campaign</span>
-                        </div>
-                    </div>
-
-                </div>
-            </transition-group>
-            
-            <div v-if="recentDoneOrders.length === 0" class="absolute inset-0 flex items-center justify-center text-stone-600">
-                <p class="text-xl tracking-widest">目前無待取餐號碼</p>
-            </div>
-            <div class="h-20"></div>
-        </div>
-    </div>
-
-    <div class="fixed bottom-0 left-0 w-[65%] bg-stone-950/80 border-t border-stone-800/50 py-4 z-20 pointer-events-none backdrop-blur-sm shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+    <div class="absolute bottom-0 left-0 w-full bg-stone-950/95 border-t border-stone-800 py-6 z-30 pointer-events-none backdrop-blur-md shadow-[0_-15px_40px_rgba(0,0,0,0.6)]">
         <div class="marquee-container">
-            <span class="marquee-content text-3xl tracking-widest text-yellow-500/90 font-light">{{ finalMarqueeText }}</span>
+            <span class="marquee-content-bottom text-5xl tracking-[0.1em] text-brick font-bold serif">
+                {{ readyOrdersMarqueeText }}
+            </span>
         </div>
     </div>
 
@@ -132,7 +112,6 @@
             
             const isMuted = ref(true);
             const marqueeData = ref({ text: '', showCount: false, count: 0 });
-            let clickTimer = null;
 
             const toggleMute = () => {
                 isMuted.value = !isMuted.value;
@@ -168,6 +147,7 @@
                     if (data) {
                         Object.keys(data).forEach(key => {
                             const order = data[key];
+                            // 篩選出今日已完成且非加點的訂單
                             if (order.status === 'done' && order.dateString === todayStr && !order.isAddon) {
                                 list.push({ ...order, key: key });
                             }
@@ -185,7 +165,8 @@
                 });
             });
 
-            const finalMarqueeText = computed(() => {
+            // 頂部公告跑馬燈邏輯
+            const topMarqueeText = computed(() => {
                 let text = marqueeData.value.text || '';
                 let showCount = marqueeData.value.showCount;
                 let count = marqueeData.value.count || 0;
@@ -198,6 +179,20 @@
                 }
                 if (parts.length === 0) return '現點現做，請耐心等候 🥣';
                 return parts.join(' ｜ ');
+            });
+
+            // 底部取餐跑馬燈邏輯
+            const readyOrdersMarqueeText = computed(() => {
+                // 排除正在畫面中央叫號的那一號
+                const availableOrders = doneOrders.value.filter(o => String(o.number) !== String(currentNumber.value));
+                
+                if (availableOrders.length === 0) {
+                    return '✅ 目前所有餐點皆已取走，持續為您現點現做中！';
+                }
+                
+                // 將號碼串接成字串
+                const numbersStr = availableOrders.map(o => `#${o.number}`).join('   ✦   ');
+                return `👉 以下號碼皆可至櫃檯取餐： ${numbersStr} 👈`;
             });
 
             watch(currentNumber, (newVal) => {
@@ -217,33 +212,7 @@
                 }
             });
 
-            const recentDoneOrders = computed(() => {
-                return doneOrders.value.filter(o => String(o.number) !== String(currentNumber.value));
-            });
-
-            const reCall = (number) => { set(dbRef(db, 'currentCallingNumber'), number); };
-
-            const finishOrder = (order) => {
-                const updates = {};
-                const targets = allRawDoneOrders.value.filter(o => String(o.number) === String(order.number));
-                targets.forEach(o => {
-                    updates[`orders/${o.key}/status`] = 'archived';
-                });
-                update(dbRef(db), updates);
-            };
-
-            const handleOrderClick = (order) => {
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                    finishOrder(order);
-                } else {
-                    clickTimer = setTimeout(() => {
-                        clickTimer = null;
-                    }, 250); 
-                }
-            };
-
+            // 點擊中央畫面時，將當前號碼歸檔（標記為 archived）
             const completeCurrent = () => {
                 if (!currentNumber.value) return;
                 const targets = allRawDoneOrders.value.filter(o => String(o.number) === String(currentNumber.value));
@@ -257,8 +226,9 @@
                 }
             };
 
+            // 一鍵清空所有畫面上的號碼（歸檔）
             const clearAll = () => {
-                if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取餐）")) {
+                if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取走）")) {
                     const updates = {};
                     updates['currentCallingNumber'] = null;
                     allRawDoneOrders.value.forEach(o => {
@@ -284,9 +254,8 @@
             };
 
             return { 
-                currentNumber, recentDoneOrders, reCall, completeCurrent, 
-                isMuted, finishOrder, toggleFullScreen, toggleMute, clearAll, handleOrderClick,
-                finalMarqueeText
+                currentNumber, completeCurrent, isMuted, toggleFullScreen, toggleMute, clearAll,
+                topMarqueeText, readyOrdersMarqueeText
             };
         }
     }).mount('#app');
