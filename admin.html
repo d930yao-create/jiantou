@@ -150,6 +150,16 @@
                                     </div>
                                 </div>
                             </div>
+<div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-2 pt-2 border-t border-stone-100 space-y-1">
+                                <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'opt'+oIdx" class="flex justify-between items-start">
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                                        <span class="text-xs font-bold text-stone-500 leading-tight">🛒 {{ opt.name }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-xs font-bold text-stone-400 text-right w-6">x1</span>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="mt-2 pt-2 border-t border-dashed border-stone-200" @click.stop>
                                 <div class="flex items-center bg-stone-50 rounded p-1.5 gap-1.5">
                                     <span class="material-icons-round text-stone-400 text-xs">edit_note</span>
@@ -196,6 +206,16 @@
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold text-stone-600 w-6 text-right" :class="item.ready ? 'line-through' : ''">x{{ item.qty }}</span>
+                                    </div>
+                                </div>
+                            </div>
+<div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-1.5 space-y-1.5">
+                                <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'popt'+oIdx" class="flex justify-between items-center p-2 rounded-lg border bg-stone-50/80 border-stone-100">
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                                        <div class="text-xs font-bold text-stone-500">🛒 {{ opt.name }}</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-stone-400 w-6 text-right">x1</span>
                                     </div>
                                 </div>
                             </div>
@@ -275,6 +295,12 @@
                                 </div>
                                 <span class="text-stone-400 font-bold">x{{ item.qty }}</span>
                             </div>
+<div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-1 pt-1 border-t border-stone-50 space-y-1">
+                                <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'hopt'+oIdx" class="flex justify-between items-start text-xs">
+                                    <span class="font-medium text-stone-400">🛒 {{ opt.name }}</span>
+                                    <span class="text-stone-400 font-bold">x1</span>
+                                </div>
+                            </div>
                             <div v-if="order.note" class="mt-1 pt-1 border-t border-dashed border-stone-100 flex items-start gap-1">
                                 <span class="material-icons-round text-yellow-600 text-[12px] mt-0.5">edit_note</span>
                                 <span class="text-[10px] text-stone-500 font-medium">{{ order.note }}</span>
@@ -319,9 +345,31 @@
                             </div>
                         </div>
                     </div>
+<div v-if="activeCheckoutOptions.length > 0" class="mb-3 pt-2 border-t border-stone-100">
+                        <div @click="isPosCheckoutOptionsOpen = !isPosCheckoutOptionsOpen" class="flex justify-between items-center cursor-pointer bg-stone-50 p-2 rounded-lg border border-stone-100 hover:bg-stone-100 transition-colors">
+                            <p class="text-xs font-bold text-stone-600 flex items-center gap-1.5">
+                                <span class="material-icons-round text-[14px] text-stone-400">shopping_bag</span> 
+                                附加服務 
+                                <span v-if="posSelectedCheckoutOptions.length > 0" class="bg-primary text-white text-[9px] px-1.5 py-0.5 rounded-full shadow-sm">{{ posSelectedCheckoutOptions.length }}</span>
+                            </p>
+                            <span class="material-icons-round text-stone-400 text-sm transition-transform" :class="isPosCheckoutOptionsOpen ? 'rotate-180' : ''">expand_more</span>
+                        </div>
+                        
+                        <div v-show="isPosCheckoutOptionsOpen" class="space-y-1.5 mt-2 animate-[fadeIn_0.2s_ease-out]">
+                            <label v-for="(opt, idx) in activeCheckoutOptions" :key="'pos_opt_'+idx" class="flex items-center justify-between p-2 border rounded-lg cursor-pointer transition-all" :class="posSelectedCheckoutOptions.includes(idx) ? 'border-primary bg-red-50 text-primary' : 'border-stone-200 bg-white'">
+                                <div class="flex items-center gap-1.5">
+                                    <input type="checkbox" :value="idx" v-model="posSelectedCheckoutOptions" class="w-3.5 h-3.5 accent-primary">
+                                    <span class="font-bold text-xs">{{ opt.name }}</span>
+                                </div>
+                                <span v-if="opt.price > 0" class="font-bold text-xs">+${{ opt.price }}</span>
+                                <span v-else class="text-stone-400 text-xs font-bold">免費</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-xs text-stone-500 font-bold">總計金額</span>
-                        <span class="text-xl font-bold text-primary">${{ posCartTotal }}</span>
+                        <span class="text-xl font-bold text-primary">${{ posFinalTotal }}</span>
                     </div>
                     <div class="mb-3 pt-2 border-t border-stone-100">
                         <div class="flex items-center bg-yellow-50/50 border border-yellow-200 rounded-lg p-2 gap-2 focus-within:bg-yellow-50">
@@ -334,7 +382,7 @@
                         <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.toString().trim().length !== 3" class="flex-1 bg-stone-800 text-white font-bold py-2.5 rounded-lg disabled:opacity-30 active:scale-95 flex items-center justify-center gap-1">
                             送單製作
                         </button>
-                        <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''; posNote=''" class="px-3 bg-stone-200 text-stone-500 rounded-lg"><span class="material-icons-round text-sm">delete</span></button>
+                        <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''; posNote=''; posSelectedCheckoutOptions=[]" class="px-3 bg-stone-200 text-stone-500 rounded-lg"><span class="material-icons-round text-sm">delete</span></button>
                     </div>
                 </div>
             </section>
@@ -1062,9 +1110,21 @@ const saveFrontEndSettings = () => {
                         if (!report[uniqueKey]) {
                             report[uniqueKey] = { name: cleanName, options: optText, count: 0, total: 0 };
                         }
-                        report[uniqueKey].count += item.qty;
+report[uniqueKey].count += item.qty;
                         report[uniqueKey].total += (item.price * item.qty);
                     });
+
+                    // ✨ 新增：把結帳附加服務也統計進去
+                    if (order.checkoutOptions && order.checkoutOptions.length > 0) {
+                        order.checkoutOptions.forEach(opt => {
+                            const uniqueKey = "服務_" + opt.name;
+                            if (!report[uniqueKey]) {
+                                report[uniqueKey] = { name: opt.name, options: '結帳服務', count: 0, total: 0 };
+                            }
+                            report[uniqueKey].count += 1;
+                            report[uniqueKey].total += (opt.price || 0);
+                        });
+                    }
                 });
                 return Object.values(report).sort((a, b) => b.total - a.total);
             });
@@ -1144,12 +1204,17 @@ const saveFrontEndSettings = () => {
                 csvContent += `\n${escapeCSV("=== 訂單詳細流水帳 ===")}\n`;
                 csvContent += `${escapeCSV("時間")},${escapeCSV("訂單編號")},${escapeCSV("訂單內容")},${escapeCSV("備註")},${escapeCSV("總金額")}\n`;
                 
-                validOrders.value.forEach(order => {
-                    const itemsStr = order.items.map(item => {
+validOrders.value.forEach(order => {
+                    let itemsStr = order.items.map(item => {
                         const optText = item.options?.length ? `(${item.options.join(',')})` : '';
                         return `${item.name}${optText} x${item.qty}`;
                     }).join(' ； ');
                     
+                    if (order.checkoutOptions && order.checkoutOptions.length > 0) {
+                        const optsStr = order.checkoutOptions.map(opt => `${opt.name} x1`).join(' ； ');
+                        itemsStr += (itemsStr ? ' ； ' : '') + `[服務] ${optsStr}`;
+                    }
+
                     csvContent += `${escapeCSV(order.timeString || '')},${escapeCSV("#" + (order.number || ''))},${escapeCSV(itemsStr)},${escapeCSV(order.note || '')},${escapeCSV("$" + (order.total || 0))}\n`;
                 });
 
@@ -1191,6 +1256,17 @@ const saveFrontEndSettings = () => {
                     total += (cItem.item.price + cItem.optionsPrice) * cItem.qty;
                 }
                 return total;
+            });
+
+            const activeCheckoutOptions = computed(() => checkoutSettings.value.filter(opt => opt.active));
+            const posSelectedCheckoutOptions = ref([]);
+const isPosCheckoutOptionsOpen = ref(false); // 控制 POS 結帳服務折疊狀態
+            const posFinalTotal = computed(() => {
+                let optionsTotal = 0;
+                posSelectedCheckoutOptions.value.forEach(idx => {
+                    optionsTotal += (activeCheckoutOptions.value[idx].price || 0);
+                });
+                return posCartTotal.value + optionsTotal;
             });
 
             const addPosCart = (item) => {
@@ -1272,9 +1348,15 @@ const saveFrontEndSettings = () => {
                     }
                 }
                 
+// ✨ 將結帳選項打包
+                const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
+
                 const now = new Date();
                 push(dbRef(db, 'orders'), {
-                    number: suffixStr, items: newCartItems, total: posCartTotal.value, 
+                    number: suffixStr, 
+                    items: newCartItems, 
+                    checkoutOptions: chosenCheckoutOptions, // ✨ 加入結帳選項
+                    total: posFinalTotal.value,             // ✨ 改成 finalTotal
                     status: 'paid', note: posNote.value, createdAt: serverTimestamp(), 
                     timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
                     dateString: `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`
@@ -1284,7 +1366,7 @@ const saveFrontEndSettings = () => {
                     update(dbRef(db), { menu: JSON.parse(JSON.stringify(menuSettings.value)) });
                 }
 
-                posCart.value = {}; posPhoneSuffix.value = ''; posNote.value = '';
+                posCart.value = {}; posPhoneSuffix.value = ''; posNote.value = ''; posSelectedCheckoutOptions.value = [];
             };
 
             const updateOrderNote = (order) => { update(dbRef(db), { [`orders/${order.key}/note`]: order.note || '' }); };
@@ -1441,7 +1523,7 @@ const removeMenuItem = (item) => {
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
                 showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
-                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption
+                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen
             };
         }
     }).mount('#app');
