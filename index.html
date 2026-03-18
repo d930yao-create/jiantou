@@ -62,14 +62,16 @@
             <p v-if="brandInfo.slogan" class="text-xs text-brick tracking-[0.2em] font-bold animate-[fadeIn_0.5s_ease-out] uppercase">{{ brandInfo.slogan }}</p>
             
 <div class="flex items-center justify-center gap-3 mt-4 mb-6 animate-[fadeIn_0.5s_ease-out]">
-                <a v-if="brandInfo.ig" :href="brandInfo.ig" target="_blank" class="w-10 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
-                    <span class="font-bold text-xs">IG</span>
-                </a>
-                <a v-if="brandInfo.line" :href="brandInfo.line" target="_blank" class="w-10 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
-                    <span class="font-bold text-xs">LINE</span>
-                </a>
+
                 <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-green-200 shadow-sm">● 營業中</span>
-                <span v-else class="bg-stone-200 text-stone-500 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-stone-300 shadow-sm">● 休息中</span>
+                <span v-else class="bg-stone-200 text-stone-500 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-stone-300 shadow-sm">● 休息中</span>                
+
+<a v-if="brandInfo.ig" :href="brandInfo.ig" target="_blank" class="px-5 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
+    <span class="font-bold text-xs">INSTAGRAM</span>
+</a>
+<a v-if="brandInfo.line" :href="brandInfo.line" target="_blank" class="px-5 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
+    <span class="font-bold text-xs">LINE</span>
+</a>
             </div>
 
 <div v-if="marqueeData.text || marqueeData.showCount" class="w-full bg-red-50 border border-red-100 text-stone-700 text-sm py-3 overflow-hidden relative flex items-center justify-center mb-6 rounded-2xl shadow-sm animate-[slideUp_0.4s_ease-out]">
