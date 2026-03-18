@@ -310,82 +310,106 @@
                 </div>
             </section>
 
-            <section v-show="currentTab === 'pos' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-800 overflow-hidden min-h-0 lg:flex">
-                <header class="p-2 bg-stone-100 font-bold text-stone-600 text-xs text-center flex-shrink-0 border-b border-stone-200">
-                    現場點餐 (POS)
-                </header>
-                <div class="flex-1 overflow-y-auto p-2 bg-stone-50 space-y-2">
-                    <article v-for="item in activeMenuSettings" :key="item.id" class="bg-white p-3 rounded-lg border border-stone-200 shadow-sm flex justify-between items-center cursor-pointer active:bg-stone-50" @click="addPosCart(item)">
-                        <div class="flex flex-col">
-                            <span class="font-bold text-stone-800">{{ item.name }}</span>
-                            <span class="text-xs text-primary font-bold">${{ item.price }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span v-if="item.stock !== null && item.stock !== undefined && item.stock !== ''" class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-bold">剩 {{ item.stock }}</span>
-                            <div class="w-8 h-8 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center">
-                                <span class="material-icons-round text-sm">add</span>
+          <div v-if="isPosModalOpen" class="fixed inset-0 z-[100] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-[fadeIn_0.2s_ease-out]">
+                <div class="bg-stone-50 w-full h-[95vh] sm:h-[90vh] sm:max-w-5xl rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+                    
+                    <div class="bg-white px-5 py-3.5 border-b border-stone-200 flex justify-between items-center flex-shrink-0 shadow-sm z-10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-stone-800 text-white rounded-lg flex items-center justify-center shadow-sm">
+                                <span class="material-icons-round text-[18px]">point_of_sale</span>
                             </div>
+                            <h2 class="font-bold text-stone-800 text-lg tracking-wide">現場點餐收銀</h2>
                         </div>
-                    </article>
-                </div>
-                <div class="bg-white border-t border-stone-200 p-3 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] flex-shrink-0">
-                    <div v-if="posCartCount > 0" class="mb-3 max-h-32 overflow-y-auto border-b border-stone-100 pb-2 space-y-2">
-                        <div v-for="(cItem, cartKey) in posCart" :key="cartKey" class="flex justify-between items-center text-sm py-1 border-b border-stone-50 last:border-0">
-                            <div class="flex flex-col flex-1 pr-2">
-                                <span class="font-bold text-stone-700">{{ cItem.item.name }}</span>
-                                <span v-if="cItem.options.length" class="text-[10px] text-primary">{{ cItem.options.join(', ') }}</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="flex items-center bg-stone-100 border border-stone-200 rounded-lg">
-                                    <button @click="decreasePosCart(cartKey)" class="w-7 h-7 flex items-center justify-center text-stone-500"><span class="material-icons-round text-sm">remove</span></button>
-                                    <span class="w-6 text-center font-bold text-stone-700">{{ cItem.qty }}</span>
-                                    <button @click="increasePosCart(cartKey)" class="w-7 h-7 flex items-center justify-center text-stone-500"><span class="material-icons-round text-sm">add</span></button>
-                                </div>
-                                <span class="font-bold text-right w-12">${{ (cItem.item.price + cItem.optionsPrice) * cItem.qty }}</span>
-                            </div>
-                        </div>
-                    </div>
-<div v-if="activeCheckoutOptions.length > 0" class="mb-3 pt-2 border-t border-stone-100">
-                        <div @click="isPosCheckoutOptionsOpen = !isPosCheckoutOptionsOpen" class="flex justify-between items-center cursor-pointer bg-stone-50 p-2 rounded-lg border border-stone-100 hover:bg-stone-100 transition-colors">
-                            <p class="text-xs font-bold text-stone-600 flex items-center gap-1.5">
-                                <span class="material-icons-round text-[14px] text-stone-400">shopping_bag</span> 
-                                附加服務 
-                                <span v-if="posSelectedCheckoutOptions.length > 0" class="bg-primary text-white text-[9px] px-1.5 py-0.5 rounded-full shadow-sm">{{ posSelectedCheckoutOptions.length }}</span>
-                            </p>
-                            <span class="material-icons-round text-stone-400 text-sm transition-transform" :class="isPosCheckoutOptionsOpen ? 'rotate-180' : ''">expand_more</span>
-                        </div>
-                        
-                        <div v-show="isPosCheckoutOptionsOpen" class="space-y-1.5 mt-2 animate-[fadeIn_0.2s_ease-out]">
-                            <label v-for="(opt, idx) in activeCheckoutOptions" :key="'pos_opt_'+idx" class="flex items-center justify-between p-2 border rounded-lg cursor-pointer transition-all" :class="posSelectedCheckoutOptions.includes(idx) ? 'border-primary bg-red-50 text-primary' : 'border-stone-200 bg-white'">
-                                <div class="flex items-center gap-1.5">
-                                    <input type="checkbox" :value="idx" v-model="posSelectedCheckoutOptions" class="w-3.5 h-3.5 accent-primary">
-                                    <span class="font-bold text-xs">{{ opt.name }}</span>
-                                </div>
-                                <span v-if="opt.price > 0" class="font-bold text-xs">+${{ opt.price }}</span>
-                                <span v-else class="text-stone-400 text-xs font-bold">免費</span>
-                            </label>
-                        </div>
+                        <button @click="isPosModalOpen = false" class="w-8 h-8 bg-stone-100 rounded-full flex items-center justify-center text-stone-500 hover:bg-stone-200 active:scale-95 transition-all">
+                            <span class="material-icons-round text-sm">close</span>
+                        </button>
                     </div>
 
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs text-stone-500 font-bold">總計金額</span>
-                        <span class="text-xl font-bold text-primary">${{ posFinalTotal }}</span>
-                    </div>
-                    <div class="mb-3 pt-2 border-t border-stone-100">
-                        <div class="flex items-center bg-yellow-50/50 border border-yellow-200 rounded-lg p-2 gap-2 focus-within:bg-yellow-50">
-                            <span class="material-icons-round text-yellow-600 text-sm">edit_note</span>
-                            <input type="text" v-model="posNote" placeholder="備註(選填)" class="w-full bg-transparent text-sm text-stone-700 outline-none">
+                    <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+                        <div class="flex-1 overflow-y-auto p-5 bg-stone-100/50 grid grid-cols-2 lg:grid-cols-3 gap-4 nav-scrollbar content-start">
+                            <article v-for="item in activeMenuSettings" :key="item.id" class="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-col cursor-pointer active:scale-95 transition-transform hover:border-stone-400" @click="addPosCart(item)">
+                                <span class="font-bold text-stone-800 text-base mb-3 leading-tight">{{ item.name }}</span>
+                                <div class="flex justify-between items-end mt-auto">
+                                    <span class="text-lg text-stone-800 font-bold serif">${{ item.price }}</span>
+                                    <span v-if="item.stock !== null && item.stock !== undefined && item.stock !== ''" class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-bold">剩 {{ item.stock }}</span>
+                                    <div v-else class="w-7 h-7 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-400">
+                                        <span class="material-icons-round text-[14px]">add</span>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div class="w-full md:w-[380px] bg-white border-l border-stone-200 flex flex-col flex-shrink-0 shadow-[-5px_0_15px_rgba(0,0,0,0.02)]">
+                            <div class="flex-1 overflow-y-auto p-5 space-y-3 nav-scrollbar">
+                                <div v-if="posCartCount === 0" class="h-full flex flex-col items-center justify-center text-stone-300 gap-3 opacity-60">
+                                    <span class="material-icons-round text-6xl">shopping_basket</span>
+                                    <p class="font-bold text-sm tracking-widest">購物車是空的</p>
+                                </div>
+                                <div v-for="(cItem, cartKey) in posCart" :key="cartKey" class="bg-stone-50 p-3.5 rounded-xl border border-stone-100 flex flex-col gap-2 relative overflow-hidden transition-all">
+                                    <div class="flex justify-between items-start pr-6">
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-stone-800">{{ cItem.item.name }}</span>
+                                            <span v-if="cItem.options.length" class="text-[10px] text-stone-500 mt-1 bg-white px-1.5 py-0.5 rounded border border-stone-100 inline-block">{{ cItem.options.join(', ') }}</span>
+                                        </div>
+                                    </div>
+                                    <button @click="posCart[cartKey].qty = 0; decreasePosCart(cartKey)" class="absolute top-2.5 right-2.5 w-6 h-6 flex items-center justify-center text-stone-300 hover:text-red-400 bg-white rounded-full shadow-sm active:scale-90"><span class="material-icons-round text-xs">close</span></button>
+                                    
+                                    <div class="flex justify-between items-center mt-2 pt-2 border-t border-stone-200 border-dashed">
+                                        <div class="flex items-center bg-white border border-stone-200 rounded-lg shadow-sm overflow-hidden">
+                                            <button @click="decreasePosCart(cartKey)" class="w-8 h-8 flex items-center justify-center text-stone-500 hover:bg-stone-50 active:bg-stone-100 transition-colors"><span class="material-icons-round text-sm">remove</span></button>
+                                            <span class="w-8 text-center font-bold text-stone-700 bg-stone-50/50 h-8 flex items-center justify-center border-x border-stone-100">{{ cItem.qty }}</span>
+                                            <button @click="increasePosCart(cartKey)" class="w-8 h-8 flex items-center justify-center text-stone-500 hover:bg-stone-50 active:bg-stone-100 transition-colors"><span class="material-icons-round text-sm">add</span></button>
+                                        </div>
+                                        <span class="font-bold text-lg text-stone-800">${{ (cItem.item.price + cItem.optionsPrice) * cItem.qty }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border-t border-stone-100 p-5 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-10">
+                                <div v-if="activeCheckoutOptions.length > 0" class="mb-4">
+                                    <div @click="isPosCheckoutOptionsOpen = !isPosCheckoutOptionsOpen" class="flex justify-between items-center cursor-pointer bg-stone-50 px-3.5 py-3 rounded-xl border border-stone-200 hover:bg-stone-100 transition-colors">
+                                        <p class="text-xs font-bold text-stone-600 flex items-center gap-2">
+                                            <span class="material-icons-round text-stone-400 text-[15px]">shopping_bag</span> 
+                                            附加服務 
+                                            <span v-if="posSelectedCheckoutOptions.length > 0" class="bg-stone-800 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm">{{ posSelectedCheckoutOptions.length }}</span>
+                                        </p>
+                                        <span class="material-icons-round text-stone-400 text-sm transition-transform" :class="isPosCheckoutOptionsOpen ? 'rotate-180' : ''">expand_more</span>
+                                    </div>
+                                    <div v-show="isPosCheckoutOptionsOpen" class="space-y-2 mt-2">
+                                        <label v-for="(opt, idx) in activeCheckoutOptions" :key="'pos_opt_'+idx" class="flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all" :class="posSelectedCheckoutOptions.includes(idx) ? 'border-stone-800 bg-stone-800 text-white shadow-md' : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'">
+                                            <div class="flex items-center gap-2">
+                                                <input type="checkbox" :value="idx" v-model="posSelectedCheckoutOptions" class="w-4 h-4 rounded border-stone-300">
+                                                <span class="font-bold text-sm">{{ opt.name }}</span>
+                                            </div>
+                                            <span class="font-bold text-sm" :class="posSelectedCheckoutOptions.includes(idx) ? 'text-white' : 'text-stone-400'">{{ opt.price > 0 ? '+$' + opt.price : '免費' }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="flex items-center bg-stone-50 border border-stone-200 rounded-xl p-3.5 gap-2 focus-within:border-stone-800 focus-within:bg-white transition-all shadow-sm">
+                                        <span class="material-icons-round text-stone-400 text-base">edit_note</span>
+                                        <input type="text" v-model="posNote" placeholder="訂單備註 (選填)" class="w-full bg-transparent text-sm text-stone-700 outline-none font-medium">
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center mb-5 pb-5 border-b border-stone-100 border-dashed">
+                                    <span class="text-sm text-stone-500 font-bold">應收總額</span>
+                                    <span class="text-4xl font-bold text-stone-800 serif">${{ posFinalTotal }}</span>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <input type="tel" maxlength="3" v-model="posPhoneSuffix" placeholder="末三碼" class="w-24 bg-stone-50 border-2 border-stone-200 rounded-xl text-center text-lg font-bold text-stone-700 outline-none focus:border-stone-800 focus:bg-white transition-colors tracking-widest shadow-sm">
+                                    <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.toString().trim().length !== 3" class="flex-1 bg-stone-800 text-white font-bold py-3.5 rounded-xl disabled:opacity-30 active:scale-95 flex items-center justify-center gap-2 transition-all shadow-lg hover:bg-black">
+                                        <span class="material-icons-round text-base">check_circle</span> 結帳送單
+                                    </button>
+                                    <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''; posNote=''; posSelectedCheckoutOptions=[]" class="w-14 bg-stone-100 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors active:scale-95 flex items-center justify-center shadow-sm border border-stone-200"><span class="material-icons-round text-xl">delete_sweep</span></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <input type="text" inputmode="numeric" maxlength="3" v-model="posPhoneSuffix" placeholder="末三碼" class="w-20 bg-stone-100 border border-stone-200 rounded-lg text-center font-bold text-stone-700 outline-none">
-                        <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.toString().trim().length !== 3" class="flex-1 bg-stone-800 text-white font-bold py-2.5 rounded-lg disabled:opacity-30 active:scale-95 flex items-center justify-center gap-1">
-                            送單製作
-                        </button>
-                        <button v-if="posCartCount > 0" @click="posCart={}; posPhoneSuffix=''; posNote=''; posSelectedCheckoutOptions=[]" class="px-3 bg-stone-200 text-stone-500 rounded-lg"><span class="material-icons-round text-sm">delete</span></button>
-                    </div>
                 </div>
-            </section>
+            </div>
         </main>
 
         <footer class="bg-white p-2 border-t flex justify-start lg:justify-center gap-2 flex-shrink-0 safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.02)] overflow-x-auto nav-scrollbar w-full">
@@ -395,7 +419,7 @@
             <button @click="showSearchModal = true" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-600 font-bold hover:text-stone-800 flex items-center gap-1 px-3 py-2 bg-stone-200 rounded-full active:scale-95">
                 <span class="material-icons-round text-sm">search</span> 搜尋訂單
             </button>
-            <button @click="currentTab='pos'" class="lg:hidden flex-shrink-0 whitespace-nowrap text-xs text-stone-600 font-bold hover:text-stone-800 flex items-center gap-1 px-3 py-2 bg-stone-200 rounded-full active:scale-95">
+            <button @click="isPosModalOpen = true" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-600 font-bold hover:text-stone-800 flex items-center gap-1 px-3 py-2 bg-stone-200 rounded-full active:scale-95">
                 <span class="material-icons-round text-sm">point_of_sale</span> 現場點餐
             </button>
             <button @click="logout" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-400 underline hover:text-stone-600 px-2 py-2">登出</button>
@@ -1260,6 +1284,7 @@ validOrders.value.forEach(order => {
 
             const activeCheckoutOptions = computed(() => checkoutSettings.value.filter(opt => opt.active));
             const posSelectedCheckoutOptions = ref([]);
+const isPosModalOpen = ref(false); // 新增：控制全螢幕 POS
 const isPosCheckoutOptionsOpen = ref(false); // 控制 POS 結帳服務折疊狀態
             const posFinalTotal = computed(() => {
                 let optionsTotal = 0;
@@ -1367,6 +1392,7 @@ const isPosCheckoutOptionsOpen = ref(false); // 控制 POS 結帳服務折疊狀
                 }
 
                 posCart.value = {}; posPhoneSuffix.value = ''; posNote.value = ''; posSelectedCheckoutOptions.value = [];
+isPosModalOpen.value = false; // ✨ 送單後自動關閉全螢幕
             };
 
             const updateOrderNote = (order) => { update(dbRef(db), { [`orders/${order.key}/note`]: order.note || '' }); };
@@ -1523,7 +1549,7 @@ const removeMenuItem = (item) => {
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
                 showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
-                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen
+                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen, isPosCheckoutOptionsOpen, isPosModalOpen 
             };
         }
     }).mount('#app');
