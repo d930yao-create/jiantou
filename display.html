@@ -3,84 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>叫號顯示器</title>
+    <title>市集叫號顯示器 (滿版大字版)</title>
+
+    <script>
+        window.MARKET_CONFIG = {
+            firebase: {
+  apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+  authDomain: "jiantou-000rlhad.firebaseapp.com",
+  databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+  projectId: "jiantou-000rlhad",
+  storageBucket: "jiantou-000rlhad.firebasestorage.app",
+  messagingSenderId: "435285773521",
+  appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+
+            }
+        };
+    </script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        :root { --color-primary: #9E5A5A; }
         body { font-family: 'Noto Sans TC', sans-serif; }
         .serif { font-family: 'Noto Serif TC', serif; }
-        .text-brick { color: #9E5A5A; }
-        @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .number-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .text-primary { color: var(--color-primary); }
+        .bg-primary { background-color: var(--color-primary); }
+        .border-primary { border-color: var(--color-primary); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .number-pop { animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         [v-cloak] { display: none !important; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* 跑馬燈共用設定 */
         .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; position: relative; }
-        
-        /* 頂部公告跑馬燈 (較慢) */
-        .marquee-content-top { display: inline-block; padding-left: 100%; animation: marquee-top 25s linear infinite; }
-        @keyframes marquee-top { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-        /* 底部取餐跑馬燈 (適中速度) */
-        .marquee-content-bottom { display: inline-block; padding-left: 100%; animation: marquee-bottom 20s linear infinite; }
-        @keyframes marquee-bottom { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        .marquee-content { display: inline-block; padding-left: 100%; animation: marquee 25s linear infinite; }
+        .marquee-content-fast { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
-<body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none">
+<body class="bg-stone-900 h-screen overflow-hidden text-stone-400 select-none flex flex-col">
 
-<div id="app" v-cloak class="h-full flex flex-col relative">
+<div id="app" v-cloak class="h-full flex flex-col relative w-full">
     
     <audio id="dingSound" src="https://github.com/d930yao-create/jiantou/raw/refs/heads/main/image/mixkit-home-standard-ding-dong-109.wav" preload="auto"></audio>
 
-    <div class="absolute top-0 left-0 w-full bg-stone-950/90 border-b border-stone-800/50 py-3 z-30 pointer-events-none backdrop-blur-sm shadow-md">
-        <div class="marquee-container">
-            <span class="marquee-content-top text-xl tracking-widest text-stone-300 font-light">{{ topMarqueeText }}</span>
-        </div>
-    </div>
-
-    <div class="absolute top-16 left-4 z-50 flex gap-3">
+    <div class="absolute top-16 left-4 z-50 flex flex-col gap-3">
         <button @click="toggleMute" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
             <span class="material-icons-round text-2xl">{{ isMuted ? 'volume_off' : 'volume_up' }}</span>
         </button>
         <button @click="toggleFullScreen" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
             <span class="material-icons-round text-2xl">fullscreen</span>
         </button>
-        <button @click="clearAll" class="p-3 rounded-full bg-brick/80 text-white hover:bg-brick transition-colors border border-red-900/50 shadow-lg active:scale-95 flex items-center gap-1" aria-label="一鍵清空所有號碼">
+        <button @click="clearAll" class="p-3 rounded-full bg-primary/80 text-white hover:bg-primary transition-colors border border-stone-600 shadow-lg active:scale-95 flex items-center justify-center">
             <span class="material-icons-round text-2xl">delete_sweep</span>
         </button>
     </div>
 
-    <div @click="completeCurrent" class="w-full h-full flex flex-col items-center justify-center bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group pt-10 pb-16">
-        <div class="absolute top-24 text-stone-500 tracking-[0.5em] text-sm uppercase opacity-50">Current Call</div>
-        <p class="text-xl mb-4 font-light tracking-widest text-stone-500">🙌餐點現點現做，感謝耐心等候🙌🙇‍♀️</p>
+    <div class="w-full bg-stone-950/90 border-b border-stone-800/50 py-3 z-20 flex-shrink-0 shadow-lg">
+        <div class="marquee-container">
+            <span class="marquee-content text-2xl tracking-widest text-stone-300 font-medium">📢 {{ finalMarqueeText }}</span>
+        </div>
+    </div>
+
+    <div @click="completeCurrent" class="flex-1 flex flex-col items-center justify-center relative bg-stone-900 z-10 cursor-pointer active:bg-stone-800 transition-colors group">
+        <div class="absolute top-8 text-stone-500 tracking-[0.8em] text-lg uppercase opacity-50 font-bold">Current Call</div>
+        <p class="text-3xl mb-4 font-light tracking-widest text-stone-400">🙌 餐點現點現做，感謝耐心等候 🙌</p>
         
-        <div :key="currentNumber" class="number-pop">
-            <h1 class="text-[30vw] leading-none font-bold serif text-yellow-400 group-hover:scale-105 transition-transform" 
-                :class="currentNumber ? 'animate-pulse' : ''"
-                style="text-shadow: 0 0 80px rgba(250, 204, 21, 0.5);">
+        <div :key="currentNumber" class="number-pop flex items-center justify-center my-4">
+            <h1 class="text-[38vw] leading-none font-black serif text-yellow-400 group-hover:scale-105 transition-transform" :class="currentNumber ? 'animate-pulse' : ''" style="text-shadow: 0 0 80px rgba(250, 204, 21, 0.7), 0 0 20px rgba(250, 204, 21, 0.4);">
                 {{ currentNumber || '--' }}
             </h1>
         </div>
         
-        <div class="mt-12">
-            <span v-if="currentNumber" class="text-5xl text-stone-200 bg-white/10 px-16 py-6 rounded-full backdrop-blur-md flex items-center gap-4 shadow-xl">
+        <div class="mt-8 h-24 flex items-center justify-center">
+            <span v-if="currentNumber" class="text-5xl text-stone-100 bg-white/10 px-16 py-6 rounded-full backdrop-blur-md flex items-center gap-4 border border-white/20 shadow-2xl">
                 <span class="material-icons-round text-yellow-400 text-5xl">lightbulb</span>請至櫃台取餐
             </span>
-            <span v-else class="text-4xl text-stone-600 tracking-wider">
-                美味準備中...
-            </span>
+            <span v-else class="text-4xl text-stone-600 tracking-widest font-bold">美味準備中...</span>
         </div>
     </div>
 
-    <div class="absolute bottom-0 left-0 w-full bg-stone-950/95 border-t border-stone-800 py-6 z-30 pointer-events-none backdrop-blur-md shadow-[0_-15px_40px_rgba(0,0,0,0.6)]">
+    <div class="w-full bg-primary/20 border-t border-primary/40 py-5 z-20 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         <div class="marquee-container">
-            <span class="marquee-content-bottom text-5xl tracking-[0.1em] text-brick font-bold serif">
-                {{ readyOrdersMarqueeText }}
+            <span class="marquee-content-fast text-4xl tracking-[0.15em] font-bold" :class="readyNumbersText === '目前無其他待取餐號碼' ? 'text-stone-400' : 'text-yellow-400'">
+                {{ readyNumbersText }}
             </span>
         </div>
     </div>
@@ -92,16 +98,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref as dbRef, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
-        authDomain: "jiantou-000rlhad.firebaseapp.com",
-        databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
-        projectId: "jiantou-000rlhad",
-        storageBucket: "jiantou-000rlhad.firebasestorage.app",
-        messagingSenderId: "435285773521",
-        appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
-    };
-    const app = initializeApp(firebaseConfig);
+    // 🚀 統一從這裡抓資料！
+    const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
 
     createApp({
@@ -119,10 +117,7 @@
                     const audio = document.getElementById('dingSound');
                     if (audio) {
                         audio.volume = 1;
-                        audio.play().then(() => {
-                            audio.pause();
-                            audio.currentTime = 0;
-                        }).catch(e => console.log('解鎖音效失敗', e));
+                        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => console.log('解鎖音效失敗', e));
                     }
                     const unlockSpeech = new SpeechSynthesisUtterance(' ');
                     window.speechSynthesis.speak(unlockSpeech);
@@ -147,7 +142,6 @@
                     if (data) {
                         Object.keys(data).forEach(key => {
                             const order = data[key];
-                            // 篩選出今日已完成且非加點的訂單
                             if (order.status === 'done' && order.dateString === todayStr && !order.isAddon) {
                                 list.push({ ...order, key: key });
                             }
@@ -156,43 +150,30 @@
                     list.sort((a, b) => b.createdAt - a.createdAt);
                     
                     allRawDoneOrders.value = list;
-                    
                     const uniqueNumbers = new Map();
-                    list.forEach(o => {
-                        if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o);
-                    });
+                    list.forEach(o => { if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o); });
                     doneOrders.value = Array.from(uniqueNumbers.values());
                 });
             });
 
-            // 頂部公告跑馬燈邏輯
-            const topMarqueeText = computed(() => {
-                let text = marqueeData.value.text || '';
-                let showCount = marqueeData.value.showCount;
-                let count = marqueeData.value.count || 0;
-
+            const finalMarqueeText = computed(() => {
+                let text = marqueeData.value.text || ''; let showCount = marqueeData.value.showCount; let count = marqueeData.value.count || 0;
                 let parts = [];
                 if (text) parts.push(text);
                 if (showCount) {
                     if (count > 0) parts.push(`🧑‍🍳 廚房目前有 ${count} 張訂單製作中，感謝您的耐心等候`);
                     else parts.push(`✨ 目前無需等候，速速為您出餐`);
                 }
-                if (parts.length === 0) return '現點現做，請耐心等候 🥣';
+                if (parts.length === 0) return '歡迎光臨！請掃描前方 QRCode 點餐 📱';
                 return parts.join(' ｜ ');
             });
 
-            // 底部取餐跑馬燈邏輯
-            const readyOrdersMarqueeText = computed(() => {
-                // 排除正在畫面中央叫號的那一號
-                const availableOrders = doneOrders.value.filter(o => String(o.number) !== String(currentNumber.value));
-                
-                if (availableOrders.length === 0) {
-                    return '✅ 目前所有餐點皆已取走，持續為您現點現做中！';
-                }
-                
-                // 將號碼串接成字串
-                const numbersStr = availableOrders.map(o => `#${o.number}`).join('   ✦   ');
-                return `👉 以下號碼皆可至櫃檯取餐： ${numbersStr} 👈`;
+            const recentDoneOrders = computed(() => { return doneOrders.value.filter(o => String(o.number) !== String(currentNumber.value)); });
+
+            const readyNumbersText = computed(() => {
+                if (recentDoneOrders.value.length === 0) return '目前無其他待取餐號碼';
+                const nums = recentDoneOrders.value.map(o => `#${o.number}`).join('、');
+                return `✅ 以下號碼皆可取餐： ${nums} 👈 請盡速至櫃檯領取您的美味餐點！`;
             });
 
             watch(currentNumber, (newVal) => {
@@ -204,15 +185,12 @@
                         const spacedNumber = String(newVal).split('').join(' ');
                         const speechText = `${spacedNumber} 號，請至櫃檯取餐`;
                         const utterance = new SpeechSynthesisUtterance(speechText);
-                        utterance.lang = 'zh-TW';
-                        utterance.rate = 0.85;  
-                        utterance.pitch = 1.2;  
+                        utterance.lang = 'zh-TW'; utterance.rate = 0.85; utterance.pitch = 1.2;  
                         window.speechSynthesis.speak(utterance);
                     }, 1000); 
                 }
             });
 
-            // 點擊中央畫面時，將當前號碼歸檔（標記為 archived）
             const completeCurrent = () => {
                 if (!currentNumber.value) return;
                 const targets = allRawDoneOrders.value.filter(o => String(o.number) === String(currentNumber.value));
@@ -226,26 +204,19 @@
                 }
             };
 
-            // 一鍵清空所有畫面上的號碼（歸檔）
             const clearAll = () => {
-                if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取走）")) {
+                if(confirm("確定要清除畫面上所有的取餐號碼嗎？（這些號碼都會被標記為已取餐）")) {
                     const updates = {};
                     updates['currentCallingNumber'] = null;
-                    allRawDoneOrders.value.forEach(o => {
-                        updates[`orders/${o.key}/status`] = 'archived';
-                    });
-                    update(dbRef(db), updates).then(() => {
-                        currentNumber.value = null;
-                    });
+                    allRawDoneOrders.value.forEach(o => { updates[`orders/${o.key}/status`] = 'archived'; });
+                    update(dbRef(db), updates).then(() => { currentNumber.value = null; });
                 }
             };
 
             const toggleFullScreen = () => {
-                const doc = window.document;
-                const docEl = doc.documentElement;
+                const doc = window.document; const docEl = doc.documentElement;
                 const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
                 const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-
                 if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
                     if(requestFullScreen) requestFullScreen.call(docEl);
                 } else {
@@ -254,8 +225,7 @@
             };
 
             return { 
-                currentNumber, completeCurrent, isMuted, toggleFullScreen, toggleMute, clearAll,
-                topMarqueeText, readyOrdersMarqueeText
+                currentNumber, completeCurrent, isMuted, toggleFullScreen, toggleMute, clearAll, finalMarqueeText, readyNumbersText
             };
         }
     }).mount('#app');
