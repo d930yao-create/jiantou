@@ -137,7 +137,7 @@
                                 <span class="text-xl font-bold text-primary">${{ order.total }}</span>
                             </div>
                             <div class="mt-2 space-y-1">
-                                <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-start">
+                                <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2">
                                         <span class="text-sm font-bold text-stone-700 leading-tight">{{ item.name }}</span>
                                         <span v-if="item.options && item.options.length" class="text-[10px] text-primary">{{ item.options.join(', ') }}</span>
@@ -196,7 +196,7 @@
                                 <span class="font-bold text-2xl text-primary">#{{ order.number }}</span>
                             </div>
                             <div class="mt-2 space-y-1.5">
-                                <div v-for="(item, idx) in order.items" :key="idx" @click.stop="toggleItemReady(order, idx)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
+                                <div v-for="(item, idx) in order.items" :key="item.uid || idx" @click.stop="toggleItemReady(order, idx)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2" :class="item.ready ? 'line-through text-stone-400' : ''">
                                         <div class="text-sm font-bold text-stone-800">
                                             {{ item.name }}
@@ -296,7 +296,7 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-start text-xs">
+                            <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start text-xs">
                                 <div class="flex flex-col">
                                     <span class="font-medium text-stone-600">{{ item.name }}</span>
                                     <span v-if="item.options && item.options.length" class="text-[9px] text-stone-400">{{ item.options.join(', ') }}</span>
@@ -864,7 +864,7 @@
                         <span class="text-xs text-stone-400">{{ order.timeString }}</span>
                     </div>
                     <div class="space-y-1 mb-2">
-                        <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-start text-xs">
+                        <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start text-xs">
                             <div class="flex flex-col leading-tight">
                                 <span class="font-medium text-stone-600">{{ item.name }}</span>
                                 <span v-if="item.options && item.options.length" class="text-[9px] text-primary">{{ item.options.join(', ') }}</span>
@@ -1370,13 +1370,18 @@ const isPosCheckoutOptionsOpen = ref(false); // 控制 POS 結帳服務折疊狀
                 const newCartItems = [];
                 let menuNeedsUpdate = false; 
 
-                for (const cartKey in posCart.value) {
-                    const cItem = posCart.value[cartKey];
-                    newCartItems.push({
-                        id: cItem.item.id, name: cItem.item.name,
-                        price: cItem.item.price + cItem.optionsPrice,
-                        qty: cItem.qty, options: cItem.options
-                    });
+
+for (const cartKey in posCart.value) {
+    const cItem = posCart.value[cartKey];
+    newCartItems.push({
+        uid: Date.now() + '_' + Math.random().toString(36).substring(2, 9), // 新增專屬身分證
+        id: cItem.item.id, 
+        name: cItem.item.name,
+        price: cItem.item.price + cItem.optionsPrice,
+        qty: cItem.qty, 
+        options: cItem.options
+    });
+// 後面的扣庫存邏輯保持不變...
 
                     const menuItem = menuSettings.value.find(m => m.id === cItem.item.id);
                     if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
