@@ -794,13 +794,20 @@
                             <th class="px-2 py-2 text-right">金額</th>
                         </tr>
                     </thead>
-                    <tbody class="text-stone-600">
-                        <tr v-for="item in salesReport" :key="item.name" class="border-b border-stone-50 last:border-0">
-                            <td class="px-2 py-2.5 font-medium">{{ item.name }}</td>
-                            <td class="px-2 py-2.5 text-center bg-stone-50/50 font-bold">{{ item.count }}</td>
-                            <td class="px-2 py-2.5 text-right text-stone-800 font-bold">${{ item.total }}</td>
-                        </tr>
-                    </tbody>
+<tbody class="text-stone-600">
+    <template v-for="mainItem in salesReport" :key="mainItem.name">
+        <tr class="bg-stone-100/50 border-b border-stone-200">
+            <td class="px-2 py-3 font-bold text-stone-800">{{ mainItem.name }} (總計)</td>
+            <td class="px-2 py-3 text-center font-black text-stone-900">{{ mainItem.totalCount }}</td>
+            <td class="px-2 py-3 text-right font-black text-primary">${{ mainItem.totalPrice }}</td>
+        </tr>
+        <tr v-if="mainItem.variants" v-for="(vData, vName) in mainItem.variants" class="border-b border-stone-50 last:border-stone-200">
+            <td class="px-6 py-2 text-[11px] text-stone-400 italic">{{ vName }}</td>
+            <td class="px-2 py-2 text-center text-[11px] text-stone-400">{{ vData.count }}</td>
+            <td class="px-2 py-2 text-right text-[11px] text-stone-400">${{ vData.total }}</td>
+        </tr>
+    </template>
+</tbody>
                 </table>
                 
                 <div class="pt-4 border-t border-stone-100 space-y-3">
@@ -1163,32 +1170,50 @@ const saveFrontEndSettings = () => {
 };
 
 const salesReport = computed(() => {
-    const report = {};
+    const reportMap = {};
     validOrders.value.filter(o => (Number(o.total) || 0) > 0).forEach(order => {
+        // 處理主餐點
         order.items.forEach(item => {
-            const cleanName = item.name.replace(' [加點]', '').trim();
-            const optText = (item.options && item.options.length) ? item.options.join(', ') : '無';
-            const uniqueKey = cleanName + "_" + optText;
+            const baseName = item.name.replace(' [加點]', '').trim();
+            const optText = (item.options && item.options.length) ? item.options.join(', ') : '基本 / 原味';
 
-            if (!report[uniqueKey]) {
-                report[uniqueKey] = { name: cleanName, options: optText, count: 0, total: 0 };
+            if (!reportMap[baseName]) {
+                reportMap[baseName] = { 
+                    name: baseName, 
+                    totalCount: 0, 
+                    totalPrice: 0, 
+                    variants: {} 
+                };
             }
-            report[uniqueKey].count += (Number(item.qty) || 0);
-            report[uniqueKey].total += ((Number(item.price) || 0) * (Number(item.qty) || 0));
+
+            // 累計品項總計
+            reportMap[baseName].totalCount += (Number(item.qty) || 0);
+            const itemPriceTotal = (Number(item.price) || 0) * (Number(item.qty) || 0);
+            reportMap[baseName].totalPrice += itemPriceTotal;
+
+            // 處理細分口味
+            if (!reportMap[baseName].variants[optText]) {
+                reportMap[baseName].variants[optText] = { count: 0, total: 0 };
+            }
+            reportMap[baseName].variants[optText].count += (Number(item.qty) || 0);
+            reportMap[baseName].variants[optText].total += itemPriceTotal;
         });
 
+        // 處理附加服務 (如提袋)
         if (order.checkoutOptions && order.checkoutOptions.length > 0) {
             order.checkoutOptions.forEach(opt => {
-                const uniqueKey = "服務_" + opt.name;
-                if (!report[uniqueKey]) {
-                    report[uniqueKey] = { name: opt.name, options: '結帳服務', count: 0, total: 0 };
+                const serviceName = "🛒 " + opt.name;
+                if (!reportMap[serviceName]) {
+                    reportMap[serviceName] = { name: serviceName, totalCount: 0, totalPrice: 0, variants: null };
                 }
-                report[uniqueKey].count += 1;
-                report[uniqueKey].total += (Number(opt.price) || 0);
+                reportMap[serviceName].totalCount += 1;
+                reportMap[serviceName].totalPrice += (Number(opt.price) || 0);
             });
         }
     });
-    return Object.values(report).sort((a, b) => b.total - a.total);
+
+    // 轉換成陣列並按照總金額排序
+    return Object.values(reportMap).sort((a, b) => b.totalPrice - a.totalPrice);
 });
 
             const togglePrepItem = (baseName) => {
@@ -1258,10 +1283,20 @@ const salesReport = computed(() => {
                 csvContent += `${escapeCSV("總營業額")},${escapeCSV("$" + dailyRevenue.value)}\n\n`;
 
                 csvContent += `${escapeCSV("=== 銷售數量統整 ===")}\n`;
-                csvContent += `${escapeCSV("品項")},${escapeCSV("加購選項")},${escapeCSV("數量")},${escapeCSV("總金額")}\n`;
-                salesReport.value.forEach(item => {
-                    csvContent += `${escapeCSV(item.name)},${escapeCSV(item.options)},${escapeCSV(item.count)},${escapeCSV("$" + item.total)}\n`;
-                });
+// 替換成這段新的
+csvContent += `${escapeCSV("品項總分類")},${escapeCSV("細分口味/選項")},${escapeCSV("數量")},${escapeCSV("總金額")}\n`;
+salesReport.value.forEach(mainItem => {
+    // 寫入主品項
+    csvContent += `${escapeCSV(mainItem.name)},${escapeCSV("--- 品項總計 ---")},${escapeCSV(mainItem.totalCount)},${escapeCSV("$" + mainItem.totalPrice)}\n`;
+    
+    // 如果有細分口味，就縮排寫入
+    if (mainItem.variants) {
+        Object.keys(mainItem.variants).forEach(vName => {
+            const vData = mainItem.variants[vName];
+            csvContent += `${escapeCSV("")},${escapeCSV("└ " + vName)},${escapeCSV(vData.count)},${escapeCSV("$" + vData.total)}\n`;
+        });
+    }
+});
 
                 csvContent += `\n${escapeCSV("=== 訂單詳細流水帳 ===")}\n`;
                 csvContent += `${escapeCSV("時間")},${escapeCSV("訂單編號")},${escapeCSV("訂單內容")},${escapeCSV("備註")},${escapeCSV("總金額")}\n`;
