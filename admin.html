@@ -319,7 +319,7 @@
             </section>
 
 <div v-if="isPosModalOpen" class="fixed inset-0 z-[100] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-[fadeIn_0.2s_ease-out]">
-                <div class="bg-stone-50 w-full h-[95vh] sm:h-[90vh] sm:max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+               <div class="bg-stone-50 w-full h-[88dvh] sm:h-[85dvh] sm:max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
                     
                     <div class="bg-white px-5 py-3.5 border-b border-stone-200 flex justify-between items-center flex-shrink-0 shadow-sm z-10">
                         <div class="flex items-center gap-3">
@@ -344,7 +344,7 @@
                                     <span class="font-bold text-stone-800 text-base mb-3 leading-tight">{{ item.name }}</span>
                                     <div class="flex justify-between items-end mt-auto">
                                         <span class="text-lg text-stone-800 font-bold serif">${{ item.price }}</span>
-                                        <span v-if="item.stock !== null && item.stock !== undefined && item.stock !== ''" class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-bold">剩 {{ item.stock }}</span>
+                                        <span v-if="item.stock !== null && item.stock !== '' && Number(item.stock) <= 5 && Number(item.stock) > 0" class="text-[10px] text-stone-400 font-medium">剩 {{ item.stock }}</span>
                                         <div v-else class="w-7 h-7 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-400">
                                             <span class="material-icons-round text-[14px]">add</span>
                                         </div>
@@ -574,14 +574,25 @@
                     <span v-else class="text-[10px] font-bold text-primary bg-stone-100 px-2 py-1 rounded-lg flex-shrink-0">{{ item.category || '未分類' }}</span>
                 </div>
                 
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1.5 cursor-pointer" @click="item.active = !item.active">
-                        <button class="w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="item.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
-                        <span class="text-[10px] font-bold" :class="item.active ? 'text-green-600' : 'text-stone-400'">{{ item.active ? '販售中' : '停售' }}</span>
-                    </div>
-                    <div class="w-px h-4 bg-stone-200"></div>
-                    <button @click="removeMenuItem(item)" class="text-stone-300 hover:text-red-500 active:scale-90 transition-transform"><span class="material-icons-round text-lg">delete_outline</span></button>
-                </div>
+<div class="flex items-center gap-3">
+    <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1 cursor-pointer" @click="item.isStockLimited = !item.isStockLimited">
+            <button class="w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="item.isStockLimited ? 'bg-blue-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
+            <span class="text-[10px] font-bold" :class="item.isStockLimited ? 'text-blue-600' : 'text-stone-400'">{{ item.isStockLimited ? '庫存' : '無限' }}</span>
+        </div>
+        <input v-if="item.isStockLimited" type="number" inputmode="numeric" v-model="item.stock" class="w-12 h-6 bg-stone-50 border border-stone-200 rounded px-1 text-[11px] font-bold text-center outline-none focus:border-primary shadow-sm" placeholder="數量">
+    </div>
+
+    <div class="w-px h-4 bg-stone-200"></div>
+
+    <div class="flex items-center gap-1.5 cursor-pointer" @click="item.active = !item.active">
+        <button class="w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="item.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
+        <span class="text-[10px] font-bold" :class="item.active ? 'text-green-600' : 'text-stone-400'">{{ item.active ? '販售中' : '停售' }}</span>
+    </div>
+    
+    <div class="w-px h-4 bg-stone-200"></div>
+    <button @click="removeMenuItem(item)" class="text-stone-300 hover:text-red-500 active:scale-90 transition-transform"><span class="material-icons-round text-lg">delete_outline</span></button>
+</div>
             </div>
             
             <div class="flex gap-2 items-center w-full mt-1">
@@ -1080,7 +1091,8 @@ onValue(dbRef(db, 'sharedOptionGroups'), s => sharedOptionGroups.value = s.val()
                                     ...item, 
                                     category: item.category || '',
                                     optionGroups: item.optionGroups || [], 
-                                    appliedSharedGroups: item.appliedSharedGroups || []
+                                    appliedSharedGroups: item.appliedSharedGroups || [],
+isStockLimited: item.stock !== null && item.stock !== undefined && item.stock !== ''
                                 }));
                             }
                         });
@@ -1121,7 +1133,7 @@ onValue(dbRef(db, 'sharedOptionGroups'), s => sharedOptionGroups.value = s.val()
 
             const activeMenuSettings = computed(() => menuSettings.value.filter(item => item.active));
             const validOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done' || o.status === 'archived'));
-            const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + o.total, 0));
+const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + (Number(o.total) || 0), 0));
             const completedOrdersCount = computed(() => validOrders.value.filter(o => o.total > 0).length);
             
             const waitingOrdersCount = computed(() => {
@@ -1131,46 +1143,53 @@ onValue(dbRef(db, 'sharedOptionGroups'), s => sharedOptionGroups.value = s.val()
             const updateMarqueeCount = () => { if (marqueeSettings.value.showCount) update(dbRef(db), { 'marqueeData/count': waitingOrdersCount.value }); };
 
 const saveFrontEndSettings = () => { 
-                update(dbRef(db), {
-                    brandInfo: JSON.parse(JSON.stringify(brandSettings.value)),
-                    menuCategories: JSON.parse(JSON.stringify(menuCategories.value)),
-                    sharedOptionGroups: JSON.parse(JSON.stringify(sharedOptionGroups.value)),
-                    menu: JSON.parse(JSON.stringify(menuSettings.value)),
-                    marqueeData: { text: marqueeSettings.value.text, showCount: marqueeSettings.value.showCount, count: waitingOrdersCount.value },
-                    checkoutOptions: JSON.parse(JSON.stringify(checkoutSettings.value)) // 新增這行
-                }).then(() => { alert('前台設定已同步更新！'); currentTab.value = 'pending'; }); 
-            };
+    // 👇 新增這段：儲存時如果沒開庫存，就自動清空數字
+    const menuToSave = menuSettings.value.map(item => {
+        let processedItem = { ...item };
+        if (!processedItem.isStockLimited) {
+            processedItem.stock = ''; 
+        }
+        return processedItem;
+    });
 
-            const salesReport = computed(() => {
-                const report = {};
-                validOrders.value.filter(o => o.total > 0).forEach(order => {
-                    order.items.forEach(item => {
-                        const cleanName = item.name.replace(' [加點]', '').trim();
-                        const optText = (item.options && item.options.length) ? item.options.join(', ') : '無';
-                        const uniqueKey = cleanName + "_" + optText;
+    update(dbRef(db), {
+        brandInfo: JSON.parse(JSON.stringify(brandSettings.value)),
+        menuCategories: JSON.parse(JSON.stringify(menuCategories.value)),
+        sharedOptionGroups: JSON.parse(JSON.stringify(sharedOptionGroups.value)),
+        menu: JSON.parse(JSON.stringify(menuToSave)), // 👈 這裡換成 menuToSave
+        marqueeData: { text: marqueeSettings.value.text, showCount: marqueeSettings.value.showCount, count: waitingOrdersCount.value },
+        checkoutOptions: JSON.parse(JSON.stringify(checkoutSettings.value))
+    }).then(() => { alert('前台設定已同步更新！'); currentTab.value = 'pending'; }); 
+};
 
+const salesReport = computed(() => {
+    const report = {};
+    validOrders.value.filter(o => (Number(o.total) || 0) > 0).forEach(order => {
+        order.items.forEach(item => {
+            const cleanName = item.name.replace(' [加點]', '').trim();
+            const optText = (item.options && item.options.length) ? item.options.join(', ') : '無';
+            const uniqueKey = cleanName + "_" + optText;
 
-                        if (!report[uniqueKey]) {
-                            report[uniqueKey] = { name: cleanName, options: optText, count: 0, total: 0 };
-                        }
-report[uniqueKey].count += item.qty;
-                        report[uniqueKey].total += (item.price * item.qty);
-                    });
+            if (!report[uniqueKey]) {
+                report[uniqueKey] = { name: cleanName, options: optText, count: 0, total: 0 };
+            }
+            report[uniqueKey].count += (Number(item.qty) || 0);
+            report[uniqueKey].total += ((Number(item.price) || 0) * (Number(item.qty) || 0));
+        });
 
-                    // ✨ 新增：把結帳附加服務也統計進去
-                    if (order.checkoutOptions && order.checkoutOptions.length > 0) {
-                        order.checkoutOptions.forEach(opt => {
-                            const uniqueKey = "服務_" + opt.name;
-                            if (!report[uniqueKey]) {
-                                report[uniqueKey] = { name: opt.name, options: '結帳服務', count: 0, total: 0 };
-                            }
-                            report[uniqueKey].count += 1;
-                            report[uniqueKey].total += (opt.price || 0);
-                        });
-                    }
-                });
-                return Object.values(report).sort((a, b) => b.total - a.total);
+        if (order.checkoutOptions && order.checkoutOptions.length > 0) {
+            order.checkoutOptions.forEach(opt => {
+                const uniqueKey = "服務_" + opt.name;
+                if (!report[uniqueKey]) {
+                    report[uniqueKey] = { name: opt.name, options: '結帳服務', count: 0, total: 0 };
+                }
+                report[uniqueKey].count += 1;
+                report[uniqueKey].total += (Number(opt.price) || 0);
             });
+        }
+    });
+    return Object.values(report).sort((a, b) => b.total - a.total);
+});
 
             const togglePrepItem = (baseName) => {
                 expandedPrepItems.value[baseName] = !expandedPrepItems.value[baseName];
@@ -1292,27 +1311,30 @@ validOrders.value.forEach(order => {
             };
 
             const posCartCount = computed(() => Object.values(posCart.value).reduce((a, b) => a + b.qty, 0));
-            const posCartTotal = computed(() => {
-                let total = 0;
-                for (const cartKey in posCart.value) {
-                    const cItem = posCart.value[cartKey];
-                    total += (cItem.item.price + cItem.optionsPrice) * cItem.qty;
-                }
-                return total;
-            });
+const posCartTotal = computed(() => {
+    let total = 0;
+    for (const cartKey in posCart.value) {
+        const cItem = posCart.value[cartKey];
+        const p = Number(cItem.item.price) || 0;
+        const op = Number(cItem.optionsPrice) || 0;
+        const q = Number(cItem.qty) || 0;
+        total += (p + op) * q;
+    }
+    return total;
+});
 
             const activeCheckoutOptions = computed(() => checkoutSettings.value.filter(opt => opt.active));
             const posSelectedCheckoutOptions = ref([]);
 const isPosModalOpen = ref(false); // 新增：控制全螢幕 POS
 const isPosCheckoutView = ref(false); // 新增：控制 POS 兩階段翻頁 (true=結帳畫面, false=菜單畫面)
 const isPosCheckoutOptionsOpen = ref(false); // 控制 POS 結帳服務折疊狀態
-            const posFinalTotal = computed(() => {
-                let optionsTotal = 0;
-                posSelectedCheckoutOptions.value.forEach(idx => {
-                    optionsTotal += (activeCheckoutOptions.value[idx].price || 0);
-                });
-                return posCartTotal.value + optionsTotal;
-            });
+const posFinalTotal = computed(() => {
+    let optionsTotal = 0;
+    posSelectedCheckoutOptions.value.forEach(idx => {
+        optionsTotal += (Number(activeCheckoutOptions.value[idx].price) || 0);
+    });
+    return (Number(posCartTotal.value) || 0) + optionsTotal;
+});
 
             const addPosCart = (item) => {
                 let combinedGroups = [...(item.optionGroups || [])];
@@ -1364,63 +1386,84 @@ const isPosCheckoutOptionsOpen = ref(false); // 控制 POS 結帳服務折疊狀
             const increasePosCart = (cartKey) => { if (posCart.value[cartKey]) posCart.value[cartKey].qty++; };
             const decreasePosCart = (cartKey) => { if (posCart.value[cartKey]) { posCart.value[cartKey].qty--; if (posCart.value[cartKey].qty === 0) delete posCart.value[cartKey]; } };
 
-            const submitPosOrder = () => {
-                const suffixStr = posPhoneSuffix.value.toString().trim();
-                if (!suffixStr || suffixStr.length !== 4) { alert('請輸入客人的手機末四碼'); return; }
-                const newCartItems = [];
-                let menuNeedsUpdate = false; 
+const submitPosOrder = () => {
+    const suffixStr = posPhoneSuffix.value.toString().trim();
+    if (!suffixStr || suffixStr.length !== 4) { alert('請輸入客人的手機末四碼'); return; }
 
+    // --- 👇 更新版：現場 POS 防撞號邏輯 (純數字相連) ---
+    const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
+    const activeNumbers = allOrders.value
+        .filter(o => o.dateString === todayStr && o.status !== 'archived')
+        .map(o => String(o.number));
 
-for (const cartKey in posCart.value) {
-    const cItem = posCart.value[cartKey];
-    newCartItems.push({
-        uid: Date.now() + '_' + Math.random().toString(36).substring(2, 9), // 新增專屬身分證
-        id: cItem.item.id, 
-        name: cItem.item.name,
-        price: cItem.item.price + cItem.optionsPrice,
-        qty: cItem.qty, 
-        options: cItem.options
-    });
-// 後面的扣庫存邏輯保持不變...
+    let finalNumber = suffixStr;
 
-                    const menuItem = menuSettings.value.find(m => m.id === cItem.item.id);
-                    if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
-                        let currentStock = parseInt(menuItem.stock);
-                        if (!isNaN(currentStock)) {
-                            currentStock -= cItem.qty;
-                            if (currentStock <= 0) {
-                                currentStock = 0;
-                                menuItem.active = false; 
-                            }
-                            menuItem.stock = currentStock;
-                            menuNeedsUpdate = true;
-                        }
-                    }
+    // 如果號碼重複，直接在後面接 1, 2, 3...
+    if (activeNumbers.includes(suffixStr)) {
+        let counter = 1;
+        while (activeNumbers.includes(`${suffixStr}${counter}`)) {
+            counter++;
+        }
+        finalNumber = `${suffixStr}${counter}`;
+
+        if (!confirm(`⚠️ 撞號提醒！\n\n目前現場已經有客人的號碼是「${suffixStr}」囉。\n為了方便辨識，系統將自動把這筆新單號碼改為「${finalNumber}」，\n確定要送出結帳嗎？`)) {
+            return;
+        }
+    }
+    // --- 👆 更新完畢 ---
+
+    const newCartItems = [];
+    let menuNeedsUpdate = false; 
+
+    for (const cartKey in posCart.value) {
+        const cItem = posCart.value[cartKey];
+        newCartItems.push({
+            uid: Date.now() + '_' + Math.random().toString(36).substring(2, 9), 
+            id: cItem.item.id, 
+            name: cItem.item.name,
+            price: cItem.item.price + cItem.optionsPrice,
+            qty: cItem.qty, 
+            options: cItem.options
+        });
+
+        const menuItem = menuSettings.value.find(m => m.id === cItem.item.id);
+        if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
+            let currentStock = parseInt(menuItem.stock);
+            if (!isNaN(currentStock)) {
+                currentStock -= cItem.qty;
+                if (currentStock <= 0) {
+                    currentStock = 0;
+                    menuItem.active = false; 
                 }
+                menuItem.stock = currentStock;
+                menuNeedsUpdate = true;
+            }
+        }
+    }
                 
-// ✨ 將結帳選項打包
-                const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
+    const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
+    const now = new Date();
+    
+    push(dbRef(db, 'orders'), {
+        number: finalNumber, // 使用檢查後的號碼
+        items: newCartItems, 
+        checkoutOptions: chosenCheckoutOptions, 
+        total: Number(posFinalTotal.value) || 0,  
+        status: 'paid', 
+        note: posNote.value, 
+        createdAt: serverTimestamp(),
+        timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
+        dateString: `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`
+    });
 
-                const now = new Date();
-                push(dbRef(db, 'orders'), {
-                    number: suffixStr, 
-                    items: newCartItems, 
-                    checkoutOptions: chosenCheckoutOptions, // ✨ 加入結帳選項
-                    total: posFinalTotal.value,             // ✨ 改成 finalTotal
-                    status: 'paid', note: posNote.value, createdAt: serverTimestamp(), 
-                    timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
-                    dateString: `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`
-                });
+    if (menuNeedsUpdate) {
+        update(dbRef(db), { menu: JSON.parse(JSON.stringify(menuSettings.value)) });
+    }
 
-                if (menuNeedsUpdate) {
-                    update(dbRef(db), { menu: JSON.parse(JSON.stringify(menuSettings.value)) });
-                }
-
-                posCart.value = {}; posPhoneSuffix.value = ''; posNote.value = ''; posSelectedCheckoutOptions.value = [];
-isPosModalOpen.value = false; // ✨ 送單後自動關閉全螢幕
-isPosCheckoutView.value = false; // ✨ 送單後將畫面翻回復位
-            };
-
+    posCart.value = {}; posPhoneSuffix.value = ''; posNote.value = ''; posSelectedCheckoutOptions.value = [];
+    isPosModalOpen.value = false; 
+    isPosCheckoutView.value = false; 
+};
             const updateOrderNote = (order) => { update(dbRef(db), { [`orders/${order.key}/note`]: order.note || '' }); };
             const toggleShopStatus = () => { set(dbRef(db, 'shopStatus'), !shopIsOpen.value); };
             const filterOrdersByDate = () => { filteredOrders.value = allOrders.value.filter(order => order.dateString === selectedDate.value.replace(/-/g, '/')); };
@@ -1475,6 +1518,7 @@ const addMenuItem = () => {
         category: selectedMenuCategory.value === 'all' ? '' : selectedMenuCategory.value, 
         active: true, 
         stock: '', 
+isStockLimited: false,
         optionGroups: [], 
         appliedSharedGroups: [] 
     }); 
@@ -1495,14 +1539,14 @@ const removeMenuItem = (item) => {
                     set(dbRef(db, 'currentCallingNumber'), order.number);
                     return;
                 }
-                if (order.isAddon && newStatus === 'paid') {
-                    const parent = filteredOrders.value.find(o => o.key === order.parentKey);
-                    if (parent) {
-                        const mergedItems = [...(parent.items || [])];
+if (order.isAddon && newStatus === 'paid') {
+        const parent = filteredOrders.value.find(o => o.key === order.parentKey);
+        if (parent) {
+                     const mergedItems = [...(parent.items || [])];
                         order.items.forEach(item => { mergedItems.push({ ...item, name: item.name + ' [加點]', ready: false, readyQty: 0 }); });
                         const updates = {};
                         updates[`orders/${parent.key}/items`] = mergedItems;
-                        updates[`orders/${parent.key}/total`] = parent.total + order.total;
+updates[`orders/${parent.key}/total`] = (Number(parent.total) || 0) + (Number(order.total) || 0);
                         if (order.note) updates[`orders/${parent.key}/note`] = parent.note ? `${parent.note} + ${order.note}` : order.note;
                         if (parent.status === 'done') updates[`orders/${parent.key}/status`] = 'paid';
                         updates[`orders/${order.key}`] = null;
@@ -1520,21 +1564,30 @@ const removeMenuItem = (item) => {
                 }
             };
             
-            const deleteOrder = (order) => { if(confirm(`確定刪除訂單 #${order.number}？`)) remove(dbRef(db, `orders/${order.key}`)); };
+const deleteOrder = (order) => { 
+    if(confirm(`⚠️ 確定要刪除訂單 #${order.number} 嗎？\n刪除後將無法復原！`)) {
+        remove(dbRef(db, `orders/${order.key}`)); 
+    }
+};
             
-            const deleteHistoryOrder = (order) => { 
-                if(confirm(`確定刪除已出餐的訂單 #${order.number}？\n\n⚠️ 警告：這將會直接從今日總營業額中扣除 $${order.total}，且無法復原！`)) {
-                    remove(dbRef(db, `orders/${order.key}`)); 
-                }
-            };
+const deleteHistoryOrder = (order) => { 
+    const safeTotal = Number(order.total) || 0;
+    if(confirm(`⚠️ 確定刪除已出餐的訂單 #${order.number}？\n\n警告：這將會直接從今日總營業額中扣除 $${safeTotal}，且無法復原！`)) {
+        remove(dbRef(db, `orders/${order.key}`)); 
+    }
+};
 
-            const deleteOrderItem = (order, itemIndex) => {
-                if(confirm('確定要移除這個品項嗎？金額會自動重新計算喔。')) {
-                    const newItems = [...order.items]; newItems.splice(itemIndex, 1);
-                    if (newItems.length === 0) remove(dbRef(db, `orders/${order.key}`));
-                    else update(dbRef(db), { [`orders/${order.key}/items`] : newItems, [`orders/${order.key}/total`] : newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) });
-                }
-            };
+const deleteOrderItem = (order, itemIndex) => {
+    if(confirm('確定要移除這個品項嗎？金額會自動重新計算。')) {
+        const newItems = [...order.items]; newItems.splice(itemIndex, 1);
+        if (newItems.length === 0) {
+            remove(dbRef(db, `orders/${order.key}`));
+        } else { 
+            const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
+            update(dbRef(db), { [`orders/${order.key}/items`] : newItems, [`orders/${order.key}/total`] : newTotal });
+        }
+    }
+};
             
             const toggleItemReady = (order, itemIndex) => {
                 const newItems = [...order.items]; const item = newItems[itemIndex];
