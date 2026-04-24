@@ -52,11 +52,9 @@
         .drawer-enter-from, .drawer-leave-to { transform: translateX(100%); }
     </style>
 <script>
-    // 檢查網址是否有專屬通關密語
     const urlParams = new URLSearchParams(window.location.search);
     const isBoss = urlParams.get('boss') === 'bao';
 
-    // 如果不是帶著密語來的老闆，就啟動防護罩
     if (!isBoss) {
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.addEventListener('keydown', event => {
@@ -72,6 +70,10 @@
 <body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
 
 <div id="app" v-cloak class="flex-1 flex flex-col h-full relative">
+
+<div v-if="!isConnected" class="bg-orange-500 text-white text-[10px] py-1 text-center font-bold animate-pulse z-[100] w-full absolute top-0 left-0">
+        ⚠️ 網路連線中斷，請檢查連線
+    </div>
 
     <div v-if="!isLoggedIn" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
         <main class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
@@ -580,7 +582,7 @@
             <button class="w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="item.isStockLimited ? 'bg-blue-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
             <span class="text-[10px] font-bold" :class="item.isStockLimited ? 'text-blue-600' : 'text-stone-400'">{{ item.isStockLimited ? '庫存' : '無限' }}</span>
         </div>
-        <input v-if="item.isStockLimited" type="number" inputmode="numeric" v-model="item.stock" class="w-12 h-6 bg-stone-50 border border-stone-200 rounded px-1 text-[11px] font-bold text-center outline-none focus:border-primary shadow-sm" placeholder="數量">
+        <input v-if="item.isStockLimited" type="number" inputmode="numeric" v-model="item.stock" @input="Number(item.stock) > 0 ? item.active = true : null" class="w-12 h-6 bg-stone-50 border border-stone-200 rounded px-1 text-[11px] font-bold text-center outline-none focus:border-primary shadow-sm" placeholder="數量">
     </div>
 
     <div class="w-px h-4 bg-stone-200"></div>
@@ -765,9 +767,10 @@
 </button>
         
         <footer class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-stone-100 flex justify-center shadow-lg">
-            <button @click="saveFrontEndSettings" class="w-full max-w-md bg-stone-800 text-white py-3 rounded-xl font-bold text-base active:scale-95 flex items-center justify-center gap-2">
-                <span class="material-icons-round text-sm">cloud_upload</span> 同步更新至前台
-            </button>
+            <button @click="saveFrontEndSettings" :disabled="!isConnected" :class="!isConnected ? 'opacity-50 grayscale cursor-not-allowed' : 'active:scale-95'" class="w-full max-w-md bg-stone-800 text-white py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all">
+    <span class="material-icons-round text-sm">cloud_upload</span> 
+    {{ isConnected ? '同步更新至前台' : '連線中斷，暫時無法更新' }}
+</button>
         </footer>
     </div>
 
@@ -902,10 +905,8 @@
 </div>
 
 <script type="module">
-    import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { getDatabase, ref as dbRef, onValue, update, set, remove, push, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue, update, set, remove, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
@@ -913,29 +914,30 @@
 
     createApp({
         setup() {
-
-// 新增：搭電梯回到最上面的功能
+ 
+const isConnected = ref(true);
+ 
 const scrollToTop = () => {
-    // 抓取前台管理那個可滾動的長長區塊
+ 
     const container = document.querySelector('.overflow-y-auto.pb-24');
     if (container) {
         container.scrollTo({ top: 0, behavior: 'smooth' });
     }
 };
 
-// 新增狀態：精簡模式與當前選擇的分類
+ 
 const isMenuCompactMode = ref(false);
-// 新增：控制防呆小公告的手風琴狀態 (預設 false 收起，讓畫面保持乾淨)
+ 
 const isMenuNoticeOpen = ref(false);
 const selectedMenuCategory = ref('all');
 
-// 新增：計算過濾後的菜單
+ 
 const filteredMenuSettings = computed(() => {
     if (selectedMenuCategory.value === 'all') return menuSettings.value;
     return menuSettings.value.filter(m => m.category === selectedMenuCategory.value);
 });
 
-// 新增：同分類商品上下移動邏輯
+ 
 const moveMenuUpFiltered = (item) => {
     if (selectedMenuCategory.value === 'all') return;
     const originalIndex = menuSettings.value.findIndex(m => m.id === item.id);
@@ -1062,7 +1064,9 @@ const checkoutSettings = ref([]);
             const posSelections = ref({}); 
 
             onMounted(() => {
+onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
                 window.addEventListener('resize', () => { isDesktop.value = window.innerWidth >= 1024; });
+
                 
                 const now = new Date();
                 selectedDate.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1421,84 +1425,80 @@ const posFinalTotal = computed(() => {
             const increasePosCart = (cartKey) => { if (posCart.value[cartKey]) posCart.value[cartKey].qty++; };
             const decreasePosCart = (cartKey) => { if (posCart.value[cartKey]) { posCart.value[cartKey].qty--; if (posCart.value[cartKey].qty === 0) delete posCart.value[cartKey]; } };
 
-const submitPosOrder = () => {
+const submitPosOrder = async () => {
     const suffixStr = posPhoneSuffix.value.toString().trim();
     if (!suffixStr || suffixStr.length !== 4) { alert('請輸入客人的手機末四碼'); return; }
 
-    // --- 👇 更新版：現場 POS 防撞號邏輯 (純數字相連) ---
     const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
     const activeNumbers = allOrders.value
         .filter(o => o.dateString === todayStr && o.status !== 'archived')
         .map(o => String(o.number));
 
     let finalNumber = suffixStr;
-
-    // 如果號碼重複，直接在後面接 1, 2, 3...
     if (activeNumbers.includes(suffixStr)) {
         let counter = 1;
-        while (activeNumbers.includes(`${suffixStr}${counter}`)) {
-            counter++;
-        }
+        while (activeNumbers.includes(`${suffixStr}${counter}`)) { counter++; }
         finalNumber = `${suffixStr}${counter}`;
-
-        if (!confirm(`⚠️ 撞號提醒！\n\n目前現場已經有客人的號碼是「${suffixStr}」囉。\n為了方便辨識，系統將自動把這筆新單號碼改為「${finalNumber}」，\n確定要送出結帳嗎？`)) {
-            return;
-        }
+        if (!confirm(`⚠️ 撞號提醒！\n單號將自動改為「${finalNumber}」，確定結帳嗎？`)) return;
     }
-    // --- 👆 更新完畢 ---
 
     const newCartItems = [];
-    let menuNeedsUpdate = false; 
+    let requiresStockCheck = false; 
 
     for (const cartKey in posCart.value) {
         const cItem = posCart.value[cartKey];
         newCartItems.push({
             uid: Date.now() + '_' + Math.random().toString(36).substring(2, 9), 
-            id: cItem.item.id, 
-            name: cItem.item.name,
+            id: cItem.item.id, name: cItem.item.name,
             price: cItem.item.price + cItem.optionsPrice,
-            qty: cItem.qty, 
-            options: cItem.options
+            qty: cItem.qty, options: cItem.options
         });
-
         const menuItem = menuSettings.value.find(m => m.id === cItem.item.id);
         if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
-            let currentStock = parseInt(menuItem.stock);
-            if (!isNaN(currentStock)) {
-                currentStock -= cItem.qty;
-                if (currentStock <= 0) {
-                    currentStock = 0;
-                    menuItem.active = false; 
-                }
-                menuItem.stock = currentStock;
-                menuNeedsUpdate = true;
-            }
+            requiresStockCheck = true;
         }
     }
-                
-    const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
-    const now = new Date();
     
-    push(dbRef(db, 'orders'), {
-        number: finalNumber, // 使用檢查後的號碼
-        items: newCartItems, 
-        checkoutOptions: chosenCheckoutOptions, 
-        total: Number(posFinalTotal.value) || 0,  
-        status: 'paid', 
-        note: posNote.value, 
-        createdAt: serverTimestamp(),
-        timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
-        dateString: `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`
-    });
-
-    if (menuNeedsUpdate) {
-        update(dbRef(db), { menu: JSON.parse(JSON.stringify(menuSettings.value)) });
+    if (requiresStockCheck) {
+        try {
+            const result = await runTransaction(dbRef(db, 'menu'), (currentMenu) => {
+                if (currentMenu === null) return currentMenu;
+                let canFulfill = true;
+                for (const cartItem of newCartItems) {
+                    const menuItem = currentMenu.find(m => m.id === cartItem.id);
+                    if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
+                        let currentStock = parseInt(menuItem.stock);
+                        if (!isNaN(currentStock) && currentStock < cartItem.qty) { canFulfill = false; break; }
+                        if (!isNaN(currentStock)) {
+                            currentStock -= cartItem.qty;
+                            if (currentStock <= 0) { currentStock = 0; menuItem.active = false; }
+                            menuItem.stock = currentStock;
+                        }
+                    }
+                }
+                if (!canFulfill) return; 
+                return currentMenu;
+            });
+            if (!result.committed) { alert('品項庫存不足，請重新確認。'); return; }
+        } catch (error) {
+            alert('網路連線不穩，請再試一次。'); return;
+        }
     }
 
+    const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
+    const now = new Date();
+    push(dbRef(db, 'orders'), {
+        number: finalNumber, items: newCartItems, checkoutOptions: chosenCheckoutOptions, 
+        total: Number(posFinalTotal.value) || 0, status: 'paid', note: posNote.value, 
+        createdAt: serverTimestamp(),
+        timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
+        dateString: todayStr
+    });
+
     posCart.value = {}; posPhoneSuffix.value = ''; posNote.value = ''; posSelectedCheckoutOptions.value = [];
-    isPosModalOpen.value = false; 
-    isPosCheckoutView.value = false; 
+    isPosModalOpen.value = false; isPosCheckoutView.value = false; 
 };
+
             const updateOrderNote = (order) => { update(dbRef(db), { [`orders/${order.key}/note`]: order.note || '' }); };
             const toggleShopStatus = () => { set(dbRef(db, 'shopStatus'), !shopIsOpen.value); };
             const filterOrdersByDate = () => { filteredOrders.value = allOrders.value.filter(order => order.dateString === selectedDate.value.replace(/-/g, '/')); };
@@ -1663,7 +1663,7 @@ const deleteOrderItem = (order, itemIndex) => {
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
                 showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
-                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView 
+                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
             };
         }
     }).mount('#app');
