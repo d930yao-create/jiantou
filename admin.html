@@ -131,9 +131,12 @@
                         
                         <div @click="updateStatus(order, 'paid')" role="button">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] text-stone-400 bg-white/60 px-1 rounded">{{ order.timeString }}</span>
-                                <span class="font-bold text-xl text-stone-800">#{{ order.number }}<span v-if="order.isAddon" class="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full ml-1">加點</span></span>
-                            </div>
+    <span class="text-[10px] text-stone-400 bg-white/60 px-1 rounded">{{ order.timeString }}</span>
+    <span class="font-bold text-xl text-stone-800">
+        #{{ order.number }}
+        <span v-if="order.isAddon" class="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">加點</span>
+    </span>
+</div>
                             <div class="flex justify-between items-end border-b border-dashed border-stone-100 pb-2 mb-2">
                                 <span class="text-xs text-stone-400">金額</span>
                                 <span class="text-xl font-bold text-primary">${{ order.total }}</span>
@@ -194,9 +197,11 @@
                         
                         <div @click="isToday ? updateStatus(order, 'done') : null" role="button">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
-                                <span class="font-bold text-2xl text-primary">#{{ order.number }}</span>
-                            </div>
+    <span class="text-[10px] text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
+    <span class="font-bold text-2xl text-primary">
+        #{{ order.number }}
+    </span>
+</div>
                             <div class="mt-2 space-y-1.5">
                                 <div v-for="(item, idx) in order.items" :key="item.uid || idx" @click.stop="toggleItemReady(order, idx)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2" :class="item.ready ? 'line-through text-stone-400' : ''">
@@ -287,9 +292,9 @@
                         
                         <div class="flex justify-between items-center pb-2 border-b border-stone-100 mb-2">
                             <div class="flex items-baseline gap-2">
-                                <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
-                                <span class="text-[10px] text-stone-400">{{ order.timeString }}</span>
-                            </div>
+    <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
+    <span class="text-[10px] text-stone-400">{{ order.timeString }}</span>
+</div>
                             <div class="flex items-center gap-2">
                                 <span class="font-bold text-primary mr-1">${{ order.total }}</span>
                                 <button @click="recallOrder(order)" class="text-[10px] bg-stone-100 text-stone-600 px-2 py-1 rounded-full border border-stone-200 active:scale-95 flex items-center gap-1">
@@ -418,13 +423,13 @@
                                 </div>
 
 <div class="flex flex-col sm:flex-row gap-3">
-                                    <div class="relative w-full sm:w-32 flex-shrink-0">
-                                        <input type="tel" maxlength="4" v-model="posPhoneSuffix" placeholder="手機末四碼" class="w-full h-full bg-stone-50 border-2 border-stone-200 rounded-2xl text-center text-xl font-bold text-stone-700 outline-none focus:border-stone-800 focus:bg-white transition-colors tracking-widest px-2 py-4 shadow-sm">
-                                    </div>
-                                    <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.toString().trim().length !== 4" class="flex-1 bg-primary hover:bg-[#8B4A4A] text-white font-bold py-4 rounded-2xl disabled:opacity-40 disabled:grayscale active:scale-95 flex items-center justify-center gap-2 transition-all shadow-lg text-xl">
-                                        <span class="material-icons-round">check_circle</span> 確認結帳送單
-                                    </button>
-                                </div>
+    <div class="relative w-full sm:w-32 flex-shrink-0">
+        <input type="tel" maxlength="5" v-model="posPhoneSuffix" placeholder="末三碼" class="w-full h-full bg-stone-50 border-2 border-stone-200 rounded-2xl text-center text-xl font-bold text-stone-700 outline-none focus:border-stone-800 focus:bg-white transition-colors tracking-widest px-2 py-4 shadow-sm">
+    </div>
+    <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.toString().trim().length < 3" class="flex-1 bg-primary hover:bg-[#8B4A4A] text-white font-bold py-4 rounded-2xl disabled:opacity-40 disabled:grayscale active:scale-95 flex items-center justify-center gap-2 transition-all shadow-lg text-xl">
+        <span class="material-icons-round">check_circle</span> 確認結帳送單
+    </button>
+</div>
                             </div>
                         </div>
 
@@ -876,13 +881,12 @@
             <div class="flex-1 overflow-y-auto p-3 bg-stone-50 space-y-2">
                 <article v-for="order in searchResults" :key="order.key" class="p-3 bg-white rounded-xl border border-stone-200 shadow-sm">
                     <div class="flex justify-between items-center mb-2 pb-2 border-b border-stone-100">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="{'bg-gray-100 text-stone-500': order.status==='pending', 'bg-red-50 text-primary': order.status==='paid', 'bg-stone-200 text-stone-600': order.status==='done' || order.status==='archived'}">
-                                {{ order.status === 'pending' ? '待結帳' : order.status === 'paid' ? '製作中' : '已出餐' }}
-                            </span>
-                        </div>
-                        <span class="text-xs text-stone-400">{{ order.timeString }}</span>
+<div class="flex items-center gap-2">
+    <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
+    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="{'bg-gray-100 text-stone-500': order.status==='pending', 'bg-red-50 text-primary': order.status==='paid', 'bg-stone-200 text-stone-600': order.status==='done' || order.status==='archived'}">
+        {{ order.status === 'pending' ? '待結帳' : order.status === 'paid' ? '製作中' : '已出餐' }}
+    </span>
+</div>                        <span class="text-xs text-stone-400">{{ order.timeString }}</span>
                     </div>
                     <div class="space-y-1 mb-2">
                         <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start text-xs">
@@ -1442,7 +1446,10 @@ const removePosCartItem = (cartKey) => {
 
 const submitPosOrder = async () => {
     const suffixStr = posPhoneSuffix.value.toString().trim();
-    if (!suffixStr || suffixStr.length !== 4) { alert('請輸入客人的手機末四碼'); return; }
+    if (!suffixStr || suffixStr.length < 3 || suffixStr.length > 5) { 
+        alert('請輸入客人的手機末三碼'); 
+        return; 
+    }
 
     const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
     const activeNumbers = allOrders.value
@@ -1451,15 +1458,21 @@ const submitPosOrder = async () => {
 
     let finalNumber = suffixStr;
     if (activeNumbers.includes(suffixStr)) {
-        let counter = 1;
-        while (activeNumbers.includes(`${suffixStr}${counter}`)) { counter++; }
-        finalNumber = `${suffixStr}${counter}`;
-        if (!confirm(`⚠️ 撞號提醒！\n單號將自動改為「${finalNumber}」，確定結帳嗎？`)) return;
+        if (suffixStr.length === 3) {
+            alert('📢 目前已有相同的三碼製作中，請向客人確認「末四碼」喔！');
+            return;
+        } else {
+            // 四碼再撞號，隨機分配 1~9 作為尾數
+            let counter = Math.floor(Math.random() * 9) + 1; 
+            while (activeNumbers.includes(`${suffixStr}${counter}`)) { counter++; }
+            finalNumber = `${suffixStr}${counter}`;
+            if (!confirm(`⚠️ 撞號提醒！\n單號將自動隨機分配為「${finalNumber}」，確定結帳嗎？`)) return;
+        }
     }
 
     const newCartItems = [];
     let requiresStockCheck = false; 
-
+ 
     for (const cartKey in posCart.value) {
         const cItem = posCart.value[cartKey];
         newCartItems.push({

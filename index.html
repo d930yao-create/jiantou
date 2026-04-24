@@ -309,8 +309,8 @@
         <button @click="isTrackingMode=false" class="absolute top-6 right-6 text-stone-400 p-2"><span class="material-icons-round text-4xl">close</span></button>
         <h2 class="text-3xl font-bold text-stone-800 mb-2 serif">輸入領餐號碼</h2>
         <p class="text-stone-400 text-base mb-8">櫃台點餐的客人，請輸入取餐號碼</p>
-        <input type="tel" maxlength="4" v-model="tempTrackInput" @input="trackError=''" placeholder="88" 
-            class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40">
+        <input type="tel" maxlength="5" v-model="tempTrackInput" @input="trackError=''" placeholder="888" 
+    class="w-full text-center text-8xl font-bold text-brick border-b-4 border-stone-100 focus:border-brick outline-none py-6 mb-2 bg-transparent serif placeholder-stone-200 h-40">
         <p v-if="trackError" class="text-brick font-bold mb-6 h-6 animate-[fadeIn_0.3s_ease-out]">{{ trackError }}</p>
         <div v-else class="h-6 mb-6"></div>
         <button @click="startTracking" :disabled="!tempTrackInput" class="w-full max-w-xs py-5 bg-brick text-white rounded-xl font-bold text-2xl shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
@@ -361,9 +361,9 @@
                 </div>
                 
                 <div v-if="!isAppending" class="mb-2 p-4 bg-stone-50 rounded-xl border border-stone-100">
-                    <label class="block text-sm font-bold text-stone-600 mb-2 text-center">請輸入手機末三碼 取餐用</label>
-                    <input type="tel" maxlength="3" v-model="phoneSuffix" placeholder="點擊輸入" class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick">
-                </div>
+    <label class="block text-sm font-bold text-stone-600 mb-2 text-center">請輸入手機末三碼 取餐用</label>
+    <input type="tel" maxlength="5" v-model="phoneSuffix" placeholder="輸入末三碼" class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick">
+</div>
             </div>
 
             <div class="flex gap-3 mt-4 flex-shrink-0 pt-2 border-t border-stone-100">
@@ -691,18 +691,56 @@ const finalTotal = computed(() => {
             };
 
 const submitOrder = async () => {
-                if (!isAppending.value) {
-                    if (!phoneSuffix.value || phoneSuffix.value.length !== 3) { alert('為了方便取餐，請輸入完整的手機末三碼喔！'); return; }
+    let finalNumber = '';
+
+    if (!isAppending.value) {
+        const suffixStr = phoneSuffix.value ? phoneSuffix.value.toString().trim() : '';
+        if (suffixStr.length < 3 || suffixStr.length > 5) {
+            alert('為了方便取餐，請輸入手機「末三碼」或「末四碼」喔！');
+            return;
+        }
+
+        const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
+        const ordersRef = dbRef(db, 'orders');
+        const snapshot = await get(ordersRef);
+        
+        const activeNumbers = [];
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                const order = child.val();
+                if (order.dateString === todayStr && order.status !== 'archived') {
+                    activeNumbers.push(String(order.number));
                 }
+            });
+        }
 
-                if (isSubmitting.value) return;
+        finalNumber = suffixStr;
+        if (activeNumbers.includes(suffixStr)) {
+            if (suffixStr.length === 3) {
+                alert('📢 目前已有相同的三碼製作中，為避免取餐錯誤，請幫我加一碼變成「四碼」喔！');
+                return;
+            } else {
+                // 隨機分配尾數
+                let counter = Math.floor(Math.random() * 9) + 1;
+                while (activeNumbers.includes(`${suffixStr}${counter}`)) {
+                    counter++;
+                }
+                finalNumber = `${suffixStr}${counter}`;
+                if (!confirm(`📢 真是太巧了！目前已有相同的號碼，系統為您隨機分配單號為「${finalNumber}」，可以接受嗎？`)) {
+                    return;
+                }
+            }
+        }
+    }
+
+    if (isSubmitting.value) return;
+    isSubmitting.value = true;
                 
-                const audio = document.getElementById('pickupSound');
-                if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
+    const audio = document.getElementById('pickupSound');
+    if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
 
-                isSubmitting.value = true;
-                const newCartItems = [];
-                let requiresStockCheck = false;
+    const newCartItems = [];
+    let requiresStockCheck = false;
                 
                 for (const cartKey in cart.value) {
                     const cItem = cart.value[cartKey];
@@ -767,18 +805,18 @@ const submitOrder = async () => {
                     return; 
                 }
                 
-                const newOrderData = {
-                    number: phoneSuffix.value, 
-                    items: newCartItems, 
-                    checkoutOptions: chosenCheckoutOptions, 
-                    total: finalTotal.value,                
-                    status: 'pending',
-                    createdAt: serverTimestamp(), 
-                    timeString: timeString, 
-                    dateString: dateString
-                };
+const newOrderData = {
+        number: finalNumber, 
+        items: newCartItems, 
+        checkoutOptions: chosenCheckoutOptions, 
+        total: finalTotal.value,                
+        status: 'pending',
+        createdAt: serverTimestamp(), 
+        timeString: timeString, 
+        dateString: dateString
+    };
 
-                const newRef = push(ordersRef, newOrderData);
+    const newRef = push(ordersRef, newOrderData);
                 localStorage.setItem('jiantou_order_key', newRef.key);
                 myOrder.value = { ...newOrderData, key: newRef.key };
                 cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
