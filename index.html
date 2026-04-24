@@ -46,6 +46,10 @@
 <body class="text-stone-700 h-[100dvh] flex flex-col overflow-hidden select-none">
 
 <div id="app" v-cloak class="h-full flex flex-col relative">
+
+<div v-if="!isConnected" class="bg-orange-500 text-white text-xs py-2 text-center font-bold z-[100] w-full absolute top-0 left-0 shadow-md">
+        網路連線不穩，建議檢查連線後再進行點餐 🛰️
+    </div>
     
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
@@ -130,7 +134,8 @@
                             
                             <div class="flex items-center gap-2 mt-3">
                                 <span class="text-brick font-bold text-xl">${{ item.price }}</span>
-                                <span v-if="item.stock !== null && item.stock !== undefined && item.stock !== ''" class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold shadow-sm">剩 {{ item.stock }} 份</span>
+                                <span v-if="item.stock !== null && item.stock !== '' && Number(item.stock) <= 5 && Number(item.stock) > 0" class="text-[11px] text-stone-400 font-medium">僅剩 {{ item.stock }} 份</span>
+ 
                             </div>
                         </div>
                         <div class="flex items-center gap-3 ml-2 self-end mb-1">
@@ -362,8 +367,9 @@
             </div>
 
             <div class="flex gap-3 mt-4 flex-shrink-0 pt-2 border-t border-stone-100">
-                <button @click="isConfirming=false" class="flex-1 py-4 bg-stone-100 text-stone-500 rounded-xl font-bold text-lg active:scale-95 transition-transform">返回修改</button>
-                <button @click="submitOrder" :disabled="isSubmitting" class="flex-1 py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">{{ isSubmitting ? '傳送中...' : (isAppending ? '送出加點單' : '確認送單') }}</button>
+                <button @click="submitOrder" :disabled="isSubmitting || !isConnected" class="flex-1 py-4 bg-brick text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 disabled:opacity-50 active:scale-95 transition-transform">
+    {{ !isConnected ? '等待網路中...' : (isSubmitting ? '傳送中...' : (isAppending ? '送出加點單' : '確認送單')) }}
+</button>
             </div>
         </div>
     </div>
@@ -372,13 +378,14 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
 
     createApp({
         setup() {
+const isConnected = ref(true);
             const hasEnteredShop = ref(false);
             
             const brandInfo = ref({
@@ -431,6 +438,7 @@ const checkoutOptions = ref([]);
             });
 
 onMounted(() => {
+onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
                 onValue(dbRef(db, 'brandInfo'), (snapshot) => {
                     if (snapshot.val()) {
                         brandInfo.value = { ...brandInfo.value, ...snapshot.val() };
@@ -682,108 +690,88 @@ const finalTotal = computed(() => {
                 }
             };
 
-            const submitOrder = async () => {
+const submitOrder = async () => {
                 if (!isAppending.value) {
-                    if (!phoneSuffix.value || phoneSuffix.value.length !== 3) {
-                        alert('為了方便取餐，請輸入完整的手機末三碼喔！');
-                        return;
-                    }
+                    if (!phoneSuffix.value || phoneSuffix.value.length !== 3) { alert('為了方便取餐，請輸入完整的手機末三碼喔！'); return; }
                 }
 
                 if (isSubmitting.value) return;
                 
                 const audio = document.getElementById('pickupSound');
-                if (audio) {
-                    audio.volume = 0; 
-                    audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
-                }
+                if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
 
                 isSubmitting.value = true;
                 const newCartItems = [];
-                
-                let menuNeedsUpdate = false;
-                const menuToUpdate = JSON.parse(JSON.stringify(fullMenu.value));
+                let requiresStockCheck = false;
                 
                 for (const cartKey in cart.value) {
                     const cItem = cart.value[cartKey];
-                    newCartItems.push({
-                        id: cItem.item.id,
-                        name: cItem.item.name,
-                        price: cItem.price,
-                        qty: cItem.qty,
-                        options: cItem.options
-                    });
-
-                    const menuItemIndex = menuToUpdate.findIndex(m => m.id === cItem.item.id);
-                    if (menuItemIndex > -1) {
-                        const menuItem = menuToUpdate[menuItemIndex];
-                        if (menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
-                            let currentStock = parseInt(menuItem.stock);
-                            if (!isNaN(currentStock)) {
-                                currentStock -= cItem.qty;
-                                if (currentStock <= 0) {
-                                    currentStock = 0;
-                                    menuItem.active = false; 
+                    newCartItems.push({ id: cItem.item.id, name: cItem.item.name, price: cItem.price, qty: cItem.qty, options: cItem.options });
+                    const menuItem = fullMenu.value.find(m => m.id === cItem.item.id);
+                    if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) requiresStockCheck = true;
+                }
+                
+                // 🛡️ 庫存守門員 (Transaction)
+                if (requiresStockCheck) {
+                    try {
+                        const result = await runTransaction(dbRef(db, 'menu'), (currentMenu) => {
+                            if (currentMenu === null) return currentMenu;
+                            let canFulfill = true;
+                            for (const cartItem of newCartItems) {
+                                const menuItem = currentMenu.find(m => m.id === cartItem.id);
+                                if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
+                                    let currentStock = parseInt(menuItem.stock);
+                                    if (!isNaN(currentStock)) {
+                                        if (currentStock < cartItem.qty) { canFulfill = false; break; }
+                                        currentStock -= cartItem.qty;
+                                        if (currentStock <= 0) { currentStock = 0; menuItem.active = false; }
+                                        menuItem.stock = currentStock;
+                                    }
                                 }
-                                menuItem.stock = currentStock;
-                                menuNeedsUpdate = true;
                             }
+                            if (!canFulfill) return;
+                            return currentMenu;
+                        });
+
+                        if (!result.committed) {
+                            alert('不好意思，剛剛最後的份量被買走囉！請重新確認購物車品項。');
+                            isSubmitting.value = false; return;
                         }
+                    } catch (error) {
+                        alert('網路連線稍微不穩，請再試一次。');
+                        isSubmitting.value = false; return;
                     }
                 }
                 
-const now = new Date();
+                const now = new Date();
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
                 const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
-
                 const ordersRef = dbRef(db, 'orders');
-
-
                 const chosenCheckoutOptions = selectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
 
                 if (isAppending.value && myOrder.value && myOrder.value.key) {
                     const addonData = {
-                        number: myOrder.value.number,
-                        parentKey: myOrder.value.key,
-                        isAddon: true, 
-                        items: newCartItems,
-                        checkoutOptions: chosenCheckoutOptions, 
-                        total: finalTotal.value,                
-                        status: 'pending',
-                        createdAt: serverTimestamp(),
-                        timeString: timeString,
-                        dateString: dateString
+                        number: myOrder.value.number, parentKey: myOrder.value.key, isAddon: true, items: newCartItems,
+                        checkoutOptions: chosenCheckoutOptions, total: finalTotal.value, status: 'pending',
+                        createdAt: serverTimestamp(), timeString: timeString, dateString: dateString
                     };
-                    
                     const newRef = push(ordersRef, addonData);
                     localStorage.setItem('jiantou_addon_key', newRef.key);
                     
                     onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
                         const data = snapshot.val();
-                        if (data) {
-                            myAddonOrder.value = { ...data, key: snapshot.key };
-                        } else {
-                            myAddonOrder.value = null;
-                            localStorage.removeItem('jiantou_addon_key');
-                        }
+                        if (data) myAddonOrder.value = { ...data, key: snapshot.key };
+                        else { myAddonOrder.value = null; localStorage.removeItem('jiantou_addon_key'); }
                     });
-
-                    if (menuNeedsUpdate) {
-                        update(dbRef(db), { menu: menuToUpdate });
-                    }
-
-                    isAppending.value = false;
-                    cart.value = {};
-                    isConfirming.value = false;
-                    isSubmitting.value = false;
+                    isAppending.value = false; cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
                     return; 
                 }
                 
-const newOrderData = {
+                const newOrderData = {
                     number: phoneSuffix.value, 
                     items: newCartItems, 
-                    checkoutOptions: chosenCheckoutOptions, // ✨ 4. 加入結帳選項
-                    total: finalTotal.value,                // ✨ 5. 將原本的 cartTotal 換成 finalTotal
+                    checkoutOptions: chosenCheckoutOptions, 
+                    total: finalTotal.value,                
                     status: 'pending',
                     createdAt: serverTimestamp(), 
                     timeString: timeString, 
@@ -791,21 +779,11 @@ const newOrderData = {
                 };
 
                 const newRef = push(ordersRef, newOrderData);
-                const localOrder = { ...newOrderData, key: newRef.key };
-                
                 localStorage.setItem('jiantou_order_key', newRef.key);
+                myOrder.value = { ...newOrderData, key: newRef.key };
+                cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
 
-                if (menuNeedsUpdate) {
-                    update(dbRef(db), { menu: menuToUpdate });
-                }
-
-                myOrder.value = localOrder;
-                cart.value = {};
-                isConfirming.value = false;
-                isSubmitting.value = false;
-
-                const thisOrderRef = dbRef(db, `orders/${newRef.key}`);
-                onValue(thisOrderRef, (snapshot) => {
+                onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
                     const data = snapshot.val();
                     if (data && data.status !== 'archived') {
                         myOrder.value = { ...data, key: snapshot.key };
@@ -815,7 +793,6 @@ const newOrderData = {
                     }
                 });
             };
-
             const resetOrder = () => {
                 myOrder.value = null;
                 trackedNumber.value = null; 

@@ -47,6 +47,11 @@
     
     <audio id="dingSound" src="https://github.com/d930yao-create/jiantou/raw/refs/heads/main/image/mixkit-home-standard-ding-dong-109.wav" preload="auto"></audio>
 
+<div class="absolute top-4 left-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 border border-stone-600 shadow-lg">
+        <div class="w-2 h-2 rounded-full" :class="isConnected ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500 animate-ping'"></div>
+        <span class="text-[10px] font-bold text-stone-300">{{ isConnected ? '連線正常' : '連線中斷' }}</span>
+    </div>
+
     <div class="absolute top-16 left-4 z-50 flex flex-col gap-3">
         <button @click="toggleMute" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
             <span class="material-icons-round text-2xl">{{ isMuted ? 'volume_off' : 'volume_up' }}</span>
@@ -104,6 +109,7 @@
 
     createApp({
         setup() {
+const isConnected = ref(true);
             const currentNumber = ref(null);
             const allRawDoneOrders = ref([]); 
             const doneOrders = ref([]);
@@ -125,6 +131,7 @@
             };
 
             onMounted(() => {
+onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
                 const callRef = dbRef(db, 'currentCallingNumber');
                 onValue(callRef, (snapshot) => { currentNumber.value = snapshot.val(); });
 
@@ -225,7 +232,7 @@
             };
 
             return { 
-                currentNumber, completeCurrent, isMuted, toggleFullScreen, toggleMute, clearAll, finalMarqueeText, readyNumbersText
+                currentNumber, completeCurrent, isMuted, toggleFullScreen, toggleMute, clearAll, finalMarqueeText, readyNumbersText, isConnected,
             };
         }
     }).mount('#app');
