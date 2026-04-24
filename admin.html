@@ -907,6 +907,7 @@
 <script type="module">
     import { getDatabase, ref as dbRef, onValue, update, set, remove, push, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
@@ -1425,6 +1426,10 @@ const posFinalTotal = computed(() => {
             const increasePosCart = (cartKey) => { if (posCart.value[cartKey]) posCart.value[cartKey].qty++; };
             const decreasePosCart = (cartKey) => { if (posCart.value[cartKey]) { posCart.value[cartKey].qty--; if (posCart.value[cartKey].qty === 0) delete posCart.value[cartKey]; } };
 
+const removePosCartItem = (cartKey) => {
+    delete posCart.value[cartKey];
+};
+
 const submitPosOrder = async () => {
     const suffixStr = posPhoneSuffix.value.toString().trim();
     if (!suffixStr || suffixStr.length !== 4) { alert('請輸入客人的手機末四碼'); return; }
@@ -1614,12 +1619,22 @@ const deleteHistoryOrder = (order) => {
 
 const deleteOrderItem = (order, itemIndex) => {
     if(confirm('確定要移除這個品項嗎？金額會自動重新計算。')) {
-        const newItems = [...order.items]; newItems.splice(itemIndex, 1);
+        const newItems = [...order.items]; 
+        newItems.splice(itemIndex, 1);
+
         if (newItems.length === 0) {
+            
             remove(dbRef(db, `orders/${order.key}`));
         } else { 
-            const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
-            update(dbRef(db), { [`orders/${order.key}/items`] : newItems, [`orders/${order.key}/total`] : newTotal });
+          
+            const itemsTotal = newItems.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
+            
+            const optionsTotal = (order.checkoutOptions || []).reduce((sum, opt) => sum + (Number(opt.price) || 0), 0);
+            
+            update(dbRef(db), { 
+                [`orders/${order.key}/items`]: newItems, 
+                [`orders/${order.key}/total`]: itemsTotal + optionsTotal 
+            });
         }
     }
 };
@@ -1660,7 +1675,7 @@ const deleteOrderItem = (order, itemIndex) => {
                 saveFrontEndSettings, addMenuItem, moveMenuUp, moveMenuDown, 
                 addOptionGroup, removeOptionGroup, addOption, removeOption, removeMenuItem, filteredOrders, 
                 posCart, posPhoneSuffix, posNote, posSelectedItem, posSelections, activeMenuSettings,
-                posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, submitPosOrder, updateOrderNote,
+                posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, removePosCartItem, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
                 showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
                 activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
