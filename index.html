@@ -716,6 +716,7 @@ const finalTotal = computed(() => {
 
 const submitOrder = async () => {
     let finalNumber = '';
+    const ordersRef = dbRef(db, 'orders'); // 👈 統一加在最上面
 
     if (!isAppending.value) {
         const suffixStr = phoneSuffix.value ? phoneSuffix.value.toString().trim() : '';
@@ -725,9 +726,7 @@ const submitOrder = async () => {
         }
 
         const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
-        const ordersRef = dbRef(db, 'orders');
-        const snapshot = await get(ordersRef);
-        
+        const snapshot = await get(ordersRef);        
         const activeNumbers = [];
         if (snapshot.exists()) {
             snapshot.forEach(child => {
@@ -836,11 +835,10 @@ finalNumber = suffixStr;
                     }
                 }
                 
-                const now = new Date();
-                const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-                const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
-                const ordersRef = dbRef(db, 'orders');
-                const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => {
+const now = new Date();
+const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => {
                     return activeCheckoutOptions.value.find(o => o.id === id);
                 }).filter(o => o);
 
