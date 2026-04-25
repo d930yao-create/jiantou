@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>市集行動點餐</title>
+    <title>點餐</title>
     
     <script>
         // 將金鑰集中在頂部管理
@@ -326,7 +326,7 @@
             <div class="overflow-y-auto flex-1 px-1 pb-2 nav-scrollbar">
                 
                 <div class="space-y-4 mb-6">
-                    <div v-for="(cItem, cartKey) in cart" :key="cartKey" class="flex justify-between items-start text-base border-b border-stone-100 pb-3 last:border-0">
+                    <div v-for="(cItem, cartKey) in cart" :key="cartKey" class="flex justify-between items-start text-base border-b border-stone-100 pb-3 last:border-0 relative">
                         <div class="flex flex-col flex-1 pr-4">
                             <span class="font-bold text-stone-700 text-lg leading-tight">{{ cItem.item.name }}</span>
                             <span v-if="cItem.options.length > 0" class="text-xs text-brick mt-1 font-bold">
@@ -335,6 +335,9 @@
                             <span v-else class="text-xs text-stone-400 mt-1">{{ cItem.item.desc }}</span>
                         </div>
                         <div class="flex items-center gap-3 mt-1">
+                            <button @click="deleteCartItem(cartKey)" class="text-stone-300 hover:text-red-400 p-1 active:scale-90 transition-transform">
+                                <span class="material-icons-round text-sm">delete</span>
+                            </button>
                             <span class="text-stone-500 font-bold">x{{ cItem.qty }}</span>
                             <span class="font-bold w-16 text-right text-lg">${{ cItem.price * cItem.qty }}</span>
                         </div>
@@ -344,9 +347,9 @@
                 <div v-if="activeCheckoutOptions.length > 0" class="mb-4 pt-3 border-t border-stone-100">
                     <p class="text-sm font-bold text-stone-500 mb-2">需要其他服務嗎？</p>
                     <div class="space-y-2">
-                        <label v-for="(opt, idx) in activeCheckoutOptions" :key="idx" class="flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all" :class="selectedCheckoutOptions.includes(idx) ? 'border-brick bg-red-50' : 'border-stone-200 bg-white'">
+                        <label v-for="opt in activeCheckoutOptions" :key="opt.id || opt.name" class="flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all" :class="selectedCheckoutOptions.includes(opt.id) ? 'border-brick bg-red-50' : 'border-stone-200 bg-white'">
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" :value="idx" v-model="selectedCheckoutOptions" class="w-4 h-4 accent-brick">
+                                <input type="checkbox" :value="opt.id" v-model="selectedCheckoutOptions" class="w-4 h-4 accent-brick">
                                 <span class="font-bold text-stone-700 text-sm">{{ opt.name }}</span>
                             </div>
                             <span v-if="opt.price > 0" class="text-brick font-bold text-sm">+${{ opt.price }}</span>
@@ -445,17 +448,35 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
                         document.title = brandInfo.value.name + " | 行動點餐";
                     }
                 }); 
-                onValue(dbRef(db, 'checkoutOptions'), s => checkoutOptions.value = s.val() || []);
-
-
+ 
+// 1. 安全讀取結帳附加服務
+                onValue(dbRef(db, 'checkoutOptions'), s => {
+                    const raw = s.val() || [];
+                    const arr = Array.isArray(raw) ? raw : Object.values(raw);
+                    checkoutOptions.value = arr.filter(opt => opt && typeof opt === 'object').map((opt, idx) => {
+                        if (!opt.id) opt.id = 'opt_legacy_' + idx; 
+                        return opt;
+                    });
+                });
+                
+                // 2. 安全讀取跑馬燈
                 onValue(dbRef(db, 'marqueeData'), (snapshot) => {
                     if (snapshot.val()) marqueeData.value = snapshot.val();
                 });
 
+                // 3. 安全讀取菜單分類 (過濾幽靈分類)
+                onValue(dbRef(db, 'menuCategories'), s => {
+                    const raw = s.val() || [];
+                    const arr = Array.isArray(raw) ? raw : Object.values(raw);
+                    menuCategories.value = arr.filter(cat => cat);
+                });
 
-
-                onValue(dbRef(db, 'menuCategories'), s => menuCategories.value = s.val() || []);
-                onValue(dbRef(db, 'sharedOptionGroups'), s => sharedOptionGroups.value = s.val() || []);
+                // 4. 安全讀取共用選項群組 (過濾幽靈群組)
+                onValue(dbRef(db, 'sharedOptionGroups'), s => {
+                    const raw = s.val() || [];
+                    const arr = Array.isArray(raw) ? raw : Object.values(raw);
+                    sharedOptionGroups.value = arr.filter(sg => sg && typeof sg === 'object');
+                });
 
                 const callRef = dbRef(db, 'currentCallingNumber');
                 onValue(callRef, (snapshot) => { currentCallingNumber.value = snapshot.val(); });
@@ -466,18 +487,16 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
                     shopIsOpen.value = (val === null) ? true : val;
                 });
 
+                // 5. 🌟 安全讀取主菜單 (最容易白屏的元凶，強力過濾！)
                 const menuRef = dbRef(db, 'menu');
                 onValue(menuRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) { 
-                        fullMenu.value = data; 
-                        menu.value = data.filter(item => item.active); 
-                    } else { 
-                        fullMenu.value = [];
-                        menu.value = []; 
-                    }
+                    const raw = snapshot.val() || [];
+                    const arr = Array.isArray(raw) ? raw : Object.values(raw);
+                    // 徹底把 null 或壞掉的資料踢出去
+                    fullMenu.value = arr.filter(item => item && typeof item === 'object'); 
+                    menu.value = fullMenu.value.filter(item => item.active); 
                 });
-
+ 
                 const savedOrderKey = localStorage.getItem('jiantou_order_key');
                 if (savedOrderKey) {
                     const savedOrderRef = dbRef(db, `orders/${savedOrderKey}`);
@@ -638,15 +657,19 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
 
             const removeFromCart = (item) => {
                 const keys = Object.keys(cart.value).filter(k => cart.value[k].item.id === item.id);
-                if (keys.length > 0) {
-                    const lastKey = keys[keys.length - 1];
-                    if (cart.value[lastKey].qty > 0) {
-                        cart.value[lastKey].qty--;
-                        if (cart.value[lastKey].qty === 0) {
-                            delete cart.value[lastKey];
-                        }
-                    }
+                if (keys.length > 1) {
+                    alert('這個品項您點了多種不同口味，為了避免刪錯，請點擊下方的「點餐明細」使用垃圾桶進行精準刪除喔！');
+                    return;
                 }
+                if (keys.length === 1) {
+                    const key = keys[0];
+                    cart.value[key].qty--;
+                    if (cart.value[key].qty === 0) delete cart.value[key];
+                }
+            };
+
+            const deleteCartItem = (cartKey) => {
+                delete cart.value[cartKey];
             };
 
             const cartCount = computed(() => Object.values(cart.value).reduce((a, b) => a + b.qty, 0));
@@ -661,8 +684,9 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
 
 const finalTotal = computed(() => {
                 let optionsTotal = 0;
-                selectedCheckoutOptions.value.forEach(idx => {
-                    optionsTotal += (activeCheckoutOptions.value[idx].price || 0);
+                selectedCheckoutOptions.value.forEach(id => {
+                    const opt = activeCheckoutOptions.value.find(o => o.id === id);
+                    if (opt) optionsTotal += (opt.price || 0);
                 });
                 return cartTotal.value + optionsTotal;
             });
@@ -714,25 +738,56 @@ const submitOrder = async () => {
             });
         }
 
-        finalNumber = suffixStr;
+finalNumber = suffixStr;
         if (activeNumbers.includes(suffixStr)) {
+            // --- 霸道總裁防撞邏輯：長度鎖定在 5 碼以內 ---
             if (suffixStr.length === 3) {
-                alert('📢 目前已有相同的三碼製作中，為避免取餐錯誤，請幫我加一碼變成「四碼」喔！');
-                return;
-            } else {
-                // 隨機分配尾數
                 let counter = Math.floor(Math.random() * 9) + 1;
-                while (activeNumbers.includes(`${suffixStr}${counter}`)) {
+                let attempts = 0;
+                // 嘗試在尾部加 1 碼
+                while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
                     counter++;
+                    if (counter > 9) counter = 1;
+                    attempts++;
                 }
-                finalNumber = `${suffixStr}${counter}`;
-                if (!confirm(`📢 真是太巧了！目前已有相同的號碼，系統為您隨機分配單號為「${finalNumber}」，可以接受嗎？`)) {
-                    return;
+                // 逃生門：1-9 全滿則變 5 碼
+                finalNumber = (attempts >= 10) ? `${suffixStr}${Math.floor(Math.random() * 90) + 10}` : `${suffixStr}${counter}`;
+                alert(`📢 真巧！您的末三碼有人使用了。系統自動微調取餐單號為「${finalNumber}」，請憑此號碼取餐喔！`);
+
+            } else if (suffixStr.length === 4) {
+                let counter = Math.floor(Math.random() * 9) + 1;
+                let attempts = 0;
+                while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
+                    counter++;
+                    if (counter > 9) counter = 1;
+                    attempts++;
                 }
+                // 逃生門：如果 4+1 碼全滿，隨機生一組全新 5 碼
+                if (attempts >= 10) {
+                    do { finalNumber = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(finalNumber));
+                } else {
+                    finalNumber = `${suffixStr}${counter}`;
+                }
+                alert(`📢 號碼重複提醒！系統為您自動微調取餐單號為「${finalNumber}」，請以此號碼為準喔！`);
+
+            } else {
+                // 5 碼撞號處理：更換最後一碼 (不增加長度)
+                let newNum = suffixStr;
+                let attempts = 0;
+                while (activeNumbers.includes(newNum) && attempts < 20) {
+                    let lastDigit = Math.floor(Math.random() * 10);
+                    newNum = suffixStr.slice(0, 4) + lastDigit;
+                    attempts++;
+                }
+                // 逃生門：如果該區段全滿，生一組全新 5 碼
+                if (attempts >= 20) {
+                    do { newNum = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(newNum));
+                }
+                finalNumber = newNum;
+                alert(`📢 太有緣了！五碼居然也重複。系統已微調您的取餐單號為「${finalNumber}」，請以此取餐！`);
             }
         }
-    }
-
+ 
     if (isSubmitting.value) return;
     isSubmitting.value = true;
                 
@@ -785,7 +840,9 @@ const submitOrder = async () => {
                 const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
                 const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
                 const ordersRef = dbRef(db, 'orders');
-                const chosenCheckoutOptions = selectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
+                const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => {
+                    return activeCheckoutOptions.value.find(o => o.id === id);
+                }).filter(o => o);
 
                 if (isAppending.value && myOrder.value && myOrder.value.key) {
                     const addonData = {
@@ -924,7 +981,8 @@ const newOrderData = {
                 isAppending, startAppend, myAddonOrder, cancelAddon,
                 
                 // ✨ 把結帳選項需要的東西加在這裡匯出
-                checkoutOptions, activeCheckoutOptions, selectedCheckoutOptions, finalTotal, isConnected
+                checkoutOptions, activeCheckoutOptions, selectedCheckoutOptions, finalTotal, isConnected,
+                deleteCartItem
             };
         }
     }).mount('#app');

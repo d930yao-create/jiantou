@@ -399,12 +399,12 @@
                                 <div v-if="activeCheckoutOptions.length > 0" class="mb-5">
                                     <p class="text-sm font-bold text-stone-400 mb-3 tracking-wide">附加服務</p>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <label v-for="(opt, idx) in activeCheckoutOptions" :key="'pos_opt_'+idx" class="flex items-center justify-between p-3.5 border-2 rounded-xl cursor-pointer transition-all" :class="posSelectedCheckoutOptions.includes(idx) ? 'border-stone-800 bg-stone-800 text-white shadow-md' : 'border-stone-100 bg-white text-stone-600 hover:border-stone-200'">
+                                        <label v-for="opt in activeCheckoutOptions" :key="opt.id || opt.name" class="flex items-center justify-between p-3.5 border-2 rounded-xl cursor-pointer transition-all" :class="posSelectedCheckoutOptions.includes(opt.id) ? 'border-stone-800 bg-stone-800 text-white shadow-md' : 'border-stone-100 bg-white text-stone-600 hover:border-stone-200'">
                                             <div class="flex items-center gap-3">
-                                                <input type="checkbox" :value="idx" v-model="posSelectedCheckoutOptions" class="w-5 h-5 rounded border-stone-300 accent-stone-800">
+                                                <input type="checkbox" :value="opt.id" v-model="posSelectedCheckoutOptions" class="w-5 h-5 rounded border-stone-300 accent-stone-800">
                                                 <span class="font-bold text-base">{{ opt.name }}</span>
                                             </div>
-                                            <span class="font-bold text-sm" :class="posSelectedCheckoutOptions.includes(idx) ? 'text-white' : 'text-stone-400'">{{ opt.price > 0 ? '+$' + opt.price : '免費' }}</span>
+                                            <span class="font-bold text-sm" :class="posSelectedCheckoutOptions.includes(opt.id) ? 'text-white' : 'text-stone-400'">{{ opt.price > 0 ? '+$' + opt.price : '免費' }}</span>
                                         </label>
                                     </div>
                                 </div>
@@ -1109,7 +1109,16 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
 
                         onValue(dbRef(db, 'menuCategories'), s => menuCategories.value = s.val() || []);
 onValue(dbRef(db, 'sharedOptionGroups'), s => sharedOptionGroups.value = s.val() || []);
-                        onValue(dbRef(db, 'checkoutOptions'), s => checkoutSettings.value = s.val() || []); 
+  
+onValue(dbRef(db, 'checkoutOptions'), s => {
+    const rawData = s.val() || [];
+    const validData = Array.isArray(rawData) ? rawData.filter(opt => opt) : Object.values(rawData).filter(opt => opt);
+    
+    checkoutSettings.value = validData.map((opt, idx) => {
+        if (!opt.id) opt.id = 'opt_legacy_' + idx; 
+        return opt;
+    });
+});
                         onValue(dbRef(db, 'menu'), s => {
                             const data = s.val();
                             if (data) {
@@ -1384,8 +1393,9 @@ const isPosCheckoutView = ref(false); // 新增：控制 POS 兩階段翻頁 (tr
 const isPosCheckoutOptionsOpen = ref(false); // 控制 POS 結帳服務折疊狀態
 const posFinalTotal = computed(() => {
     let optionsTotal = 0;
-    posSelectedCheckoutOptions.value.forEach(idx => {
-        optionsTotal += (Number(activeCheckoutOptions.value[idx].price) || 0);
+    posSelectedCheckoutOptions.value.forEach(id => {
+        const opt = activeCheckoutOptions.value.find(o => o.id === id);
+        if (opt) optionsTotal += (Number(opt.price) || 0);
     });
     return (Number(posCartTotal.value) || 0) + optionsTotal;
 });
@@ -1456,17 +1466,48 @@ const submitPosOrder = async () => {
         .filter(o => o.dateString === todayStr && o.status !== 'archived')
         .map(o => String(o.number));
 
-    let finalNumber = suffixStr;
+let finalNumber = suffixStr;
     if (activeNumbers.includes(suffixStr)) {
+        // POS 端使用 confirm 讓管理員可以親口告訴客人
         if (suffixStr.length === 3) {
-            alert('📢 目前已有相同的三碼製作中，請向客人確認「末四碼」喔！');
-            return;
+            let counter = Math.floor(Math.random() * 9) + 1;
+            let attempts = 0;
+            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
+                counter++;
+                if (counter > 9) counter = 1;
+                attempts++;
+            }
+            finalNumber = (attempts >= 10) ? `${suffixStr}${Math.floor(Math.random() * 90) + 10}` : `${suffixStr}${counter}`;
+            if (!confirm(`⚠️ 撞號提醒！\n單號將自動微調為「${finalNumber}」，確定結帳嗎？`)) return;
+
+        } else if (suffixStr.length === 4) {
+            let counter = Math.floor(Math.random() * 9) + 1;
+            let attempts = 0;
+            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
+                counter++;
+                if (counter > 9) counter = 1;
+                attempts++;
+            }
+            if (attempts >= 10) {
+                do { finalNumber = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(finalNumber));
+            } else {
+                finalNumber = `${suffixStr}${counter}`;
+            }
+            if (!confirm(`⚠️ 撞號提醒！\n單號將自動微調為「${finalNumber}」，確定結帳嗎？`)) return;
+
         } else {
-            // 四碼再撞號，隨機分配 1~9 作為尾數
-            let counter = Math.floor(Math.random() * 9) + 1; 
-            while (activeNumbers.includes(`${suffixStr}${counter}`)) { counter++; }
-            finalNumber = `${suffixStr}${counter}`;
-            if (!confirm(`⚠️ 撞號提醒！\n單號將自動隨機分配為「${finalNumber}」，確定結帳嗎？`)) return;
+            let newNum = suffixStr;
+            let attempts = 0;
+            while (activeNumbers.includes(newNum) && attempts < 20) {
+                let lastDigit = Math.floor(Math.random() * 10);
+                newNum = suffixStr.slice(0, 4) + lastDigit;
+                attempts++;
+            }
+            if (attempts >= 20) {
+                do { newNum = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(newNum));
+            }
+            finalNumber = newNum;
+            if (!confirm(`⚠️ 五碼撞號提醒！\n單號將微調為「${finalNumber}」，確定結帳嗎？`)) return;
         }
     }
 
@@ -1513,7 +1554,10 @@ const submitPosOrder = async () => {
         }
     }
 
-    const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(idx => activeCheckoutOptions.value[idx]);
+    const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(id => {
+        return activeCheckoutOptions.value.find(o => o.id === id);
+    }).filter(o => o);
+ 
     const now = new Date();
     push(dbRef(db, 'orders'), {
         number: finalNumber, items: newCartItems, checkoutOptions: chosenCheckoutOptions, 
@@ -1682,7 +1726,15 @@ const deleteOrderItem = (order, itemIndex) => {
             };
 
 
-            const addCheckoutOption = () => { checkoutSettings.value.push({ name: '', price: 0, active: true }); };
+            const addCheckoutOption = () => { 
+                checkoutSettings.value.push({ 
+                    id: 'opt_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                    name: '', 
+                    price: 0, 
+                    active: true 
+                }); 
+            };
+ 
             const removeCheckoutOption = (index) => { if(confirm('確定刪除此結帳服務嗎？')) checkoutSettings.value.splice(index, 1); };
 
 
