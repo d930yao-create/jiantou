@@ -120,9 +120,10 @@
                 <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
                 <p class="text-6xl font-bold text-stone-300 serif mb-3">#{{ currentCallingNumber || '--' }}</p>
                 
+                <!-- 🔥 製作中單數移至叫號區下方 -->
                 <div v-if="marqueeData.showCount" class="inline-flex items-center gap-1.5 px-4 py-2 bg-red-50 border border-red-100 rounded-full text-brick text-xs font-bold shadow-sm animate-[fadeIn_0.5s_ease-out]">
                     <span class="material-icons-round text-sm">local_fire_department</span>
-                    目前還有 {{ marqueeData.count }} 張單製作中
+                    目前前面還有 {{ marqueeData.count }} 張單製作中
                 </div>
             </div>
             
@@ -996,7 +997,7 @@
                 isAppending, startAppend, myAddonOrder, cancelAddon,
                 checkoutOptions, activeCheckoutOptions, selectedCheckoutOptions, finalTotal, isConnected,
                 deleteCartItem,
-                isAnnounceExpanded 
+                isAnnounceExpanded // 🌟 匯出縮放狀態
             };
         }
     }).mount('#app');
