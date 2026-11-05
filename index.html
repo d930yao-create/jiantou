@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>尖頭油飯｜點餐</title>
     
     <script>
@@ -27,6 +27,13 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        :root { --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); }
+        html, body { min-height: 100%; overscroll-behavior: none; }
+        body { padding-top: 0; }
+        .safe-area-top { padding-top: calc(2rem + var(--safe-top)); }
+        .safe-area-bottom { padding-bottom: calc(1.5rem + var(--safe-bottom)); }
+        .safe-modal-bottom { padding-bottom: max(1.5rem, var(--safe-bottom)); }
+        .safe-scroll-bottom { scroll-padding-bottom: calc(9rem + var(--safe-bottom)); }
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF7; font-weight: 500; }
         .serif { font-family: 'Noto Serif TC', serif; }
         .text-brick { color: #9E5A5A; }
@@ -76,23 +83,25 @@
                     </a>
                 </div>
 
-                <!-- 📢 升級版：精緻緊湊公告欄（高度縮小 + 按鈕整合） -->
-                <div v-if="marqueeData.text" class="w-full bg-red-50/90 border border-red-100 text-stone-700 text-sm mb-4 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 relative animate-[slideUp_0.4s_ease-out] flex flex-col">
-                    <!-- 公告標頭列 (整合滑動提示與放大收合按鈕) -->
-                    <div class="flex justify-between items-center px-3.5 py-1.5 border-b border-red-100/60 bg-red-100/30">
-                        <span class="text-xs font-bold text-brick flex items-center gap-1">
+                <!-- 📢 精簡公告欄：滑動提示與放大按鈕整合於同一列 -->
+                <div v-if="marqueeData.text" class="w-full bg-red-50/90 border border-red-100 text-stone-700 text-sm mb-4 rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative animate-[slideUp_0.4s_ease-out] flex flex-col">
+                    <div class="flex justify-between items-center gap-2 px-3 py-2 border-b border-red-100/60 bg-red-100/30">
+                        <span class="text-xs font-bold text-brick flex items-center gap-1 shrink-0">
                             <span class="material-icons-round text-sm">campaign</span> 店內公告
                         </span>
-                        <button @click="isAnnounceExpanded = !isAnnounceExpanded" class="text-[11px] text-brick hover:text-red-900 font-bold flex items-center gap-1 bg-white/90 px-2.5 py-0.5 rounded-full border border-red-200 shadow-xs active:scale-95 transition-all">
-                            <span class="material-icons-round text-[13px] text-brick/80">unfold_more</span>
-                            <span>{{ isAnnounceExpanded ? '上下滑動 · 收合' : '上下滑動觀看 · 點擊放大' }}</span>
-                        </button>
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span v-if="!isAnnounceExpanded" class="text-[10px] text-brick/75 font-medium flex items-center gap-0.5 whitespace-nowrap">
+                                <span class="material-icons-round text-xs">swap_vert</span> 上下滑動觀看
+                            </span>
+                            <button @click="isAnnounceExpanded = !isAnnounceExpanded" class="text-[11px] text-brick font-bold flex items-center gap-0.5 bg-white/90 px-2.5 py-1 rounded-full border border-red-200 shadow-sm active:scale-95 transition-all shrink-0">
+                                <span>{{ isAnnounceExpanded ? '收合' : '放大' }}</span>
+                                <span class="material-icons-round text-xs">{{ isAnnounceExpanded ? 'unfold_less' : 'unfold_more' }}</span>
+                            </button>
+                        </div>
                     </div>
-
-                    <!-- 公告內容主體 (預設高度縮小至 max-h-14，約 2 行高，兼顧精簡與閱讀) -->
-                    <div class="px-3.5 py-2 overflow-y-auto transition-all duration-300 relative text-left" 
-                         :class="isAnnounceExpanded ? 'max-h-[45vh]' : 'max-h-14'">
-                        <p class="whitespace-pre-line leading-relaxed text-stone-700 font-medium text-xs sm:text-sm tracking-wide">
+                    <div class="px-3 py-2 overflow-y-auto overscroll-contain transition-all duration-300 relative text-left" style="touch-action: pan-y;"
+                         :class="isAnnounceExpanded ? 'max-h-[42vh]' : 'max-h-20'">
+                        <p class="whitespace-pre-line leading-relaxed text-stone-700 font-medium text-[13px] tracking-wide">
                             {{ marqueeData.text }}
                         </p>
                     </div>
@@ -120,9 +129,10 @@
                 <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
                 <p class="text-6xl font-bold text-stone-300 serif mb-3">#{{ currentCallingNumber || '--' }}</p>
                 
+                <!-- 🔥 製作中單數移至叫號區下方 -->
                 <div v-if="marqueeData.showCount" class="inline-flex items-center gap-1.5 px-4 py-2 bg-red-50 border border-red-100 rounded-full text-brick text-xs font-bold shadow-sm animate-[fadeIn_0.5s_ease-out]">
                     <span class="material-icons-round text-sm">local_fire_department</span>
-                    目前還有 {{ marqueeData.count }} 張單製作中
+                    目前前面還有 {{ marqueeData.count }} 張單製作中
                 </div>
             </div>
             
@@ -131,7 +141,7 @@
 
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]">
         
-        <div class="px-6 pt-8 pb-4 bg-[#FDFBF7] z-10 flex-shrink-0 flex justify-between items-center shadow-sm">
+        <div class="px-6 pt-8 safe-area-top pb-4 bg-[#FDFBF7] z-10 flex-shrink-0 flex justify-between items-center shadow-sm">
             <div @click="hasEnteredShop=false" class="cursor-pointer">
                 <h1 class="text-2xl font-bold text-stone-800 tracking-wide serif flex items-center gap-1">
                     <span class="material-icons-round text-stone-400 text-2xl">arrow_back_ios</span>
@@ -187,24 +197,29 @@
 
         <div class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom">
             
-            <div v-if="(!myOrder && !trackedNumber) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl p-6">
-                <div class="flex justify-between items-center mb-5">
-                    <div>
-                        <p class="text-sm text-stone-400 mb-1">{{ isAppending ? '加點總金額' : '總金額' }}</p>
-                        <p class="text-4xl font-bold text-stone-800 serif">${{ cartTotal }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-stone-400 mb-1">{{ isAppending ? '新增品項' : '已選品項' }}</p>
-                        <p class="text-lg font-bold text-stone-800">{{ cartCount }} 份</p>
+            <div v-if="(!myOrder && !trackedNumber) || isAppending" class="bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] rounded-t-3xl px-5 pt-4 pb-3">
+                <button v-if="cartCount > 0" @click="isCartExpanded = !isCartExpanded" class="w-full flex items-center justify-between pb-3 mb-3 border-b border-stone-100 text-left">
+                    <span class="flex items-center gap-2 text-sm font-bold text-stone-600"><span class="material-icons-round text-brick">shopping_bag</span> 購物車明細 <span class="px-2 py-0.5 rounded-full bg-red-50 text-brick text-xs">{{ cartCount }}</span></span>
+                    <span class="flex items-center gap-1 text-xs text-stone-400">{{ isCartExpanded ? '收合' : '展開' }} <span class="material-icons-round text-base">{{ isCartExpanded ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</span></span>
+                </button>
+                <div v-if="isCartExpanded && cartCount > 0" class="max-h-44 overflow-y-auto space-y-3 pb-3 mb-3 border-b border-stone-100">
+                    <div v-for="(cItem, cartKey) in cart" :key="cartKey" class="flex items-center justify-between gap-3 text-sm">
+                        <div class="min-w-0 flex-1"><p class="font-bold text-stone-700 truncate">{{ cItem.item.name }}</p><p v-if="cItem.options && cItem.options.length" class="text-[11px] text-stone-400 truncate">{{ cItem.options.join('、') }}</p><p class="text-xs text-stone-500">${{ cItem.price }} / 份</p></div>
+                        <div class="flex items-center gap-2"><button @click="decreaseCartItem(cartKey)" class="w-8 h-8 rounded-full border border-stone-200 text-stone-500 font-bold">−</button><span class="w-5 text-center font-bold">{{ cItem.qty }}</span><button @click="increaseCartItem(cartKey)" class="w-8 h-8 rounded-full border border-stone-200 text-brick font-bold">＋</button></div>
+                        <span class="w-16 text-right font-bold text-stone-700">${{ cItem.price * cItem.qty }}</span>
                     </div>
                 </div>
+                <div class="flex justify-between items-center mb-3">
+                    <div><p class="text-xs text-stone-400 mb-0.5">{{ isAppending ? '加點總金額' : '總金額' }}</p><p class="text-3xl font-bold text-stone-800 serif">${{ cartTotal }}</p></div>
+                    <div class="text-right"><p class="text-xs text-stone-400 mb-0.5">{{ isAppending ? '新增品項' : '已選品項' }}</p><p class="text-base font-bold text-stone-800">{{ cartCount }} 份</p></div>
+                </div>
                 <div class="flex gap-2">
-                    <button v-if="isAppending" @click="isAppending=false; cart={}" class="px-6 py-4 rounded-xl font-bold text-lg text-stone-500 bg-stone-100 transition-all active:scale-95">取消</button>
-                    <button @click="openConfirmation" :disabled="cartCount===0" class="flex-1 py-4 rounded-xl font-bold text-xl tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">{{ isAppending ? '確認加點明細' : '點餐明細' }}</button>
+                    <button v-if="isAppending" @click="isAppending=false; cart={}; isCartExpanded=false" class="px-5 py-3 rounded-xl font-bold text-base text-stone-500 bg-stone-100 transition-all active:scale-95">取消</button>
+                    <button @click="openConfirmation" :disabled="cartCount===0" class="flex-1 py-3.5 rounded-xl font-bold text-lg tracking-wide text-white shadow-lg bg-brick disabled:opacity-50 transition-all active:scale-95">{{ isAppending ? '確認加點明細' : '前往確認訂單' }}</button>
                 </div>
             </div>
 
-            <div v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[70vh] overflow-y-auto transition-transform duration-300">
+            <div v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 safe-area-bottom max-h-[70vh] overflow-y-auto transition-transform duration-300">
                 
                 <div class="flex justify-between items-start mb-6">
                     <div>
@@ -285,7 +300,7 @@
     </div>
 
     <div v-if="selectedItemForOptions" class="fixed inset-0 bg-black/60 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="selectedItemForOptions=null">
-        <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out] max-h-[90vh] flex flex-col">
+        <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 safe-modal-bottom shadow-2xl animate-[slideUp_0.2s_ease-out] max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-2 flex-shrink-0">
                 <h3 class="text-2xl font-bold text-stone-800 serif">{{ selectedItemForOptions.name }}</h3>
                 <button @click="selectedItemForOptions=null" class="text-stone-400 p-1"><span class="material-icons-round">close</span></button>
@@ -411,7 +426,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo, update, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
@@ -439,6 +454,7 @@
             const sharedOptionGroups = ref([]);
 
             const cart = ref({});
+            const isCartExpanded = ref(false);
             const selectedItemForOptions = ref(null);
             const optSelections = ref({}); 
             
@@ -723,7 +739,7 @@
 
             const startAppend = () => {
                 isAppending.value = true;
-                cart.value = {}; 
+                cart.value = {}; isCartExpanded.value = false; 
             };
 
             const cancelAddon = () => {
@@ -736,171 +752,169 @@
                 }
             };
 
-            const submitOrder = async () => {
-                let finalNumber = '';
-                const ordersRef = dbRef(db, 'orders');
+            // 以交易方式扣庫存，兼容 Firebase menu 陣列與物件格式。
+            const changeMenuStock = async (items, direction = -1) => {
+                const quantities = {};
+                items.forEach(item => { quantities[item.id] = (quantities[item.id] || 0) + Number(item.qty || 0); });
+                const result = await runTransaction(dbRef(db, 'menu'), currentMenu => {
+                    if (!currentMenu) return currentMenu;
+                    const next = JSON.parse(JSON.stringify(currentMenu));
+                    const records = Array.isArray(next) ? next : Object.values(next);
+                    for (const [id, qty] of Object.entries(quantities)) {
+                        const menuItem = records.find(item => item && String(item.id) === String(id));
+                        if (!menuItem || menuItem.stock === null || menuItem.stock === undefined || menuItem.stock === '') continue;
+                        const stock = Number(menuItem.stock);
+                        if (!Number.isFinite(stock) || stock < 0) return;
+                        if (direction < 0 && stock < qty) return;
+                        menuItem.stock = Math.max(0, stock + (direction * qty));
+                        if (direction < 0 && menuItem.stock === 0) menuItem.active = false;
+                    }
+                    return next;
+                }, { applyLocally: false });
+                return result.committed;
+            };
 
+            // 在 orders 節點內一次完成「檢查撞號＋建立訂單」，避免前後台同時送單撞號。
+            const createOrderWithUniqueNumber = async (orderData, suffix) => {
+                const ordersRef = dbRef(db, 'orders');
+                const newOrderRef = push(ordersRef);
+                const chooseNumber = used => {
+                    let candidate = String(suffix);
+                    if (!used.has(candidate)) return candidate;
+                    const endings = candidate.length >= 5 ? '0123456789' : '123456789';
+                    for (const digit of endings) {
+                        const next = candidate.length >= 5 ? candidate.slice(0, -1) + digit : candidate + digit;
+                        if (!used.has(next)) return next;
+                    }
+                    for (let i = 0; i < 100; i++) {
+                        const randomNumber = String(Math.floor(10000 + Math.random() * 90000));
+                        if (!used.has(randomNumber)) return randomNumber;
+                    }
+                    return null;
+                };
+                try {
+                    const result = await runTransaction(ordersRef, current => {
+                        const records = current && typeof current === 'object' ? { ...current } : {};
+                        const used = new Set(Object.values(records).filter(o => o && o.dateString === orderData.dateString && o.status !== 'archived').map(o => String(o.number || '')));
+                        const candidate = chooseNumber(used);
+                        if (!candidate) return;
+                        records[newOrderRef.key] = { ...orderData, number: candidate };
+                        return records;
+                    }, { applyLocally: false });
+                    if (!result.committed) throw new Error('ORDER_CREATE_FAILED');
+                    return { key: newOrderRef.key, data: result.snapshot.child(newOrderRef.key).val() };
+                } catch (transactionError) {
+                    // 若資料庫規則只允許寫入 orders 子節點，改走相容寫法；此備援不具交易級防撞保證。
+                    console.warn('orders 根節點交易不可用，改用相容送單方式：', transactionError);
+                    const snapshot = await get(ordersRef);
+                    const used = new Set();
+                    if (snapshot.exists()) snapshot.forEach(child => {
+                        const order = child.val();
+                        if (order && order.dateString === orderData.dateString && order.status !== 'archived') used.add(String(order.number || ''));
+                    });
+                    const candidate = chooseNumber(used);
+                    if (!candidate) throw transactionError;
+                    await set(newOrderRef, { ...orderData, number: candidate });
+                    return { key: newOrderRef.key, data: { ...orderData, number: candidate } };
+                }
+            };
+
+            const increaseCartItem = (cartKey) => {
+                const line = cart.value[cartKey];
+                if (!line) return;
+                const menuItem = fullMenu.value.find(m => String(m.id) === String(line.item.id));
+                if (menuItem && menuItem.stock !== null && menuItem.stock !== undefined && menuItem.stock !== '') {
+                    const currentCount = getItemCount(line.item.id);
+                    if (currentCount >= Number(menuItem.stock)) { alert(`「${line.item.name}」目前只剩 ${menuItem.stock} 份囉！`); return; }
+                }
+                line.qty++;
+            };
+            const decreaseCartItem = (cartKey) => {
+                const line = cart.value[cartKey];
+                if (!line) return;
+                line.qty--;
+                if (line.qty <= 0) delete cart.value[cartKey];
+            };
+
+            const submitOrder = async () => {
+                if (isSubmitting.value) return;
                 if (!isAppending.value) {
-                    const suffixStr = phoneSuffix.value ? phoneSuffix.value.toString().trim() : '';
-                    if (suffixStr.length < 3 || suffixStr.length > 5) {
-                        alert('為了方便取餐，請輸入手機「末三碼」或「末四碼」喔！');
+                    const suffixStr = String(phoneSuffix.value || '').trim();
+                    if (!/^\d{3,5}$/.test(suffixStr)) {
+                        alert('為了方便取餐，請輸入手機末三碼至末五碼喔！');
+                        return;
+                    }
+                }
+                if (!cartCount.value) return;
+                isSubmitting.value = true;
+                let stockReserved = false;
+                let newCartItems = [];
+                try {
+                    const audio = document.getElementById('pickupSound');
+                    if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
+
+                    for (const cartKey in cart.value) {
+                        const cItem = cart.value[cartKey];
+                        newCartItems.push({ id: cItem.item.id, name: cItem.item.name, price: cItem.price, qty: cItem.qty, options: cItem.options || [] });
+                    }
+                    const stockOk = await changeMenuStock(newCartItems, -1);
+                    if (!stockOk) {
+                        alert('不好意思，部分品項剛剛已售完或數量不足，請重新確認購物車。');
+                        return;
+                    }
+                    stockReserved = true;
+
+                    const now = new Date();
+                    const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                    const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+                    const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => activeCheckoutOptions.value.find(o => o.id === id)).filter(Boolean);
+
+                    if (isAppending.value && myOrder.value && myOrder.value.key) {
+                        const addonData = {
+                            number: myOrder.value.number, parentKey: myOrder.value.key, isAddon: true,
+                            items: newCartItems, checkoutOptions: chosenCheckoutOptions, total: finalTotal.value,
+                            status: 'pending', createdAt: serverTimestamp(), timeString, dateString
+                        };
+                        const newRef = await push(dbRef(db, 'orders'), addonData);
+                        localStorage.setItem('jiantou_addon_key', newRef.key);
+                        onValue(dbRef(db, `orders/${newRef.key}`), snapshot => {
+                            const data = snapshot.val();
+                            if (data) myAddonOrder.value = { ...data, key: snapshot.key };
+                            else { myAddonOrder.value = null; localStorage.removeItem('jiantou_addon_key'); }
+                        });
+                        stockReserved = false;
+                        isAppending.value = false; cart.value = {}; isCartExpanded.value = false; isConfirming.value = false;
                         return;
                     }
 
-                    const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
-                    const snapshot = await get(ordersRef);        
-                    const activeNumbers = [];
-                    if (snapshot.exists()) {
-                        snapshot.forEach(child => {
-                            const order = child.val();
-                            if (order.dateString === todayStr && order.status !== 'archived') {
-                                activeNumbers.push(String(order.number));
-                            }
-                        });
-                    }
-
-                    finalNumber = suffixStr;
-                    if (activeNumbers.includes(suffixStr)) {
-                        if (suffixStr.length === 3) {
-                            let counter = Math.floor(Math.random() * 9) + 1;
-                            let attempts = 0;
-                            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
-                                counter++;
-                                if (counter > 9) counter = 1;
-                                attempts++;
-                            }
-                            finalNumber = (attempts >= 10) ? `${suffixStr}${Math.floor(Math.random() * 90) + 10}` : `${suffixStr}${counter}`;
-                            alert(`📢 真巧！您的末三碼有人使用了。系統自動微調取餐單號為「${finalNumber}」，請憑此號碼取餐喔！`);
-
-                        } else if (suffixStr.length === 4) {
-                            let counter = Math.floor(Math.random() * 9) + 1;
-                            let attempts = 0;
-                            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
-                                counter++;
-                                if (counter > 9) counter = 1;
-                                attempts++;
-                            }
-                            if (attempts >= 10) {
-                                do { finalNumber = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(finalNumber));
-                            } else {
-                                finalNumber = `${suffixStr}${counter}`;
-                            }
-                            alert(`📢 號碼重複提醒！系統為您自動微調取餐單號為「${finalNumber}」，請以此號碼為準喔！`);
-
-                        } else {
-                            let newNum = suffixStr;
-                            let attempts = 0;
-                            while (activeNumbers.includes(newNum) && attempts < 20) {
-                                let lastDigit = Math.floor(Math.random() * 10);
-                                newNum = suffixStr.slice(0, 4) + lastDigit;
-                                attempts++;
-                            }
-                            if (attempts >= 20) {
-                                do { newNum = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(newNum));
-                            }
-                            finalNumber = newNum;
-                            alert(`📢 太有緣了！五碼居然也重複。系統已微調您的取餐單號為「${finalNumber}」，請以此取餐！`);
-                        }
-                    }
-                }
- 
-                if (isSubmitting.value) return;
-                isSubmitting.value = true;
-                            
-                const audio = document.getElementById('pickupSound');
-                if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
-
-                const newCartItems = [];
-                let requiresStockCheck = false;
-                            
-                for (const cartKey in cart.value) {
-                    const cItem = cart.value[cartKey];
-                    newCartItems.push({ id: cItem.item.id, name: cItem.item.name, price: cItem.price, qty: cItem.qty, options: cItem.options });
-                    const menuItem = fullMenu.value.find(m => m.id === cItem.item.id);
-                    if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) requiresStockCheck = true;
-                }
-                
-                if (requiresStockCheck) {
-                    try {
-                        const result = await runTransaction(dbRef(db, 'menu'), (currentMenu) => {
-                            if (currentMenu === null) return currentMenu;
-                            let canFulfill = true;
-                            for (const cartItem of newCartItems) {
-                                const menuItem = currentMenu.find(m => m.id === cartItem.id);
-                                if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
-                                    let currentStock = parseInt(menuItem.stock);
-                                    if (!isNaN(currentStock)) {
-                                        if (currentStock < cartItem.qty) { canFulfill = false; break; }
-                                        currentStock -= cartItem.qty;
-                                        if (currentStock <= 0) { currentStock = 0; menuItem.active = false; }
-                                        menuItem.stock = currentStock;
-                                    }
-                                }
-                            }
-                            if (!canFulfill) return;
-                            return currentMenu;
-                        });
-
-                        if (!result.committed) {
-                            alert('不好意思，剛剛最後的份量被買走囉！請重新確認購物車品項。');
-                            isSubmitting.value = false; return;
-                        }
-                    } catch (error) {
-                        alert('網路連線稍微不穩，請再試一次。');
-                        isSubmitting.value = false; return;
-                    }
-                }
-                
-                const now = new Date();
-                const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-                const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
-                const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => {
-                    return activeCheckoutOptions.value.find(o => o.id === id);
-                }).filter(o => o);
-
-                if (isAppending.value && myOrder.value && myOrder.value.key) {
-                    const addonData = {
-                        number: myOrder.value.number, parentKey: myOrder.value.key, isAddon: true, items: newCartItems,
-                        checkoutOptions: chosenCheckoutOptions, total: finalTotal.value, status: 'pending',
-                        createdAt: serverTimestamp(), timeString: timeString, dateString: dateString
+                    const orderData = {
+                        items: newCartItems, checkoutOptions: chosenCheckoutOptions, total: finalTotal.value,
+                        status: 'pending', createdAt: serverTimestamp(), timeString, dateString
                     };
-                    const newRef = push(ordersRef, addonData);
-                    localStorage.setItem('jiantou_addon_key', newRef.key);
-                    
-                    onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
-                        const data = snapshot.val();
-                        if (data) myAddonOrder.value = { ...data, key: snapshot.key };
-                        else { myAddonOrder.value = null; localStorage.removeItem('jiantou_addon_key'); }
-                    });
-                    isAppending.value = false; cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
-                    return; 
-                }
-                
-                const newOrderData = {
-                    number: finalNumber, 
-                    items: newCartItems, 
-                    checkoutOptions: chosenCheckoutOptions, 
-                    total: finalTotal.value,                
-                    status: 'pending',
-                    createdAt: serverTimestamp(), 
-                    timeString: timeString, 
-                    dateString: dateString
-                };
-
-                const newRef = push(ordersRef, newOrderData);
-                localStorage.setItem('jiantou_order_key', newRef.key);
-                myOrder.value = { ...newOrderData, key: newRef.key };
-                cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
-
-                onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
-                    const data = snapshot.val();
-                    if (data && data.status !== 'archived') {
-                        myOrder.value = { ...data, key: snapshot.key };
-                    } else {
-                        myOrder.value = null;
-                        localStorage.removeItem('jiantou_order_key');
+                    const created = await createOrderWithUniqueNumber(orderData, String(phoneSuffix.value).trim());
+                    const savedOrder = { ...created.data, key: created.key };
+                    if (String(savedOrder.number) !== String(phoneSuffix.value).trim()) {
+                        alert(`提醒：手機末碼與其他訂單重複，系統已將取餐號碼調整為「${savedOrder.number}」，請以此號碼取餐喔！`);
                     }
-                });
+                    localStorage.setItem('jiantou_order_key', created.key);
+                    myOrder.value = savedOrder;
+                    stockReserved = false;
+                    cart.value = {}; isCartExpanded.value = false; isConfirming.value = false;
+                    onValue(dbRef(db, `orders/${created.key}`), snapshot => {
+                        const data = snapshot.val();
+                        if (data && data.status !== 'archived') myOrder.value = { ...data, key: snapshot.key };
+                        else { myOrder.value = null; localStorage.removeItem('jiantou_order_key'); }
+                    });
+                } catch (error) {
+                    if (stockReserved) {
+                        try { await changeMenuStock(newCartItems, 1); }
+                        catch (rollbackError) { console.error('庫存補回失敗，請人工核對：', rollbackError); }
+                    }
+                    console.error('送單失敗：', error);
+                    alert('訂單送出時發生問題，請確認網路後再試一次；若畫面未出現訂單，請勿連續重複送出。');
+                } finally {
+                    isSubmitting.value = false;
+                }
             };
 
             const resetOrder = () => {
@@ -986,6 +1000,7 @@
                 groupedMenu, 
                 menu, cart, myOrder, isSubmitting, currentCallingNumber,
                 getItemCount, addToCart, removeFromCart, cartCount, cartTotal, submitOrder, getStatusText,
+                isCartExpanded, increaseCartItem, decreaseCartItem,
                 shopIsOpen, showDetails, isConfirming, openConfirmation,
                 resetOrder, cancelOrder, showPickupModal, closePickupModal,
                 isTrackingMode, tempTrackInput, startTracking, trackedNumber, isTrackedNumberCalled, stopTracking,
@@ -996,7 +1011,7 @@
                 isAppending, startAppend, myAddonOrder, cancelAddon,
                 checkoutOptions, activeCheckoutOptions, selectedCheckoutOptions, finalTotal, isConnected,
                 deleteCartItem,
-                isAnnounceExpanded 
+                isAnnounceExpanded // 🌟 匯出縮放狀態
             };
         }
     }).mount('#app');
