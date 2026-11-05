@@ -2,64 +2,92 @@
 <html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>尖頭油飯 POS｜後台管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="控單後台管理系統">
+    <meta name="theme-color" content="#f5f5f4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>控單後台 | 營業管理</title>
     
     <script>
         window.MARKET_CONFIG = {
             shopName: "尖頭油飯", 
             firebase: {
-              apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
-              authDomain: "jiantou-000rlhad.firebaseapp.com",
-              databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
-              projectId: "jiantou-000rlhad",
-              storageBucket: "jiantou-000rlhad.firebasestorage.app",
-              messagingSenderId: "435285773521",
-              appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+  apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+  authDomain: "jiantou-000rlhad.firebaseapp.com",
+  databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+  projectId: "jiantou-000rlhad",
+  storageBucket: "jiantou-000rlhad.firebasestorage.app",
+  messagingSenderId: "435285773521",
+  appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
             }
         };
     </script>
+    <style>
+        :root {
+            --color-bg-base: #f5f5f4;
+            --color-primary: #9E5A5A; 
+        }
+    </style>
+
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap');
-        :root { --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); --color-primary: #9E5A5A; }
-        html, body { min-height: 100%; overscroll-behavior: none; }
-        .safe-area-top { padding-top: calc(.75rem + var(--safe-top)); }
-        .safe-area-bottom { padding-bottom: max(.75rem, var(--safe-bottom)); }
-        body { font-family: sans-serif; background-color: #f5f5f4; }
+        body { font-family: sans-serif; background-color: var(--color-bg-base); }
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
+        .border-primary { border-color: var(--color-primary); }
+        .focus\:border-primary:focus { border-color: var(--color-primary); }
+        .accent-primary { accent-color: var(--color-primary); }
         .serif { font-family: 'Noto Serif TC', serif; }
         [v-cloak] { display: none !important; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .vertical-text { writing-mode: vertical-lr; text-orientation: upright; letter-spacing: 0.2em; }
         .nav-scrollbar::-webkit-scrollbar { display: none; }
+        .nav-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .drawer-enter-active, .drawer-leave-active { transition: transform 0.25s ease; }
+        .drawer-enter-from, .drawer-leave-to { transform: translateX(100%); }
     </style>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const isBoss = urlParams.get('boss') === 'bao';
+
+    if (!isBoss) {
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', event => {
+            if (event.keyCode === 123 || 
+               (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74)) || 
+               (event.ctrlKey && event.keyCode === 85)) {
+                event.preventDefault();
+            }
+        });
+    }
+</script>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
 
 <div id="app" v-cloak class="flex-1 flex flex-col h-full relative">
 
-    <div v-if="!isConnected" class="bg-orange-500 text-white text-[10px] py-1 text-center font-bold z-[100] w-full absolute top-0 left-0">
+<div v-if="!isConnected" class="bg-orange-500 text-white text-[10px] py-1 text-center font-bold animate-pulse z-[100] w-full absolute top-0 left-0">
         ⚠️ 網路連線中斷，請檢查連線
     </div>
 
-    <!-- 登入頁面 -->
-    <div v-if="!isLoggedIn || !isAdmin" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
+    <div v-if="!isLoggedIn" class="fixed inset-0 bg-stone-100 z-50 flex items-center justify-center">
         <main class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
             <h1 class="text-xl font-bold text-stone-800 mb-2">{{ shopName }}</h1>
-            <p class="text-xs text-stone-500 mb-4">後台管理員登入</p>
+            <p class="text-xs text-stone-500 mb-4">後台登入</p>
             <input type="text" v-model="loginUser" placeholder="登入帳號" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-3 text-center outline-none focus:border-primary">
             <input type="password" v-model="loginPass" placeholder="登入密碼" @keyup.enter="checkLogin" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 mb-6 text-center outline-none focus:border-primary">
             <button @click="checkLogin" class="w-full bg-stone-800 text-white font-bold py-3 rounded-lg hover:bg-black transition-colors">登入</button>
-            <p v-if="loginError" class="text-red-500 text-xs mt-4">{{ loginErrorMessage || '帳號密碼錯誤或無管理權限' }}</p>
+            <p v-if="loginError" class="text-red-500 text-xs mt-4">帳號或密碼錯誤，請重新輸入</p>
         </main>
     </div>
 
-    <!-- 後台主介面 -->
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden">
-        <header class="bg-white px-4 py-3 safe-area-top border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0">
+        <header class="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0">
             <div>
                 <button @click="toggleShopStatus" 
                     class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all"
@@ -67,75 +95,92 @@
                     <span class="material-icons-round text-sm">{{ shopIsOpen ? 'store' : 'storefront' }}</span>
                     {{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
-                <div class="flex items-center gap-1 mt-1.5">
+                <div class="flex items-center gap-1 mt-2">
                     <span class="material-icons-round text-stone-400 text-sm">calendar_today</span>
-                    <input type="date" v-model="selectedDate" @change="filterOrdersByDate" class="text-xs text-stone-600 bg-transparent border-b border-stone-200 outline-none focus:border-primary font-medium">
+                    <input type="date" v-model="selectedDate" class="text-xs text-stone-600 bg-transparent border-b border-stone-200 outline-none focus:border-primary font-medium">
                 </div>
             </div>
-            
-            <div class="text-right flex items-center gap-3">
-                <div class="hidden sm:block text-xs border-r pr-3 border-stone-200">
-                    <div class="text-blue-600">💵 現金: <span class="font-bold text-blue-800">${{ revenueBreakdown.cash }}</span></div>
-                    <div class="text-emerald-600">🟢 LINE Pay: <span class="font-bold text-emerald-700">${{ revenueBreakdown.linepay }}</span></div>
-                </div>
-                <div>
-                    <p class="text-[10px] text-stone-400 uppercase tracking-wider">{{ isToday ? '今日總營收' : '歷史營收' }}</p>
-                    <div class="flex items-center gap-1.5">
-                        <p class="text-xl font-bold text-primary">${{ dailyRevenue }}</p>
-                        <button @click="showReportModal=true" class="bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-full p-1.5 transition-colors">
-                            <span class="material-icons-round text-sm">poll</span>
-                        </button>
-                    </div>
+            <div class="text-right">
+                <p class="text-[10px] text-stone-400 uppercase tracking-wider">{{ isToday ? '今日營收' : '歷史營收' }}</p>
+                <div class="flex items-center gap-2">
+                    <p class="text-xl font-bold text-primary">${{ dailyRevenue }}</p>
+                    <button @click="showReport=true" class="bg-stone-100 hover:bg-stone-200 rounded-full p-1 transition-colors">
+                        <span class="material-icons-round text-sm">poll</span>
+                    </button>
                 </div>
             </div>
         </header>
 
-        <!-- 行動端頁籤按鈕 -->
         <nav class="flex lg:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0 overflow-x-auto nav-scrollbar">
             <button @click="currentTab='pending'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">待結帳 ({{ pendingOrders.length }})</button>
             <button @click="currentTab='processing'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='processing' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">製作中 ({{ processingOrders.length }})</button>
             <button @click="currentTab='history'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors" :class="currentTab==='history' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">已出餐 ({{ historyOrders.length }})</button>
-            <button @click="currentTab='menu'" class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1" :class="currentTab==='menu' ? 'bg-primary text-white shadow' : 'text-stone-500 bg-stone-200'">
-                <span class="material-icons-round text-sm">edit_note</span> 前台管理
-            </button>
         </nav>
 
-        <!-- 看板卡片 / 菜單管理主區域 -->
         <main class="flex-1 overflow-hidden relative flex flex-col lg:flex-row p-2 gap-2 min-h-0">
-            
-            <!-- 1. 待結帳區 -->
-            <section v-show="currentTab === 'pending' || isDesktop" class="flex-1 min-w-[240px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0 lg:flex">
-                <header class="p-2 bg-gray-100 font-bold text-stone-500 text-xs text-center flex justify-between px-3 flex-shrink-0">
-                    <span>待結帳區</span><span class="bg-gray-200 px-2 py-0.5 rounded-full text-[10px] font-bold">{{ pendingOrders.length }}</span>
+            <section v-show="currentTab === 'pending' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-gray-400 overflow-hidden min-h-0 lg:flex">
+                <header class="p-2 bg-gray-100 font-bold text-stone-500 text-xs text-center flex justify-between px-2 flex-shrink-0">
+                    <span>待結帳</span><span class="bg-gray-200 px-2 rounded-full text-[10px]">{{ pendingOrders.length }}</span>
                 </header>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <article v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg shadow-sm relative transition-all" :class="order.isAddon ? 'bg-amber-50/60 border-amber-200' : 'bg-white border-stone-100'">
-                        <button @click.stop.prevent="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg z-10 active:scale-90">
-                            <span class="material-icons-round text-sm">close</span>
+                    <article v-for="order in pendingOrders" :key="order.key" class="p-3 border rounded-lg shadow-sm relative" :class="order.isAddon ? 'bg-yellow-50/50 border-yellow-200' : 'bg-white border-stone-100'">
+                        
+                        <button @click.stop.prevent="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg z-[40] active:scale-90 touch-manipulation">
+                            <span class="material-icons-round text-base pointer-events-none">close</span>
                         </button>
+                        
                         <div>
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">{{ order.timeString }}</span>
-                                <span class="font-bold text-2xl text-stone-800">#{{ order.number }}</span>
+                                <span class="text-[10px] text-stone-400 bg-white/60 px-1 rounded">{{ order.timeString }}</span>
+                                <span class="font-bold text-xl text-stone-800">
+                                    #{{ order.number }}
+                                    <span v-if="order.isAddon" class="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">加點</span>
+                                </span>
                             </div>
                             <div class="flex justify-between items-end border-b border-dashed border-stone-100 pb-2 mb-2">
-                                <span class="text-xs text-stone-400 font-medium">金額</span>
-                                <span class="text-2xl font-bold text-primary">${{ order.total }}</span>
+                                <span class="text-xs text-stone-400">金額</span>
+                                <span class="text-xl font-bold text-primary">${{ order.total }}</span>
                             </div>
-                            <div class="space-y-1 mb-3">
-                                <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-start">
-                                    <span class="text-sm font-bold text-stone-700">{{ item.name }}</span>
-                                    <span class="text-sm font-bold text-stone-500">x{{ item.qty }}</span>
+                            <div class="mt-2 space-y-1">
+                                <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start">
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                                        <span class="text-sm font-bold text-stone-700 leading-tight">{{ item.name }}</span>
+                                        <span v-if="item.options && item.options.length" class="text-[10px] text-primary">{{ item.options.join(', ') }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-sm font-bold text-stone-500">x{{ item.qty }}</span>
+                                        <button @click.stop.prevent="deleteOrderItem(order, idx)" class="text-stone-300 hover:text-red-400 p-2 -mr-2 active:scale-90 touch-manipulation">
+                                            <span class="material-icons-round text-sm pointer-events-none">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-2 pt-2 border-t border-stone-100 space-y-1">
+                                <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'opt'+oIdx" class="flex justify-between items-start">
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                                        <span class="text-xs font-bold text-stone-500 leading-tight">🛒 {{ opt.name }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-xs font-bold text-stone-400 text-right w-6">x1</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-dashed border-stone-200">
+                                <div class="flex items-center bg-stone-50 rounded p-1.5 gap-1.5">
+                                    <span class="material-icons-round text-stone-400 text-xs">edit_note</span>
+                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增備註..." class="w-full bg-transparent text-xs text-stone-600 outline-none">
                                 </div>
                             </div>
                             
-                            <!-- 收款按鈕：深藍色現金 vs 經典綠色 LINE Pay -->
-                            <div class="pt-2 border-t border-stone-100 grid grid-cols-2 gap-2">
-                                <button @click="updateStatus(order, 'paid', 'cash')" class="py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all">
-                                    <span>💵 現金收款</span>
+                            <!-- 收款雙按鈕 (低彩度素色設計) -->
+                            <div v-if="isToday" class="mt-3 flex gap-2">
+                                <button @click="updateStatus(order, 'paid', '現金')" class="flex-1 py-2 rounded-lg text-xs font-bold bg-stone-200 text-stone-700 hover:bg-stone-300 active:scale-95 transition-all flex items-center justify-center gap-1 shadow-sm">
+                                    <span class="material-icons-round text-sm text-stone-500">payments</span>
+                                    {{ order.isAddon ? '現金併單' : '現金' }}
                                 </button>
-                                <button @click="updateStatus(order, 'paid', 'linepay')" class="py-2.5 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all">
-                                    <span>🟢 LINE Pay</span>
+                                <button @click="updateStatus(order, 'paid', 'LINE Pay')" class="flex-1 py-2 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 hover:bg-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1 shadow-sm">
+                                    <span class="material-icons-round text-sm text-emerald-600">qr_code_2</span>
+                                    {{ order.isAddon ? 'LINEPay併單' : 'LINE Pay' }}
                                 </button>
                             </div>
                         </div>
@@ -143,206 +188,969 @@
                 </div>
             </section>
 
-            <!-- 2. 製作中區 -->
-            <section v-show="currentTab === 'processing' || isDesktop" class="flex-1 min-w-[240px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-primary overflow-hidden min-h-0 lg:flex">
+            <section v-show="currentTab === 'processing' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-primary overflow-hidden min-h-0 lg:flex relative">
                 <header class="p-2 bg-red-50 font-bold text-primary text-xs flex justify-between items-center px-3 flex-shrink-0">
-                    <span>製作中 ({{ processingOrders.length }})</span>
+                    <div class="flex items-center gap-2">
+                        <span>製作中</span><span class="bg-red-100 px-2 py-0.5 rounded-full text-[10px]">{{ processingOrders.length }}</span>
+                    </div>
+                    <button @click="showPrepStats = !showPrepStats" class="flex items-center gap-1 bg-white border border-red-200 px-2 py-1 rounded-md text-primary shadow-sm active:scale-95 transition-all">
+                        <span class="material-icons-round text-[14px]">kitchen</span>
+                        <span class="text-[10px] font-bold">待製作餐點</span>
+                    </button>
                 </header>
+                
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
                     <article v-for="order in processingOrders" :key="order.key" class="p-3 border border-red-100 bg-red-50/20 rounded-lg shadow-sm relative">
-                        <button @click.stop.prevent="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg z-10">
-                            <span class="material-icons-round text-sm">close</span>
+                        
+                        <button @click.stop.prevent="deleteOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg z-[40] active:scale-90 touch-manipulation">
+                            <span class="material-icons-round text-base pointer-events-none">close</span>
                         </button>
-                        <div>
+                        
+                        <div @click="isToday ? updateStatus(order, 'done') : null" role="button">
                             <div class="flex justify-between items-center mb-1">
                                 <div class="flex items-center gap-1.5">
-                                    <span class="text-[10px] text-stone-400">{{ order.timeString }}</span>
-                                    <button @click="switchPaymentMethod(order)" class="text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-0.5 active:scale-95"
-                                        :class="order.paymentMethod === 'linepay' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-blue-50 text-blue-700 border-blue-300'">
-                                        <span>{{ order.paymentMethod === 'linepay' ? '🟢 LINE Pay' : '💵 現金' }}</span>
-                                        <span class="material-icons-round text-[10px] opacity-60">sync</span>
-                                    </button>
+                                    <span class="text-[10px] text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold border" :class="order.paymentMethod === 'LINE Pay' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-100 text-stone-600 border-stone-200'">
+                                        {{ order.paymentMethod || '現金' }}
+                                    </span>
                                 </div>
-                                <span class="font-bold text-2xl text-primary">#{{ order.number }}</span>
+                                <span class="font-bold text-2xl text-primary">
+                                    #{{ order.number }}
+                                </span>
                             </div>
-                            <div class="mt-2 space-y-1.5 mb-3">
-                                <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40">
-                                    <span class="text-sm font-bold text-stone-800">{{ item.name }}</span>
-                                    <span class="text-sm font-bold text-stone-600">x{{ item.qty }}</span>
+                            <div class="mt-2 space-y-1.5">
+                                <div v-for="(item, idx) in order.items" :key="item.uid || idx" @click.stop="toggleItemReady(order, idx)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2" :class="item.ready ? 'line-through text-stone-400' : ''">
+                                        <div class="text-sm font-bold text-stone-800">
+                                            {{ item.name }}
+                                            <span v-if="!item.ready && (item.readyQty || 0) > 0" class="bg-orange-100 text-orange-600 text-[10px] px-1.5 py-0.5 rounded ml-1 font-bold">已好 {{ item.readyQty }}</span>
+                                        </div>
+                                        <span v-if="item.options && item.options.length" class="text-[10px] text-primary">{{ item.options.join(', ') }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-stone-600 w-6 text-right" :class="item.ready ? 'line-through' : ''">x{{ item.qty }}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <button @click="updateStatus(order, 'done')" class="w-full py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-1">
-                                <span class="material-icons-round text-sm">volume_up</span> 叫號並完成
-                            </button>
+                            <div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-1.5 space-y-1.5">
+                                <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'popt'+oIdx" class="flex justify-between items-center p-2 rounded-lg border bg-stone-50/80 border-stone-100">
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                                        <div class="text-xs font-bold text-stone-500">🛒 {{ opt.name }}</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-stone-400 w-6 text-right">x1</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-dashed border-red-100" @click.stop>
+                                <div class="flex items-center bg-white/80 rounded p-1.5 gap-1.5">
+                                    <span class="material-icons-round text-primary opacity-50 text-xs">edit_note</span>
+                                    <input type="text" v-model="order.note" @blur="updateOrderNote(order)" placeholder="新增備註..." class="w-full bg-transparent text-xs text-stone-700 outline-none font-medium">
+                                </div>
+                            </div>
+                            <div v-if="isToday" class="mt-3 flex justify-end">
+                                <button class="text-[11px] bg-primary text-white px-4 py-1.5 rounded-full font-bold shadow-sm active:scale-95">叫號並結案</button>
+                            </div>
                         </div>
                     </article>
                 </div>
+
+                <div class="absolute top-10 bottom-0 right-0 w-[60%] lg:w-[240px] bg-stone-50 border-l border-stone-200 shadow-2xl transition-transform duration-300 flex flex-col z-20"
+                     :class="showPrepStats ? 'translate-x-0' : 'translate-x-full'">
+                    <div class="p-3 bg-stone-200 flex justify-between items-center flex-shrink-0 border-b border-stone-300">
+                        <span class="text-xs font-bold text-stone-700 flex items-center gap-1"><span class="material-icons-round text-[14px] text-stone-500">list_alt</span> 總待做量</span>
+                        <button @click="showPrepStats = false" class="text-stone-400 hover:text-stone-600 bg-stone-100 rounded-full w-5 h-5 flex items-center justify-center shadow-sm"><span class="material-icons-round text-xs">close</span></button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-2 space-y-2 nav-scrollbar">
+                        <div v-if="preparationStats.length === 0" class="text-center text-stone-400 text-xs mt-6">
+                            目前沒有待做品項
+                        </div>
+                        
+                        <div v-for="stat in preparationStats" :key="stat.baseName" class="bg-white rounded-lg border border-stone-200 shadow-sm overflow-hidden transition-all">
+                            
+                            <div @click="(stat.details.length > 1 || stat.details[0].option !== '基本 / 原味') ? togglePrepItem(stat.baseName) : null" 
+                                 class="flex justify-between items-center p-2.5 transition-colors"
+                                 :class="(stat.details.length > 1 || stat.details[0].option !== '基本 / 原味') ? 'cursor-pointer hover:bg-stone-50' : ''">
+                                
+                                <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <span v-if="stat.details.length > 1 || stat.details[0].option !== '基本 / 原味'" 
+                                          class="material-icons-round text-stone-300 text-sm transition-transform" 
+                                          :class="expandedPrepItems[stat.baseName] ? 'rotate-180 text-primary' : ''">expand_more</span>
+                                    <span v-else class="w-[14px]"></span>
+                                    
+                                    <span class="text-sm font-bold text-stone-700 truncate">{{ stat.baseName }}</span>
+                                </div>
+                                <span class="text-sm font-bold text-white bg-primary w-7 h-7 flex flex-shrink-0 items-center justify-center rounded-full shadow-sm">{{ stat.totalQty }}</span>
+                            </div>
+                            
+                            <div v-show="expandedPrepItems[stat.baseName]" class="bg-stone-50 border-t border-stone-100 p-2 space-y-1.5 animate-[fadeIn_0.2s_ease-out]">
+                                <div v-for="detail in stat.details" :key="detail.option" class="flex justify-between items-start text-xs px-1">
+                                    <span class="text-stone-600 flex-1 pr-2 leading-tight" :class="detail.option === '基本 / 原味' ? 'opacity-60' : 'font-bold text-primary'">{{ detail.option }}</span>
+                                    <span class="font-bold text-stone-500 flex-shrink-0 w-8 text-right bg-white border border-stone-200 rounded px-1 shadow-sm">x {{ detail.qty }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </section>
 
-            <!-- 3. 已出餐 / 歷史區 -->
-            <section v-show="currentTab === 'history' || isDesktop" class="flex-1 min-w-[240px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-300 overflow-hidden min-h-0 lg:flex">
-                <header class="p-2 bg-stone-200 font-bold text-stone-600 text-xs text-center flex justify-between px-3 flex-shrink-0">
-                    <span>已出餐 / 歷史 ({{ historyOrders.length }})</span>
+            <section v-show="currentTab === 'history' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-300 overflow-hidden min-h-0 lg:flex">
+                <header class="p-2 bg-stone-200 font-bold text-stone-600 text-xs text-center flex justify-between px-2 flex-shrink-0">
+                    <span>已出餐 / 歷史</span><span class="bg-stone-300 px-2 rounded-full text-[10px] text-stone-700">{{ historyOrders.length }}</span>
                 </header>
                 <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
                     <article v-for="order in historyOrders" :key="order.key" class="p-3 bg-white rounded-lg border border-stone-200 shadow-sm text-sm relative">
+                        
+                        <button @click.stop.prevent="deleteHistoryOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg z-[40] active:scale-90 touch-manipulation">
+                            <span class="material-icons-round text-base pointer-events-none">close</span>
+                        </button>
+                        
                         <div class="flex justify-between items-center pb-2 border-b border-stone-100 mb-2">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-baseline gap-2">
                                 <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
-                                <button @click="switchPaymentMethod(order)" class="text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-0.5 active:scale-95"
-                                    :class="order.paymentMethod === 'linepay' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'">
-                                    <span>{{ order.paymentMethod === 'linepay' ? '🟢 LINE Pay' : '💵 現金' }}</span>
-                                    <span class="material-icons-round text-[10px] opacity-60">edit</span>
+                                <span class="text-[10px] text-stone-400">{{ order.timeString }}</span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border" :class="order.paymentMethod === 'LINE Pay' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-100 text-stone-500 border-stone-200'">
+                                    {{ order.paymentMethod || '現金' }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-primary mr-1">${{ order.total }}</span>
+                                <button @click="recallOrder(order)" class="text-[10px] bg-stone-100 text-stone-600 px-2 py-1 rounded-full border border-stone-200 active:scale-95 flex items-center gap-1">
+                                    <span class="material-icons-round text-[10px]">campaign</span> 再叫
                                 </button>
                             </div>
-                            <span class="font-bold text-primary">${{ order.total }}</span>
                         </div>
                         <div class="space-y-1">
-                            <div v-for="(item, idx) in order.items" :key="idx" class="flex justify-between items-start text-xs">
-                                <span class="font-medium text-stone-600">{{ item.name }}</span>
+                            <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start text-xs">
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-stone-600">{{ item.name }}</span>
+                                    <span v-if="item.options && item.options.length" class="text-[9px] text-stone-400">{{ item.options.join(', ') }}</span>
+                                </div>
                                 <span class="text-stone-400 font-bold">x{{ item.qty }}</span>
+                            </div>
+                            <div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-1 pt-1 border-t border-stone-50 space-y-1">
+                                <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'hopt'+oIdx" class="flex justify-between items-start text-xs">
+                                    <span class="font-medium text-stone-400">🛒 {{ opt.name }}</span>
+                                    <span class="text-stone-400 font-bold">x1</span>
+                                </div>
+                            </div>
+                            <div v-if="order.note" class="mt-1 pt-1 border-t border-dashed border-stone-100 flex items-start gap-1">
+                                <span class="material-icons-round text-yellow-600 text-[12px] mt-0.5">edit_note</span>
+                                <span class="text-[10px] text-stone-500 font-medium">{{ order.note }}</span>
                             </div>
                         </div>
                     </article>
                 </div>
             </section>
 
-            <!-- 4. 前台菜單與公告管理頁面 (回復補回) -->
-            <section v-show="currentTab === 'menu'" class="flex-1 bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-700 overflow-hidden min-h-0">
-                <header class="p-3 bg-stone-100 font-bold text-stone-700 text-xs flex justify-between items-center px-4 flex-shrink-0">
-                    <span class="flex items-center gap-1"><span class="material-icons-round text-sm">settings</span> 前台菜單與公告設定</span>
-                    <button @click="saveMenuChanges" class="px-3 py-1 bg-primary text-white rounded-lg text-xs font-bold shadow-sm">儲存設定</button>
-                </header>
-                <div class="flex-1 overflow-y-auto p-4 space-y-6">
-                    <!-- 跑馬燈公告設定 -->
-                    <div class="p-4 bg-stone-50 border border-stone-200 rounded-xl">
-                        <h3 class="font-bold text-sm text-stone-800 mb-2 flex items-center gap-1">
-                            <span class="material-icons-round text-primary text-base">campaign</span> 前台跑馬燈公告內容
-                        </h3>
-                        <textarea v-model="marqueeText" rows="3" placeholder="請輸入欲顯示於前台頂部的公告內容..." class="w-full p-2.5 text-xs bg-white border border-stone-200 rounded-lg outline-none focus:border-primary"></textarea>
-                        <button @click="saveMarquee" class="mt-2 px-4 py-1.5 bg-stone-800 text-white rounded-lg text-xs font-bold">更新跑馬燈</button>
+<div v-if="isPosModalOpen" class="fixed inset-0 z-[100] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-[fadeIn_0.2s_ease-out]">
+               <div class="bg-stone-50 w-full h-[88dvh] sm:h-[85dvh] sm:max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+                    
+                    <div class="bg-white px-5 py-3.5 border-b border-stone-200 flex justify-between items-center flex-shrink-0 shadow-sm z-10">
+                        <div class="flex items-center gap-3">
+                            <button v-if="isPosCheckoutView" @click="isPosCheckoutView = false" class="w-8 h-8 bg-stone-100 rounded-full flex items-center justify-center text-stone-600 hover:bg-stone-200 active:scale-95 transition-all">
+                                <span class="material-icons-round text-sm">arrow_back_ios_new</span>
+                            </button>
+                            <div v-else class="w-8 h-8 bg-stone-800 text-white rounded-lg flex items-center justify-center shadow-sm">
+                                <span class="material-icons-round text-[18px]">point_of_sale</span>
+                            </div>
+                            <h2 class="font-bold text-stone-800 text-lg tracking-wide">{{ isPosCheckoutView ? '確認結帳明細' : '現場點餐收銀' }}</h2>
+                        </div>
+                        <button @click="isPosModalOpen = false; isPosCheckoutView = false" class="w-8 h-8 bg-stone-100 rounded-full flex items-center justify-center text-stone-500 hover:bg-stone-200 active:scale-95 transition-all">
+                            <span class="material-icons-round text-sm">close</span>
+                        </button>
                     </div>
 
-                    <!-- 菜單列表品項設定 -->
-                    <div>
-                        <h3 class="font-bold text-sm text-stone-800 mb-3 flex items-center gap-1">
-                            <span class="material-icons-round text-primary text-base">restaurant_menu</span> 菜單品項與庫存管理
-                        </h3>
-                        <div class="space-y-3">
-                            <div v-for="(item, idx) in menuList" :key="item.id" class="p-3 border rounded-xl bg-white shadow-sm flex flex-col gap-2">
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-2">
-                                        <button @click="item.active = !item.active" class="px-2 py-0.5 rounded text-[10px] font-bold" :class="item.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                                            {{ item.active ? '上架中' : '已下架' }}
-                                        </button>
-                                        <span class="font-bold text-sm text-stone-800">{{ item.name }}</span>
+                    <div class="flex-1 overflow-hidden relative">
+                        
+                        <div v-show="!isPosCheckoutView" class="absolute inset-0 flex flex-col bg-stone-100/50">
+                            <div class="flex-1 overflow-y-auto p-5 grid grid-cols-2 sm:grid-cols-3 gap-4 nav-scrollbar content-start pb-28">
+                                <article v-for="item in activeMenuSettings" :key="item.id" class="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-col cursor-pointer active:scale-95 transition-transform hover:border-stone-400" @click="addPosCart(item)">
+                                    <span class="font-bold text-stone-800 text-base mb-3 leading-tight">{{ item.name }}</span>
+                                    <div class="flex justify-between items-end mt-auto">
+                                        <span class="text-lg text-stone-800 font-bold serif">${{ item.price }}</span>
+                                        <span v-if="item.stock !== null && item.stock !== '' && Number(item.stock) <= 5 && Number(item.stock) > 0" class="text-[10px] text-stone-400 font-medium">剩 {{ item.stock }}</span>
+                                        <div v-else class="w-7 h-7 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-400">
+                                            <span class="material-icons-round text-[14px]">add</span>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-1">
-                                        <span class="text-xs text-stone-400">價格 $</span>
-                                        <input type="number" v-model.number="item.price" class="w-16 p-1 text-xs border rounded text-center font-bold">
+                                </article>
+                            </div>
+                            
+                            <div class="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-stone-200 via-stone-100 to-transparent">
+                                <button @click="isPosCheckoutView = true" :disabled="posCartCount === 0" class="w-full bg-stone-800 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-stone-300 active:scale-95 disabled:opacity-40 disabled:scale-100 transition-all flex justify-between items-center px-6">
+                                    <div class="flex items-center gap-3">
+                                        <div class="relative">
+                                            <span class="material-icons-round text-2xl">shopping_cart</span>
+                                            <span v-if="posCartCount > 0" class="absolute -top-2 -right-2 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border border-stone-800">{{ posCartCount }}</span>
+                                        </div>
+                                        <span>查看購物車</span>
                                     </div>
-                                </div>
-                                <div class="flex justify-between items-center pt-2 border-t border-stone-100 text-xs">
-                                    <span class="text-stone-500">當前剩餘庫存：</span>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" v-model="item.stock" placeholder="留空表不限" class="w-24 p-1 text-xs border rounded text-center">
-                                        <span class="text-[10px] text-stone-400">(留空表無限量)</span>
+                                    <span class="text-2xl serif tracking-wide">${{ posCartTotal }}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-show="isPosCheckoutView" class="absolute inset-0 flex flex-col bg-white overflow-y-auto nav-scrollbar">
+                            <div class="p-5 space-y-3">
+                                <div v-for="(cItem, cartKey) in posCart" :key="cartKey" class="bg-stone-50 p-4 rounded-xl border border-stone-100 flex flex-col gap-2 relative overflow-hidden">
+                                    <div class="flex justify-between items-start pr-8">
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-stone-800 text-lg">{{ cItem.item.name }}</span>
+                                            <span v-if="cItem.options.length" class="text-xs text-stone-500 mt-1.5 bg-white px-2 py-0.5 rounded border border-stone-200 inline-block font-medium">{{ cItem.options.join(', ') }}</span>
+                                        </div>
+                                    </div>
+                                    <button @click="posCart[cartKey].qty = 0; decreasePosCart(cartKey)" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-stone-400 hover:text-red-400 bg-white border border-stone-100 rounded-full shadow-sm active:scale-90 transition-all"><span class="material-icons-round text-sm">close</span></button>
+                                    
+                                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-stone-200 border-dashed">
+                                        <div class="flex items-center bg-white border border-stone-200 rounded-lg shadow-sm overflow-hidden">
+                                            <button @click="decreasePosCart(cartKey)" class="w-10 h-10 flex items-center justify-center text-stone-500 hover:bg-stone-50 active:bg-stone-100 transition-colors"><span class="material-icons-round text-lg">remove</span></button>
+                                            <span class="w-10 text-center font-bold text-stone-700 bg-stone-50/50 h-10 flex items-center justify-center border-x border-stone-100 text-lg">{{ cItem.qty }}</span>
+                                            <button @click="increasePosCart(cartKey)" class="w-10 h-10 flex items-center justify-center text-stone-500 hover:bg-stone-50 active:bg-stone-100 transition-colors"><span class="material-icons-round text-lg">add</span></button>
+                                        </div>
+                                        <span class="font-bold text-xl text-stone-800">${{ (cItem.item.price + cItem.optionsPrice) * cItem.qty }}</span>
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="bg-white border-t border-stone-100 p-6 mt-auto shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+                                <div v-if="activeCheckoutOptions.length > 0" class="mb-5">
+                                    <p class="text-sm font-bold text-stone-400 mb-3 tracking-wide">附加服務</p>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <label v-for="opt in activeCheckoutOptions" :key="opt.id || opt.name" class="flex items-center justify-between p-3.5 border-2 rounded-xl cursor-pointer transition-all" :class="posSelectedCheckoutOptions.includes(opt.id) ? 'border-stone-800 bg-stone-800 text-white shadow-md' : 'border-stone-100 bg-white text-stone-600 hover:border-stone-200'">
+                                            <div class="flex items-center gap-3">
+                                                <input type="checkbox" :value="opt.id" v-model="posSelectedCheckoutOptions" class="w-5 h-5 rounded border-stone-300 accent-stone-800">
+                                                <span class="font-bold text-base">{{ opt.name }}</span>
+                                            </div>
+                                            <span class="font-bold text-sm" :class="posSelectedCheckoutOptions.includes(opt.id) ? 'text-white' : 'text-stone-400'">{{ opt.price > 0 ? '+$' + opt.price : '免費' }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-5">
+                                    <p class="text-sm font-bold text-stone-400 mb-2 tracking-wide">付款方式</p>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <button @click="posPaymentMethod = '現金'" type="button" class="py-2.5 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2" :class="posPaymentMethod === '現金' ? 'border-stone-800 bg-stone-800 text-white shadow-md' : 'border-stone-200 bg-white text-stone-600'">
+                                            <span class="material-icons-round text-base">payments</span> 現金
+                                        </button>
+                                        <button @click="posPaymentMethod = 'LINE Pay'" type="button" class="py-2.5 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2" :class="posPaymentMethod === 'LINE Pay' ? 'border-emerald-600 bg-emerald-600 text-white shadow-md' : 'border-stone-200 bg-white text-stone-600'">
+                                            <span class="material-icons-round text-base">qr_code_2</span> LINE Pay
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-6">
+                                    <p class="text-sm font-bold text-stone-400 mb-3 tracking-wide">訂單備註</p>
+                                    <div class="flex items-center bg-stone-50 border-2 border-stone-100 rounded-xl p-3.5 gap-2 focus-within:border-stone-800 focus-within:bg-white transition-all shadow-sm">
+                                        <span class="material-icons-round text-stone-400 text-xl">edit_note</span>
+                                        <input type="text" v-model="posNote" placeholder="輸入備註 (選填)..." class="w-full bg-transparent text-base text-stone-700 outline-none font-medium">
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center mb-6 pb-6 border-b border-stone-200 border-dashed">
+                                    <span class="text-base text-stone-500 font-bold">應收總額</span>
+                                    <span class="text-5xl font-bold text-stone-800 serif">${{ posFinalTotal }}</span>
+                                </div>
+
+<div class="flex flex-col sm:flex-row gap-3">
+    <div class="relative w-full sm:w-32 flex-shrink-0">
+        <input type="tel" maxlength="5" v-model="posPhoneSuffix" placeholder="末三碼" class="w-full h-full bg-stone-50 border-2 border-stone-200 rounded-2xl text-center text-xl font-bold text-stone-700 outline-none focus:border-stone-800 focus:bg-white transition-colors tracking-widest px-2 py-4 shadow-sm">
+    </div>
+    <button @click="submitPosOrder" :disabled="posCartCount === 0 || !posPhoneSuffix || posPhoneSuffix.toString().trim().length < 3" class="flex-1 bg-primary hover:bg-[#8B4A4A] text-white font-bold py-4 rounded-2xl disabled:opacity-40 disabled:grayscale active:scale-95 flex items-center justify-center gap-2 transition-all shadow-lg text-xl">
+        <span class="material-icons-round">check_circle</span> 確認結帳送單
+    </button>
+</div>
+                            </div>
                         </div>
+
                     </div>
                 </div>
-            </section>
-
+            </div>
         </main>
 
-        <footer class="bg-white p-2 border-t flex justify-between lg:justify-center items-center gap-2 flex-shrink-0 safe-area-bottom shadow-sm overflow-x-auto nav-scrollbar w-full px-4">
-            <button @click="currentTab='menu'" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-600 font-bold flex items-center gap-1 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 rounded-full">
-                <span class="material-icons-round text-sm">edit_note</span> 前台菜單/公告設定
+        <footer class="bg-white p-2 border-t flex justify-start lg:justify-center gap-2 flex-shrink-0 safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.02)] overflow-x-auto nav-scrollbar w-full">
+            <button @click="currentTab='menu'" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-500 font-bold hover:text-primary flex items-center gap-1 px-3 py-2 bg-stone-100 rounded-full active:scale-95">
+                <span class="material-icons-round text-sm">edit_note</span> 前台管理
             </button>
-            <button @click="logout" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-400 underline px-2 py-1.5">登出</button>
+            <button @click="showSearchModal = true" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-600 font-bold hover:text-stone-800 flex items-center gap-1 px-3 py-2 bg-stone-200 rounded-full active:scale-95">
+                <span class="material-icons-round text-sm">search</span> 搜尋訂單
+            </button>
+            <button @click="isPosModalOpen = true" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-600 font-bold hover:text-stone-800 flex items-center gap-1 px-3 py-2 bg-stone-200 rounded-full active:scale-95">
+                <span class="material-icons-round text-sm">point_of_sale</span> 現場點餐
+            </button>
+            <button @click="logout" class="flex-shrink-0 whitespace-nowrap text-xs text-stone-400 underline hover:text-stone-600 px-2 py-2">登出</button>
         </footer>
     </div>
 
-    <!-- 營收對帳彈窗 -->
-    <div v-if="showReportModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" @click.self="showReportModal=false">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl animate-[fadeIn_0.2s_ease-out]">
-            <div class="flex justify-between items-center mb-4 border-b border-stone-100 pb-3">
-                <h3 class="text-lg font-bold text-stone-800 flex items-center gap-1">
-                    <span class="material-icons-round text-primary">assessment</span> 營收對帳清單
-                </h3>
-                <button @click="showReportModal=false" class="text-stone-400"><span class="material-icons-round">close</span></button>
-            </div>
-            
-            <p class="text-xs text-stone-400 mb-3 font-medium">統計日期：{{ selectedDate }}</p>
+    <div v-if="currentTab === 'menu'" class="fixed inset-0 bg-stone-50 z-50 flex flex-col">
+        <header class="bg-stone-800 text-white p-4 flex justify-between items-center shadow-md flex-shrink-0">
+            <h2 class="text-lg font-bold">前台管理設定</h2>
+            <button @click="currentTab='pending'" class="text-stone-300 font-bold hover:text-white">✕ 關閉</button>
+        </header>
 
-            <div class="space-y-3 mb-6">
-                <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 flex justify-between items-center">
-                    <div>
-                        <p class="text-xs text-blue-700 font-bold">💵 現金收入</p>
-                        <p class="text-xs text-blue-600">{{ revenueBreakdown.cashCount }} 筆訂單</p>
-                    </div>
-                    <p class="text-2xl font-bold text-blue-800">${{ revenueBreakdown.cash }}</p>
-                </div>
-
-                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex justify-between items-center">
-                    <div>
-                        <p class="text-xs text-emerald-700 font-bold">🟢 LINE Pay 收入</p>
-                        <p class="text-xs text-emerald-600">{{ revenueBreakdown.linepayCount }} 筆訂單</p>
-                    </div>
-                    <p class="text-2xl font-bold text-emerald-800">${{ revenueBreakdown.linepay }}</p>
-                </div>
-
-                <div class="p-4 bg-stone-100 rounded-xl flex justify-between items-center border border-stone-200">
-                    <div>
-                        <p class="text-xs text-stone-500 font-bold">💰 總營收</p>
-                        <p class="text-xs text-stone-400">總計 {{ revenueBreakdown.totalCount }} 筆</p>
-                    </div>
-                    <p class="text-3xl font-bold text-primary serif">${{ dailyRevenue }}</p>
-                </div>
-            </div>
-
-            <button @click="showReportModal=false" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-sm">關閉</button>
+        <div class="flex bg-stone-800 text-stone-400 text-sm font-bold flex-shrink-0 px-2 pt-2 gap-1 overflow-x-auto nav-scrollbar">
+            <button @click="frontTab='brand'" class="whitespace-nowrap flex-1 px-3 py-2.5 rounded-t-xl transition-colors" :class="frontTab==='brand' ? 'bg-stone-50 text-stone-800' : 'bg-stone-700 hover:bg-stone-600'">品牌設定 / 跑馬燈</button>
+            <button @click="frontTab='menu'" class="whitespace-nowrap flex-1 px-3 py-2.5 rounded-t-xl transition-colors" :class="frontTab==='menu' ? 'bg-stone-50 text-stone-800' : 'bg-stone-700 hover:bg-stone-600'">菜單管理</button>
+            <button @click="frontTab='categories'" class="whitespace-nowrap flex-1 px-3 py-2.5 rounded-t-xl transition-colors" :class="frontTab==='categories' ? 'bg-stone-50 text-stone-800' : 'bg-stone-700 hover:bg-stone-600'">其他設定</button>
         </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 pb-24 bg-stone-50">
+            <div class="max-w-md mx-auto">
+                
+                <div v-show="frontTab === 'brand'" class="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+
+                    <section class="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-stone-800 mb-4 flex items-center gap-2">
+                            <span class="material-icons-round text-primary">campaign</span> 跑馬燈公告設定
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 mb-1">跑馬燈文字</label>
+                                <textarea v-model="marqueeSettings.text" rows="3" placeholder="輸入要顯示給客人看的文字... (留空則不顯示)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 text-sm outline-none focus:border-primary resize-none"></textarea>
+                            </div>
+                            <label class="flex items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-100 cursor-pointer hover:bg-stone-100 transition-colors">
+                                <div>
+                                    <p class="text-sm font-bold text-stone-700">自動顯示等候單數</p>
+                                    <p class="text-[10px] text-stone-400">開啟後將自動於前台與叫號機顯示製作中單數</p>
+                                </div>
+                                <input type="checkbox" v-model="marqueeSettings.showCount" class="w-5 h-5 accent-primary rounded">
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-stone-800 mb-4 flex items-center gap-2">
+                            <span class="material-icons-round text-primary">info</span> 候餐小提醒設定
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 mb-1">提示文字內容 (支援換行)</label>
+                                <textarea v-model="brandSettings.waitReminder" rows="3" placeholder="例如：現點現做，需稍作等待，造成不便敬請見諒🙇🏻‍♀️" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 text-sm outline-none focus:border-primary resize-none"></textarea>
+                                <p class="text-[10px] text-stone-400 mt-1">此文字將顯示於客人點餐後的等待畫面。若留空則前台自動隱藏該區塊。</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-stone-800 mb-4 flex items-center gap-2">
+                            <span class="material-icons-round text-primary">storefront</span> 品牌視覺設定
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 mb-1">店鋪名稱</label>
+                                <input type="text" v-model="brandSettings.name" placeholder="輸入店鋪名稱..." class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 mb-1">品牌標語 (Slogan)</label>
+                                <input type="text" v-model="brandSettings.slogan" placeholder="例如: TRADITIONAL TASTE..." class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 mb-1">Logo 圖片網址</label>
+                                <input type="text" v-model="brandSettings.logo" placeholder="貼上圖片網址 (https://...)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 mb-1">Instagram 連結 (選填)</label>
+                                <input type="text" v-model="brandSettings.ig" placeholder="貼上 IG 網址 (留空則前台自動隱藏)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 mb-1">LINE 連結 (選填)</label>
+                                <input type="text" v-model="brandSettings.line" placeholder="貼上 LINE 網址 (留空則前台自動隱藏)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary">
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+<div v-show="frontTab === 'menu'" class="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+    
+<div class="bg-yellow-50 border border-yellow-200 rounded-xl mb-4 shadow-sm overflow-hidden">
+        <header @click="isMenuNoticeOpen = !isMenuNoticeOpen" class="p-3 flex justify-between items-center cursor-pointer hover:bg-yellow-100/50 transition-colors">
+            <div class="flex items-center gap-2 text-yellow-800">
+                <span class="material-icons-round text-yellow-500 text-base">warning</span>
+                <span class="font-bold text-xs">公版選項使用防呆提醒</span>
+            </div>
+            <span class="material-icons-round text-yellow-500 transition-transform text-sm" :class="isMenuNoticeOpen ? 'rotate-180' : ''">expand_more</span>
+        </header>
+        <div v-show="isMenuNoticeOpen" class="px-3 pb-3 pt-1 text-xs text-yellow-800 leading-relaxed border-t border-yellow-100/50">
+            <ul class="list-disc pl-6 space-y-1 text-[11px]">
+                <li><span class="font-bold">打勾套用：</span>隨公版同步更新價格與選項。</li>
+                <li><span class="font-bold">匯入專屬：</span>脫離連動可獨立修改，且系統會<b>自動取消打勾</b>以防重複出現！</li>
+            </ul>
+        </div>
+    </div>
+ 
+<div class="bg-white border border-stone-200 rounded-xl p-3 mb-4 shadow-sm">
+    <div class="flex justify-between items-end mb-2">
+        <h3 class="font-bold text-stone-800 text-sm">菜單排序與管理</h3>
+        <label class="flex items-center gap-1.5 cursor-pointer bg-stone-50 px-2 py-1 rounded border border-stone-200 shadow-sm active:scale-95 transition-transform">
+            <input type="checkbox" v-model="isMenuCompactMode" class="accent-primary w-3.5 h-3.5">
+            <span class="text-[11px] font-bold text-stone-600">精簡排版模式</span>
+        </label>
+    </div>
+    
+    <div class="flex gap-1 overflow-x-auto nav-scrollbar pb-1">
+        <button @click="selectedMenuCategory = 'all'" class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border" :class="selectedMenuCategory === 'all' ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-500 border-stone-200'">全部 (禁排序)</button>
+        <button v-for="cat in menuCategories" :key="cat" @click="selectedMenuCategory = cat" class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border" :class="selectedMenuCategory === cat ? 'bg-primary text-white border-primary' : 'bg-white text-stone-500 border-stone-200'">{{ cat }}</button>
     </div>
 </div>
 
+    <section class="space-y-3">
+<article v-for="item in filteredMenuSettings" :key="item.id" class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-stone-200 flex flex-col gap-2 transition-all">
+            
+            <div class="flex justify-between items-center border-b border-stone-100 pb-2">
+                <div class="flex items-center gap-2">
+                    <div v-if="selectedMenuCategory !== 'all'" class="flex items-center bg-stone-50 border border-stone-200 rounded-lg shadow-sm">
+                        <button @click="moveMenuUpFiltered(item)" class="px-2 py-1 text-stone-400 hover:text-stone-700 hover:bg-stone-200 active:bg-stone-300 transition-colors"><span class="material-icons-round text-[16px]">arrow_upward</span></button>
+                        <div class="w-px h-4 bg-stone-200"></div>
+                        <button @click="moveMenuDownFiltered(item)" class="px-2 py-1 text-stone-400 hover:text-stone-700 hover:bg-stone-200 active:bg-stone-300 transition-colors"><span class="material-icons-round text-[16px]">arrow_downward</span></button>
+                    </div>
+                    
+                    <select v-if="!isMenuCompactMode" v-model="item.category" class="w-28 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 text-xs font-bold text-stone-600 outline-none focus:border-primary shadow-sm">
+                        <option value="">-- 分類 --</option>
+                        <option v-for="cat in menuCategories" :key="cat" :value="cat">{{ cat }}</option>
+                    </select>
+                    <span v-else class="text-[10px] font-bold text-primary bg-stone-100 px-2 py-1 rounded-lg flex-shrink-0">{{ item.category || '未分類' }}</span>
+                </div>
+                
+<div class="flex items-center gap-3">
+    <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1 cursor-pointer" @click="item.isStockLimited = !item.isStockLimited">
+            <button class="w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="item.isStockLimited ? 'bg-blue-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
+            <span class="text-[10px] font-bold" :class="item.isStockLimited ? 'text-blue-600' : 'text-stone-400'">{{ item.isStockLimited ? '庫存' : '庫存設定' }}</span>
+        </div>
+        <input v-if="item.isStockLimited" type="number" inputmode="numeric" v-model="item.stock" @input="Number(item.stock) > 0 ? item.active = true : null" class="w-12 h-6 bg-stone-50 border border-stone-200 rounded px-1 text-[11px] font-bold text-center outline-none focus:border-primary shadow-sm" placeholder="數量">
+    </div>
+
+    <div class="w-px h-4 bg-stone-200"></div>
+
+    <div class="flex items-center gap-1.5 cursor-pointer" @click="item.active = !item.active">
+        <button class="w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="item.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
+        <span class="text-[10px] font-bold" :class="item.active ? 'text-green-600' : 'text-stone-400'">{{ item.active ? '販售中' : '停售' }}</span>
+    </div>
+    
+    <div class="w-px h-4 bg-stone-200"></div>
+    <button @click="removeMenuItem(item)" class="text-stone-300 hover:text-red-500 active:scale-90 transition-transform"><span class="material-icons-round text-lg">delete_outline</span></button>
+</div>
+            </div>
+            
+            <div class="flex gap-2 items-center w-full mt-1">
+                <input type="text" v-model="item.name" class="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm font-bold focus:border-primary outline-none shadow-sm" placeholder="輸入商品名稱">
+                
+                <div v-if="!isMenuCompactMode" class="flex items-center gap-1 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 focus-within:border-primary shadow-sm">
+                    <span class="text-stone-400 text-sm font-bold pl-1">$</span>
+                    <input type="number" inputmode="numeric" v-model="item.price" class="w-16 bg-transparent text-sm font-bold text-right outline-none" placeholder="0">
+                </div>
+            </div>
+
+            <div v-show="!isMenuCompactMode" class="space-y-2 mt-1">
+                <input type="text" v-model="item.desc" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-500 focus:border-primary outline-none" placeholder="商品描述 (選填，可空白)">
+                
+                <div class="mt-2 pt-2 border-t border-stone-100 border-dashed">
+                    <p class="text-[10px] font-bold text-stone-400 mb-1">公版調味群組 (選擇套用或匯入)：</p>
+                    <div v-if="sharedOptionGroups.length > 0" class="space-y-2 mb-3">
+                        <div v-for="sg in sharedOptionGroups" :key="sg.id" class="flex items-center justify-between bg-stone-50 border border-stone-200 px-2 py-1.5 rounded-lg">
+                            <label class="flex items-center gap-1.5 text-xs cursor-pointer flex-1">
+                                <input type="checkbox" :value="sg.id" v-model="item.appliedSharedGroups" class="accent-primary w-3.5 h-3.5">
+                                <span class="font-bold" :class="item.appliedSharedGroups.includes(sg.id) ? 'text-primary' : 'text-stone-600'">{{ sg.name || '未命名' }} <span class="text-[9px] font-normal text-stone-400">({{ sg.type === 'single' ? '單選' : '複選' }})</span></span>
+                            </label>
+                            <button @click="importSharedGroup(item, sg)" class="text-[10px] bg-white border border-stone-200 text-stone-500 px-2 py-1 rounded shadow-sm hover:bg-stone-100 transition-colors flex items-center gap-1 active:scale-95">
+                                <span class="material-icons-round text-[10px]">file_download</span> 匯入專屬
+                            </button>
+                        </div>
+                    </div>
+                    <p v-else class="text-[10px] text-stone-400 mb-3 bg-stone-50 p-1.5 rounded-lg border border-stone-200 border-dashed">尚無公版群組，請至「分類與調味」新增</p>
+
+                    <div class="flex justify-between items-center mb-2 pt-2 border-t border-stone-100 border-dashed">
+                        <span class="text-[10px] font-bold text-stone-400">自訂專屬群組 (獨立修改)</span>
+                        <button @click="addOptionGroup(item)" class="text-[10px] bg-stone-100 text-stone-600 font-bold px-2 py-1 rounded-lg hover:bg-stone-200 transition-colors">+ 新增專屬群組</button>
+                    </div>
+                    
+                    <div v-for="(group, gIdx) in item.optionGroups" :key="gIdx" class="mt-2 p-2 border border-stone-200 rounded-xl bg-stone-50 relative">
+                        <button @click="removeOptionGroup(item, gIdx)" class="absolute top-2 right-2 text-stone-300 hover:text-red-400"><span class="material-icons-round text-sm">delete</span></button>
+                        <div class="flex gap-2 items-center mb-2 pr-5">
+                            <input type="text" v-model="group.name" placeholder="群組名稱 (例:份量)" class="w-full text-xs font-bold p-1.5 rounded-lg border border-stone-200 outline-none focus:border-primary">
+                            <select v-model="group.type" class="text-xs p-1.5 rounded-lg border border-stone-200 font-bold text-stone-600 outline-none">
+                                <option value="single">🔘 單選</option><option value="multiple">☑️ 複選</option>
+                            </select>
+                        </div>
+                        <div v-for="(opt, oIdx) in group.options" :key="oIdx" class="flex gap-1 mb-1 items-center">
+                            <input v-model="opt.name" placeholder="選項名稱" class="flex-1 text-xs p-1.5 rounded-lg border border-stone-200 outline-none">
+                            <span class="text-xs text-stone-400">+$</span>
+                            <input type="number" v-model="opt.price" placeholder="0" class="w-12 text-xs p-1.5 rounded-lg border border-stone-200 text-center outline-none">
+                            <button @click="removeOption(group, oIdx)" class="text-stone-300 hover:text-red-400 p-1"><span class="material-icons-round text-sm">close</span></button>
+                        </div>
+                        <button @click="addOption(group)" class="text-[10px] bg-white border border-stone-200 text-stone-500 font-bold px-2 py-1.5 rounded-lg w-full mt-1 hover:bg-stone-100 transition-colors">+ 新增選項</button>
+                    </div>
+                </div>
+            </div>
+        </article>
+ 
+        <button @click="addMenuItem" class="w-full py-3 border-2 border-dashed border-stone-300 text-stone-500 rounded-xl font-bold hover:bg-stone-100 flex items-center justify-center gap-1"><span class="material-icons-round">add</span> 新增品項</button>
+    </section>
+       
+
+</div>       
+
+<div v-show="frontTab === 'categories'" class="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+    
+    <section class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+        <header @click="activeCategoryTab = activeCategoryTab === 'categories' ? '' : 'categories'" class="p-4 bg-stone-50 flex justify-between items-center cursor-pointer hover:bg-stone-100 transition-colors">
+            <h3 class="font-bold text-stone-800 flex items-center gap-2">
+                <span class="material-icons-round text-stone-500">label</span> 菜單分類
+            </h3>
+            <span class="material-icons-round text-stone-400 transition-transform" :class="activeCategoryTab === 'categories' ? 'rotate-180' : ''">expand_more</span>
+        </header>
+        
+        <div v-show="activeCategoryTab === 'categories'" class="p-4 border-t border-stone-100 space-y-4">
+            <p class="text-[11px] text-stone-400 mb-3">可建立分類讓前台分區顯示。</p>
+            <div class="flex gap-2 mb-4">
+                <input type="text" v-model="newCategory" @keyup.enter="addCategory" placeholder="新增分類 (例: 飲料區)" class="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
+                <button @click="addCategory" class="bg-stone-800 text-white px-4 rounded-lg font-bold text-sm active:scale-95 transition-transform">新增</button>
+            </div>
+
+            <div class="space-y-2">
+                <div v-for="(cat, idx) in menuCategories" :key="idx" class="flex justify-between items-center bg-white border border-stone-200 p-2.5 rounded-xl shadow-sm">
+                    <span class="font-bold text-stone-700 pl-2 text-sm">{{ cat }}</span>
+                    <div class="flex items-center gap-1 border-l border-stone-100 pl-2">
+                        <button @click="moveCategoryUp(idx)" :disabled="idx === 0" class="p-2 text-stone-400 hover:text-stone-600 disabled:opacity-20 active:scale-90"><span class="material-icons-round text-lg">arrow_upward</span></button>
+                        <button @click="moveCategoryDown(idx)" :disabled="idx === menuCategories.length - 1" class="p-2 text-stone-400 hover:text-stone-600 disabled:opacity-20 active:scale-90"><span class="material-icons-round text-lg">arrow_downward</span></button>
+                        <div class="w-px h-5 bg-stone-200 mx-1"></div>
+                        <button @click="removeCategory(idx)" class="p-2 text-stone-300 hover:text-red-500 active:scale-90"><span class="material-icons-round text-lg">delete_outline</span></button>
+                    </div>
+                </div>
+                <div v-if="menuCategories.length === 0" class="text-center text-xs text-stone-400 py-4 bg-stone-50 rounded-xl border border-stone-200 border-dashed">目前尚無分類，請於上方新增</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+        <header @click="activeCategoryTab = activeCategoryTab === 'shared' ? '' : 'shared'" class="p-4 bg-stone-50 flex justify-between items-center cursor-pointer hover:bg-stone-100 transition-colors">
+            <h3 class="font-bold text-stone-800 flex items-center gap-2">
+                <span class="material-icons-round text-stone-500">style</span> 共用選項庫 (公版配料)
+            </h3>
+            <span class="material-icons-round text-stone-400 transition-transform" :class="activeCategoryTab === 'shared' ? 'rotate-180' : ''">expand_more</span>
+        </header>
+        
+        <div v-show="activeCategoryTab === 'shared'" class="p-4 border-t border-stone-100">
+            <p class="text-[11px] text-stone-400 mb-3">在此建立調味群組，可供菜單一鍵套用或匯入。</p>
+            <div class="space-y-3">
+                <article v-for="(sg, sIdx) in sharedOptionGroups" :key="sg.id" class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                    <header @click="sg.isExpanded = !sg.isExpanded" class="bg-stone-50 p-3 flex justify-between items-center cursor-pointer hover:bg-stone-100 transition-colors border-b border-stone-100">
+                        <div class="flex items-center gap-2">
+                            <span class="material-icons-round text-stone-400 transition-transform" :class="sg.isExpanded ? 'rotate-180' : ''">expand_more</span>
+                            <span class="font-bold text-stone-700">{{ sg.name || '未命名群組' }}</span>
+                            <span class="text-[10px] bg-white border border-stone-200 px-1.5 py-0.5 rounded text-stone-500 font-bold">{{ sg.type === 'single' ? '單選' : '複選' }}</span>
+                        </div>
+                        <button @click.stop="removeSharedGroup(sIdx)" class="text-stone-300 hover:text-red-500 p-2"><span class="material-icons-round text-base">delete_outline</span></button>
+                    </header>
+                    
+                    <div v-show="sg.isExpanded" class="p-3 bg-white space-y-3">
+                        <div class="flex gap-2 items-center">
+                            <input type="text" v-model="sg.name" placeholder="群組名稱 (例: 炸物調味)" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold outline-none focus:border-primary">
+                            <select v-model="sg.type" class="w-24 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold text-stone-600 outline-none">
+                                <option value="single">🔘 單選</option>
+                                <option value="multiple">☑️ 複選</option>
+                            </select>
+                        </div>
+                        <div class="border-t border-stone-100 border-dashed pt-2 space-y-2">
+                            <div v-for="(opt, oIdx) in sg.options" :key="oIdx" class="flex gap-2 items-center">
+                                <input v-model="opt.name" placeholder="選項名稱" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-xs outline-none focus:border-primary">
+                                <span class="text-xs text-stone-400">+$</span>
+                                <input type="number" v-model="opt.price" placeholder="0" class="w-16 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-xs text-center outline-none focus:border-primary">
+                                <button @click="removeOption(sg, oIdx)" class="text-stone-300 hover:text-red-400 p-1"><span class="material-icons-round text-sm">close</span></button>
+                            </div>
+                            <button @click="addOption(sg)" class="text-xs bg-stone-100 border border-stone-200 text-stone-600 font-bold px-3 py-2 rounded-lg w-full hover:bg-stone-200 transition-colors">+ 新增選項</button>
+                        </div>
+                    </div>
+                </article>
+                <button @click="addSharedGroup" class="w-full py-3 border-2 border-dashed border-stone-300 text-stone-500 rounded-xl font-bold hover:bg-stone-100 flex items-center justify-center gap-1"><span class="material-icons-round">add</span> 新增公版群組</button>
+            </div>
+        </div>
+    </section>
+<section class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden mt-4">
+        <header @click="activeCategoryTab = activeCategoryTab === 'checkout' ? '' : 'checkout'" class="p-4 bg-stone-50 flex justify-between items-center cursor-pointer hover:bg-stone-100 transition-colors">
+            <h3 class="font-bold text-stone-800 flex items-center gap-2">
+                <span class="material-icons-round text-stone-500">shopping_bag</span> 結帳附加服務
+            </h3>
+            <span class="material-icons-round text-stone-400 transition-transform" :class="activeCategoryTab === 'checkout' ? 'rotate-180' : ''">expand_more</span>
+        </header>
+        
+        <div v-show="activeCategoryTab === 'checkout'" class="p-4 border-t border-stone-100">
+            <p class="text-[11px] text-stone-400 mb-3">客人在結帳頁面可勾選的額外服務，例如提袋、自備餐具等。</p>
+            
+            <div class="space-y-2">
+                <article v-for="(opt, index) in checkoutSettings" :key="index" class="bg-white p-2.5 rounded-xl shadow-sm border border-stone-200 flex gap-2 items-center">
+                    <input type="text" v-model="opt.name" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold outline-none focus:border-primary" placeholder="名稱 (例: 加購提袋)">
+                    <span class="text-xs text-stone-400">+$</span>
+                    <input type="number" inputmode="numeric" v-model="opt.price" class="w-16 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold text-center outline-none focus:border-primary" placeholder="0">
+                    
+                    <button @click="opt.active = !opt.active" class="ml-2 w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="opt.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
+                    <button @click="removeCheckoutOption(index)" class="text-stone-300 hover:text-red-400 transition-colors ml-1"><span class="material-icons-round text-base">close</span></button>
+                </article>
+            </div>
+<button @click="addCheckoutOption" class="w-full py-2 border border-dashed border-stone-300 text-stone-500 rounded-lg text-sm font-bold hover:bg-stone-100 transition-colors flex items-center justify-center gap-1 mt-2">
+                <span class="material-icons-round text-sm">add</span> 新增結帳服務
+            </button>
+        </div>
+    </section>
+
+    <section class="bg-stone-50 rounded-xl shadow-sm border border-stone-200 overflow-hidden mt-4">
+        <header @click="activeCategoryTab = activeCategoryTab === 'inactive' ? '' : 'inactive'" class="p-4 bg-stone-100 flex justify-between items-center cursor-pointer hover:bg-stone-200 transition-colors">
+            <h3 class="font-bold text-stone-600 flex items-center gap-2">
+                <span class="material-icons-round text-stone-400">inventory_2</span> 停售商品庫
+            </h3>
+            <div class="flex items-center gap-2">
+                <span class="bg-stone-300 text-stone-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{{ inactiveMenuSettings.length }}</span>
+                <span class="material-icons-round text-stone-400 transition-transform" :class="activeCategoryTab === 'inactive' ? 'rotate-180' : ''">expand_more</span>
+            </div>
+        </header>
+        
+        <div v-show="activeCategoryTab === 'inactive'" class="p-4 border-t border-stone-200">
+            <p class="text-[11px] text-stone-400 mb-3">這裡是暫時停售的商品，重新開啟販售就會回到原本的菜單分類中。</p>
+            
+            <div class="space-y-2">
+                <article v-for="item in inactiveMenuSettings" :key="item.id" class="bg-white p-3 rounded-xl shadow-sm border border-stone-200 flex justify-between items-center opacity-70 hover:opacity-100 transition-opacity">
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 font-bold">{{ item.category || '未分類' }}</span>
+                            <span class="font-bold text-stone-700 text-sm">{{ item.name }}</span>
+                        </div>
+                        <span class="text-xs text-stone-400 mt-1">${{ item.price }}</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5 cursor-pointer" @click="item.active = true">
+                            <button class="w-8 h-4 rounded-full flex items-center p-0.5 transition-colors bg-stone-300 justify-start"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
+                            <span class="text-[10px] font-bold text-stone-400">上架</span>
+                        </div>
+                        <div class="w-px h-4 bg-stone-200 mx-1"></div>
+                        <button @click="removeMenuItem(item)" class="text-stone-300 hover:text-red-500 active:scale-90 transition-transform"><span class="material-icons-round text-lg">delete_outline</span></button>
+                    </div>
+                </article>
+                <div v-if="inactiveMenuSettings.length === 0" class="text-center text-xs text-stone-400 py-4 bg-stone-100 rounded-xl border border-stone-200 border-dashed">目前沒有停售商品</div>
+            </div>
+        </div>
+    </section>
+</div>
+
+            </div>
+        </div>
+
+<button v-show="frontTab === 'menu'" @click="scrollToTop" class="absolute bottom-20 right-4 w-10 h-10 bg-stone-800/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform z-[60] backdrop-blur-sm">
+    <span class="material-icons-round text-lg">arrow_upward</span>
+</button>
+        
+        <footer class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-stone-100 flex justify-center shadow-lg">
+            <button @click="saveFrontEndSettings" :disabled="!isConnected" :class="!isConnected ? 'opacity-50 grayscale cursor-not-allowed' : 'active:scale-95'" class="w-full max-w-md bg-stone-800 text-white py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all">
+    <span class="material-icons-round text-sm">cloud_upload</span> 
+    {{ isConnected ? '同步更新至前台' : '連線中斷，暫時無法更新' }}
+</button>
+        </footer>
+    </div>
+
+    <div v-if="showReport" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" @click.self="showReport=false">
+        <section class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-[slideUp_0.2s_ease-out]">
+            <header class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0">
+                <h3 class="font-bold text-sm">{{ formattedDateString }} 銷售報表</h3>
+                <button @click="showReport=false" class="text-stone-300 hover:text-white transition-colors">✕</button>
+            </header>
+            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                <div class="flex justify-between items-end pb-4 border-b border-dashed border-stone-200">
+                    <div class="text-stone-500 text-xs space-y-1">
+                        <div>總訂單: <span class="font-bold text-stone-800">{{ completedOrdersCount }}</span> 筆</div>
+                        <div class="text-[11px] text-stone-500">
+                            💵 現金: <span class="font-bold text-stone-700">${{ cashRevenue }}</span> ｜ 💳 LINE Pay: <span class="font-bold text-stone-700">${{ linePayRevenue }}</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-stone-400 mb-0.5">總營業額</p>
+                        <p class="text-2xl font-bold text-primary">${{ dailyRevenue }}</p>
+                    </div>
+                </div>
+                
+                <table class="w-full text-xs text-left">
+                    <thead class="text-stone-400 uppercase bg-stone-50 border-b border-stone-100">
+                        <tr>
+                            <th class="px-2 py-2">品項</th>
+                            <th class="px-2 py-2 text-center">數</th>
+                            <th class="px-2 py-2 text-right">金額</th>
+                        </tr>
+                    </thead>
+<tbody class="text-stone-600">
+    <template v-for="mainItem in salesReport" :key="mainItem.name">
+        <tr class="bg-stone-100/50 border-b border-stone-200">
+            <td class="px-2 py-3 font-bold text-stone-800">{{ mainItem.name }} (總計)</td>
+            <td class="px-2 py-3 text-center font-black text-stone-900">{{ mainItem.totalCount }}</td>
+            <td class="px-2 py-3 text-right font-black text-primary">${{ mainItem.totalPrice }}</td>
+        </tr>
+        <tr v-if="mainItem.variants" v-for="(vData, vName) in mainItem.variants" class="border-b border-stone-50 last:border-stone-200">
+            <td class="px-6 py-2 text-[11px] text-stone-400 italic">{{ vName }}</td>
+            <td class="px-2 py-2 text-center text-[11px] text-stone-400">{{ vData.count }}</td>
+            <td class="px-2 py-2 text-right text-[11px] text-stone-400">${{ vData.total }}</td>
+        </tr>
+    </template>
+</tbody>
+                </table>
+                
+                <div class="pt-4 border-t border-stone-100 space-y-3">
+                    <button @click="exportCombinedReport" class="w-full py-3 bg-stone-100 text-stone-700 rounded-lg font-bold text-xs hover:bg-stone-200 transition-colors flex justify-center items-center gap-1 touch-manipulation">
+                        <span class="material-icons-round text-sm">download</span> 匯出今日報表 (統整+明細)
+                    </button>
+                    <button @click="deleteAllOrdersByDate" class="w-full py-2.5 text-[10px] text-red-400 bg-transparent border border-red-100 rounded-lg font-bold hover:bg-red-50 transition-colors touch-manipulation">
+                        ⚠️ 清空此日所有訂單
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div v-if="posSelectedItem" class="fixed inset-0 bg-black/60 z-[100] flex items-end justify-center p-0 backdrop-blur-sm" @click.self="posSelectedItem=null">
+        <section class="bg-white w-full max-w-sm rounded-t-3xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out] max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-2 flex-shrink-0">
+                <h3 class="text-xl font-bold text-stone-800">{{ posSelectedItem.name }}</h3>
+                <button @click="posSelectedItem=null" class="text-stone-400 p-1"><span class="material-icons-round">close</span></button>
+            </div>
+            
+            <div class="overflow-y-auto flex-1 pb-4">
+                <div v-for="(group, gIdx) in posSelectedItem.displayGroups" :key="gIdx" class="mb-5 mt-2">
+                    <p class="text-sm font-bold border-b border-stone-100 mb-3 pb-1 text-stone-500">
+                        {{ group.name }} <span class="text-[10px] bg-stone-100 px-1 rounded font-normal">{{ group.type === 'single' ? '單選' : '可複選' }}</span>
+                    </p>
+                    <div class="space-y-2">
+                        <div v-for="(opt, oIdx) in group.options" :key="oIdx" @click="handlePosSelect(gIdx, oIdx, group.type)"
+                             class="flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all"
+                             :class="isPosOptionSelected(gIdx, oIdx) ? 'border-stone-800 bg-stone-50 text-stone-800 font-bold' : 'border-stone-200 bg-white'">
+                            <span class="flex items-center gap-2">
+                                <span class="material-icons-round">{{ isPosOptionSelected(gIdx, oIdx) ? (group.type==='single'?'radio_button_checked':'check_box') : (group.type==='single'?'radio_button_unchecked':'check_box_outline_blank') }}</span>
+                                {{ opt.name }}
+                            </span>
+                            <span :class="opt.price > 0 ? 'text-primary' : 'text-stone-400 text-sm font-normal'">{{ opt.price > 0 ? `+$${opt.price}` : '免費' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button @click="confirmPosAddOptions" class="w-full py-3 bg-stone-800 text-white rounded-xl font-bold text-lg active:scale-95 transition-transform mt-2 flex-shrink-0">加入訂單</button>
+        </section>
+    </div>
+
+    <div v-if="showSearchModal" class="fixed inset-0 bg-black/60 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="showSearchModal=false">
+        <section class="bg-[#FDFBF7] w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col h-[85vh] sm:h-[75vh] shadow-2xl animate-[slideUp_0.3s_ease-out] overflow-hidden">
+            <header class="bg-stone-800 p-4 text-white flex justify-between items-center flex-shrink-0">
+                <h2 class="text-lg font-bold flex items-center gap-2"><span class="material-icons-round">search</span> 搜尋訂單</h2>
+                <button @click="showSearchModal=false" class="text-stone-300 hover:text-white transition-colors"><span class="material-icons-round">close</span></button>
+            </header>
+            <div class="bg-white p-4 border-b border-stone-200 shadow-sm flex-shrink-0 z-10">
+                <div class="flex bg-stone-100 rounded-lg p-1 mb-3">
+                    <button @click="searchStatus='all'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='all' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">全部</button>
+                    <button @click="searchStatus='pending'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">待結帳</button>
+                    <button @click="searchStatus='paid'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='paid' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">製作中</button>
+                    <button @click="searchStatus='done'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='done' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">已出餐</button>
+                </div>
+                <div class="relative">
+                    <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">search</span>
+                    <input type="text" v-model="searchQuery" placeholder="輸入單號、品項、付款方式或備註..." class="w-full bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-4 py-2 text-sm outline-none focus:border-primary font-medium">
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 bg-stone-50 space-y-2">
+                <article v-for="order in searchResults" :key="order.key" class="p-3 bg-white rounded-xl border border-stone-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-2 pb-2 border-b border-stone-100">
+<div class="flex items-center gap-2">
+    <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
+    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="{'bg-gray-100 text-stone-500': order.status==='pending', 'bg-red-50 text-primary': order.status==='paid', 'bg-stone-200 text-stone-600': order.status==='done' || order.status==='archived'}">
+        {{ order.status === 'pending' ? '待結帳' : order.status === 'paid' ? '製作中' : '已出餐' }}
+    </span>
+    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border" :class="order.paymentMethod === 'LINE Pay' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-100 text-stone-600 border-stone-200'">
+        {{ order.paymentMethod || '現金' }}
+    </span>
+</div>                        <span class="text-xs text-stone-400">{{ order.timeString }}</span>
+                    </div>
+                    <div class="space-y-1 mb-2">
+                        <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start text-xs">
+                            <div class="flex flex-col leading-tight">
+                                <span class="font-medium text-stone-600">{{ item.name }}</span>
+                                <span v-if="item.options && item.options.length" class="text-[9px] text-primary">{{ item.options.join(', ') }}</span>
+                            </div>
+                            <span class="text-stone-500 font-bold">x{{ item.qty }}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-end pt-2 border-t border-dashed border-stone-100">
+                        <div class="text-[10px] text-stone-500 w-2/3 truncate"><span v-if="order.note" class="text-yellow-600 font-bold">備註:</span> {{ order.note }}</div>
+                        <span class="text-base font-bold text-primary">${{ order.total }}</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </div>
+
+</div>
+
+
 <script type="module">
-    import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+
+    import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    
+
+    import { getDatabase, ref as dbRef, onValue, update, set, remove, push, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    
+
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
+
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
     const auth = getAuth(app);
-    const functions = getFunctions(app);
-
-    const callUpdateOrderStatus = httpsCallable(functions, 'updateOrderStatus');
-    const callUpdateMenu = httpsCallable(functions, 'updateMenu');
 
     createApp({
         setup() {
-            const isConnected = ref(true);
+ 
+const isConnected = ref(true);
+ 
+const scrollToTop = () => {
+ 
+    const container = document.querySelector('.overflow-y-auto.pb-24');
+    if (container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
+ 
+const isMenuCompactMode = ref(false);
+const isMenuNoticeOpen = ref(false);
+const selectedMenuCategory = ref('all');
+
+const filteredMenuSettings = computed(() => {
+    const activeItems = menuSettings.value.filter(m => m.active !== false);
+    if (selectedMenuCategory.value === 'all') return activeItems;
+    return activeItems.filter(m => m.category === selectedMenuCategory.value);
+});
+
+const inactiveMenuSettings = computed(() => {
+    return menuSettings.value.filter(m => m.active === false);
+});
+
+ 
+const moveMenuUpFiltered = (item) => {
+    if (selectedMenuCategory.value === 'all') return;
+    const originalIndex = menuSettings.value.findIndex(m => m.id === item.id);
+    let targetIndex = -1;
+    for (let i = originalIndex - 1; i >= 0; i--) {
+        if (menuSettings.value[i].category === item.category) { targetIndex = i; break; }
+    }
+    if (targetIndex !== -1) {
+        const temp = menuSettings.value[originalIndex];
+        menuSettings.value[originalIndex] = menuSettings.value[targetIndex];
+        menuSettings.value[targetIndex] = temp;
+    }
+};
+
+const moveMenuDownFiltered = (item) => {
+    if (selectedMenuCategory.value === 'all') return;
+    const originalIndex = menuSettings.value.findIndex(m => m.id === item.id);
+    let targetIndex = -1;
+    for (let i = originalIndex + 1; i < menuSettings.value.length; i++) {
+        if (menuSettings.value[i].category === item.category) { targetIndex = i; break; }
+    }
+    if (targetIndex !== -1) {
+        const temp = menuSettings.value[originalIndex];
+        menuSettings.value[originalIndex] = menuSettings.value[targetIndex];
+        menuSettings.value[targetIndex] = temp;
+    }
+};
+
+const syncMenuSettingsOrder = () => {
+    const grouped = {};
+    menuCategories.value.forEach(cat => grouped[cat] = []);
+    grouped[''] = [];
+    grouped['other'] = [];
+
+    menuSettings.value.forEach(item => {
+        if (item.category && menuCategories.value.includes(item.category)) {
+            grouped[item.category].push(item);
+        } else if (!item.category) {
+            grouped[''].push(item);
+        } else {
+            grouped['other'].push(item);
+        }
+    });
+
+    const newMenuSettings = [];
+    menuCategories.value.forEach(cat => {
+        newMenuSettings.push(...grouped[cat]);
+    });
+    newMenuSettings.push(...grouped['other']);
+    newMenuSettings.push(...grouped['']);
+
+    menuSettings.value = newMenuSettings;
+};
+
+const moveCategoryUp = (idx) => {
+    if (idx > 0) {
+        const temp = menuCategories.value[idx];
+        menuCategories.value[idx] = menuCategories.value[idx - 1];
+        menuCategories.value[idx - 1] = temp;
+        syncMenuSettingsOrder(); 
+    }
+};
+
+const moveCategoryDown = (idx) => {
+    if (idx < menuCategories.value.length - 1) {
+        const temp = menuCategories.value[idx];
+        menuCategories.value[idx] = menuCategories.value[idx + 1];
+        menuCategories.value[idx + 1] = temp;
+        syncMenuSettingsOrder(); 
+    }
+};
             const shopName = ref(window.MARKET_CONFIG.shopName);
+            
             const isLoggedIn = ref(false);
-            const isAdmin = ref(false);
             const loginUser = ref('');
             const loginPass = ref('');
             const loginError = ref(false);
-            const loginErrorMessage = ref('');
+            
             const allOrders = ref([]);
             const filteredOrders = ref([]);
+            const showReport = ref(false);
             const selectedDate = ref('');
             const shopIsOpen = ref(false);
-            const currentTab = ref('pending');
-            const isDesktop = ref(window.innerWidth >= 1024);
-            const showReportModal = ref(false);
             
-            const menuList = ref([]);
-            const marqueeText = ref('');
+            const currentTab = ref('pending'); 
+            const frontTab = ref('menu'); 
+            const activeCategoryTab = ref('categories');
+            const isDesktop = ref(window.innerWidth >= 1024);
+            const showPrepStats = ref(false); 
+            const expandedPrepItems = ref({}); 
+            
+            const brandSettings = ref({
+                name: window.MARKET_CONFIG.shopName,
+                slogan: '',
+                logo: '',
+                ig: '',
+                line: '',
+                waitReminder: ''
+            });
+
+            const menuSettings = ref([]); 
+            const menuCategories = ref([]); 
+            const newCategory = ref('');
+            
+            const sharedOptionGroups = ref([]); 
+            const marqueeSettings = ref({ text: '', showCount: false });
+            const checkoutSettings = ref([]);
+
+            const showSearchModal = ref(false); 
+            const searchQuery = ref(''); 
+            const searchStatus = ref('all'); 
+
+            const posCart = ref({});
+            const posPhoneSuffix = ref('');
+            const posNote = ref('');
+            const posPaymentMethod = ref('現金');
+            const posSelectedItem = ref(null);
+            const posSelections = ref({}); 
 
             onMounted(() => {
                 onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
@@ -351,141 +1159,676 @@
                 const now = new Date();
                 selectedDate.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 
-                onAuthStateChanged(auth, async (user) => {
+                onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        const tokenResult = await user.getIdTokenResult();
-                        if (tokenResult.claims.admin === true) {
-                            isLoggedIn.value = true;
-                            isAdmin.value = true;
-                            loadAdminData();
-                        } else {
-                            isLoggedIn.value = true; isAdmin.value = false; loginError.value = true;
-                            loginErrorMessage.value = '登入成功，但此帳號未設定 admin 管理員權限。';
-                        }
-                    } else {
-                        isLoggedIn.value = false; isAdmin.value = false;
-                    }
+                        isLoggedIn.value = true;
+                        
+                        onValue(dbRef(db, 'orders'), (snapshot) => {
+                            const data = snapshot.val();
+                            allOrders.value = [];
+                            if (data) Object.keys(data).forEach(key => allOrders.value.push({ ...data[key], key: key }));
+                            filterOrdersByDate();
+                            updateMarqueeCount();
+                        });
+                        
+                        onValue(dbRef(db, 'shopStatus'), s => shopIsOpen.value = s.val() === true);
+                        
+                        onValue(dbRef(db, 'brandInfo'), s => {
+                            if (s.val()) {
+                                brandSettings.value = { ...brandSettings.value, ...s.val() };
+                                shopName.value = s.val().name || window.MARKET_CONFIG.shopName;
+                            }
+                        });
+
+                        onValue(dbRef(db, 'menuCategories'), s => menuCategories.value = s.val() || []);
+                        onValue(dbRef(db, 'sharedOptionGroups'), s => sharedOptionGroups.value = s.val() || []);
+  
+                        onValue(dbRef(db, 'checkoutOptions'), s => {
+                            const rawData = s.val() || [];
+                            const validData = Array.isArray(rawData) ? rawData.filter(opt => opt) : Object.values(rawData).filter(opt => opt);
+                            
+                            checkoutSettings.value = validData.map((opt, idx) => {
+                                if (!opt.id) opt.id = 'opt_legacy_' + idx; 
+                                return opt;
+                            });
+                        });
+                        onValue(dbRef(db, 'menu'), s => {
+                            const data = s.val();
+                            if (data) {
+                                menuSettings.value = data.map(item => ({
+                                    ...item, 
+                                    category: item.category || '',
+                                    optionGroups: item.optionGroups || [], 
+                                    appliedSharedGroups: item.appliedSharedGroups || [],
+                                    isStockLimited: item.stock !== null && item.stock !== undefined && item.stock !== ''
+                                }));
+                            }
+                        });
+                        onValue(dbRef(db, 'marqueeData'), s => {
+                            if (s.val()) { marqueeSettings.value.text = s.val().text || ''; marqueeSettings.value.showCount = s.val().showCount || false; }
+                        });
+                    } else { isLoggedIn.value = false; }
                 });
             });
 
-            const loadAdminData = () => {
-                onValue(dbRef(db, 'orders'), (snapshot) => {
-                    const data = snapshot.val();
-                    allOrders.value = [];
-                    if (data) Object.keys(data).forEach(key => allOrders.value.push({ ...data[key], key: key }));
-                    filterOrdersByDate();
-                });
-                onValue(dbRef(db, 'shopStatus'), s => shopIsOpen.value = s.val() === true);
-                onValue(dbRef(db, 'menu'), s => {
-                    const val = s.val() || [];
-                    menuList.value = Array.isArray(val) ? val : Object.values(val);
-                });
-                onValue(dbRef(db, 'marqueeData'), s => {
-                    if (s.val()) marqueeText.value = s.val().text || '';
-                });
-            };
-
-            const toggleShopStatus = () => {
-                set(dbRef(db, 'shopStatus'), !shopIsOpen.value);
-            };
-
-            const saveMarquee = () => {
-                set(dbRef(db, 'marqueeData/text'), marqueeText.value).then(() => alert('跑馬燈公告已成功更新！'));
-            };
-
-            const saveMenuChanges = async () => {
-                try {
-                    await callUpdateMenu({ newMenu: menuList.value });
-                    alert('菜單與庫存設定已更新！');
-                } catch (e) {
-                    alert('儲存失敗：' + e.message);
-                }
-            };
-
-            const checkLogin = () => {
-                loginError.value = false;
+            const checkLogin = () => { 
                 let fakeEmail = loginUser.value.trim();
                 if (!fakeEmail.includes('@')) fakeEmail += '@market.app';
-                signInWithEmailAndPassword(auth, fakeEmail, loginPass.value).catch(err => {
-                    loginError.value = true; loginErrorMessage.value = '帳號或密碼錯誤';
-                });
+                signInWithEmailAndPassword(auth, fakeEmail, loginPass.value).then(() => loginError.value = false).catch(() => loginError.value = true);
             };
-
             const logout = () => signOut(auth);
+            watch(selectedDate, () => filterOrdersByDate());
+
             const isToday = computed(() => selectedDate.value === `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`);
-
-            const filterOrdersByDate = () => {
-                filteredOrders.value = allOrders.value.filter(order => order.dateString === selectedDate.value.replace(/-/g, '/'));
-            };
-
-            const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending'));
-            const processingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid'));
-            const historyOrders = computed(() => filteredOrders.value.filter(o => o.status === 'done' || o.status === 'archived'));
+            const formattedDateString = computed(() => selectedDate.value.replace(/-/g, '/'));
             
-            const dailyRevenue = computed(() => {
-                return filteredOrders.value
-                    .filter(o => o.status !== 'pending')
-                    .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
+            const processingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
+            const historyOrders = computed(() => filteredOrders.value.filter(o => o.status === 'done' || o.status === 'archived').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));
+
+            const searchResults = computed(() => {
+                let list = filteredOrders.value;
+                if (searchStatus.value !== 'all') {
+                    if (searchStatus.value === 'done') list = list.filter(o => o.status === 'done' || o.status === 'archived');
+                    else list = list.filter(o => o.status === searchStatus.value);
+                }
+                if (searchQuery.value) {
+                    const q = searchQuery.value.toLowerCase().trim();
+                    list = list.filter(o => (o.number && o.number.toString().includes(q)) || (o.note && o.note.toLowerCase().includes(q)) || (o.paymentMethod && o.paymentMethod.toLowerCase().includes(q)) || (o.items && o.items.some(item => item.name.toLowerCase().includes(q))));
+                }
+                return list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)); 
             });
 
-            const revenueBreakdown = computed(() => {
-                let cash = 0, cashCount = 0;
-                let linepay = 0, linepayCount = 0;
-                let totalCount = 0;
+            const activeMenuSettings = computed(() => menuSettings.value.filter(item => item.active));
+            const validOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'done' || o.status === 'archived'));
+            const dailyRevenue = computed(() => validOrders.value.reduce((sum, o) => sum + (Number(o.total) || 0), 0));
+            const cashRevenue = computed(() => validOrders.value.filter(o => (o.paymentMethod || '現金') !== 'LINE Pay').reduce((sum, o) => sum + (Number(o.total) || 0), 0));
+            const linePayRevenue = computed(() => validOrders.value.filter(o => o.paymentMethod === 'LINE Pay').reduce((sum, o) => sum + (Number(o.total) || 0), 0));
+            const completedOrdersCount = computed(() => validOrders.value.filter(o => o.total > 0).length);
+            
+            const waitingOrdersCount = computed(() => {
+                const todayOrders = allOrders.value.filter(order => order.dateString === `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`);
+                return todayOrders.filter(o => o.status === 'paid').length;
+            });
+            const updateMarqueeCount = () => { if (marqueeSettings.value.showCount) update(dbRef(db), { 'marqueeData/count': waitingOrdersCount.value }); };
 
-                filteredOrders.value.forEach(o => {
-                    if (o.status !== 'pending') {
-                        totalCount++;
-                        const amt = Number(o.total) || 0;
-                        if (o.paymentMethod === 'linepay') {
-                            linepay += amt; linepayCount++;
-                        } else {
-                            cash += amt; cashCount++;
+const saveFrontEndSettings = () => { 
+    const menuToSave = menuSettings.value.map(item => {
+        let processedItem = { ...item };
+        if (!processedItem.isStockLimited) {
+            processedItem.stock = ''; 
+        }
+        return processedItem;
+    });
+
+    update(dbRef(db), {
+        brandInfo: JSON.parse(JSON.stringify(brandSettings.value)),
+        menuCategories: JSON.parse(JSON.stringify(menuCategories.value)),
+        sharedOptionGroups: JSON.parse(JSON.stringify(sharedOptionGroups.value)),
+        menu: JSON.parse(JSON.stringify(menuToSave)),
+        marqueeData: { text: marqueeSettings.value.text, showCount: marqueeSettings.value.showCount, count: waitingOrdersCount.value },
+        checkoutOptions: JSON.parse(JSON.stringify(checkoutSettings.value))
+    }).then(() => { alert('前台設定已同步更新！'); currentTab.value = 'pending'; }); 
+};
+
+const salesReport = computed(() => {
+    const reportMap = {};
+    validOrders.value.filter(o => (Number(o.total) || 0) > 0).forEach(order => {
+        order.items.forEach(item => {
+            const baseName = item.name.replace(' [加點]', '').trim();
+            const optText = (item.options && item.options.length) ? item.options.join(', ') : '基本 / 原味';
+
+            if (!reportMap[baseName]) {
+                reportMap[baseName] = { 
+                    name: baseName, 
+                    totalCount: 0, 
+                    totalPrice: 0, 
+                    variants: {} 
+                };
+            }
+
+            reportMap[baseName].totalCount += (Number(item.qty) || 0);
+            const itemPriceTotal = (Number(item.price) || 0) * (Number(item.qty) || 0);
+            reportMap[baseName].totalPrice += itemPriceTotal;
+
+            if (!reportMap[baseName].variants[optText]) {
+                reportMap[baseName].variants[optText] = { count: 0, total: 0 };
+            }
+            reportMap[baseName].variants[optText].count += (Number(item.qty) || 0);
+            reportMap[baseName].variants[optText].total += itemPriceTotal;
+        });
+
+        if (order.checkoutOptions && order.checkoutOptions.length > 0) {
+            order.checkoutOptions.forEach(opt => {
+                const serviceName = "🛒 " + opt.name;
+                if (!reportMap[serviceName]) {
+                    reportMap[serviceName] = { name: serviceName, totalCount: 0, totalPrice: 0, variants: null };
+                }
+                reportMap[serviceName].totalCount += 1;
+                reportMap[serviceName].totalPrice += (Number(opt.price) || 0);
+            });
+        }
+    });
+
+    return Object.values(reportMap).sort((a, b) => b.totalPrice - a.totalPrice);
+});
+
+            const togglePrepItem = (baseName) => {
+                expandedPrepItems.value[baseName] = !expandedPrepItems.value[baseName];
+            };
+
+            const preparationStats = computed(() => {
+                const stats = {};
+                processingOrders.value.forEach(order => {
+                    order.items.forEach(item => {
+                        if (!item.ready) {
+                            const remainingQty = item.qty - (item.readyQty || 0);
+                            if (remainingQty > 0) {
+                                const baseName = item.name.replace(' [加點]', '').trim();
+
+                                if (!stats[baseName]) {
+                                    const menuItem = menuSettings.value.find(m => m.name === baseName);
+                                    const category = menuItem ? menuItem.category : '其他';
+                                    stats[baseName] = {
+                                        baseName: baseName,
+                                        category: category,
+                                        totalQty: 0,
+                                        detailsMap: {} 
+                                    };
+                                }
+
+                                stats[baseName].totalQty += remainingQty;
+
+                                const optStr = (item.options && item.options.length) ? item.options.join(', ') : '基本 / 原味';
+                                if (!stats[baseName].detailsMap[optStr]) {
+                                    stats[baseName].detailsMap[optStr] = 0;
+                                }
+                                stats[baseName].detailsMap[optStr] += remainingQty;
+                            }
+                        }
+                    });
+                });
+
+                return Object.values(stats).map(stat => {
+                    return {
+                        ...stat,
+                        details: Object.keys(stat.detailsMap).map(k => ({ option: k, qty: stat.detailsMap[k] })).sort((a,b) => b.qty - a.qty)
+                    };
+                }).sort((a, b) => {
+                    const idxA = menuCategories.value.indexOf(a.category);
+                    const idxB = menuCategories.value.indexOf(b.category);
+                    const finalIdxA = idxA === -1 ? 999 : idxA;
+                    const finalIdxB = idxB === -1 ? 999 : idxB;
+
+                    if (finalIdxA !== finalIdxB) return finalIdxA - finalIdxB;
+                    
+                    const mIdxA = menuSettings.value.findIndex(m => m.name === a.baseName);
+                    const mIdxB = menuSettings.value.findIndex(m => m.name === b.baseName);
+                    return mIdxA - mIdxB;
+                });
+            });
+
+            const exportCombinedReport = async () => {
+                let csvContent = "\uFEFF"; 
+                const escapeCSV = (val) => {
+                    const str = (val === null || val === undefined) ? "" : String(val);
+                    return `"${str.replace(/"/g, '""')}"`;
+                };
+
+                csvContent += `${escapeCSV("報表日期")},${escapeCSV(formattedDateString.value)}\n`;
+                csvContent += `${escapeCSV("總訂單數")},${escapeCSV(completedOrdersCount.value + " 筆")}\n`;
+                csvContent += `${escapeCSV("總營業額")},${escapeCSV("$" + dailyRevenue.value)}\n`;
+                csvContent += `${escapeCSV("現金總額")},${escapeCSV("$" + cashRevenue.value)}\n`;
+                csvContent += `${escapeCSV("LINE Pay總額")},${escapeCSV("$" + linePayRevenue.value)}\n\n`;
+
+                csvContent += `${escapeCSV("=== 銷售數量統整 ===")}\n`;
+                csvContent += `${escapeCSV("品項總分類")},${escapeCSV("細分口味/選項")},${escapeCSV("數量")},${escapeCSV("總金額")}\n`;
+                salesReport.value.forEach(mainItem => {
+                    csvContent += `${escapeCSV(mainItem.name)},${escapeCSV("--- 品項總計 ---")},${escapeCSV(mainItem.totalCount)},${escapeCSV("$" + mainItem.totalPrice)}\n`;
+                    if (mainItem.variants) {
+                        Object.keys(mainItem.variants).forEach(vName => {
+                            const vData = mainItem.variants[vName];
+                            csvContent += `${escapeCSV("")},${escapeCSV("└ " + vName)},${escapeCSV(vData.count)},${escapeCSV("$" + vData.total)}\n`;
+                        });
+                    }
+                });
+
+                csvContent += `\n${escapeCSV("=== 訂單詳細流水帳 ===")}\n`;
+                csvContent += `${escapeCSV("時間")},${escapeCSV("訂單編號")},${escapeCSV("付款方式")},${escapeCSV("訂單內容")},${escapeCSV("備註")},${escapeCSV("總金額")}\n`;
+                
+                validOrders.value.forEach(order => {
+                    let itemsStr = order.items.map(item => {
+                        const optText = item.options?.length ? `(${item.options.join(',')})` : '';
+                        return `${item.name}${optText} x${item.qty}`;
+                    }).join(' ； ');
+                    
+                    if (order.checkoutOptions && order.checkoutOptions.length > 0) {
+                        const optsStr = order.checkoutOptions.map(opt => `${opt.name} x1`).join(' ； ');
+                        itemsStr += (itemsStr ? ' ； ' : '') + `[服務] ${optsStr}`;
+                    }
+
+                    csvContent += `${escapeCSV(order.timeString || '')},${escapeCSV("#" + (order.number || ''))},${escapeCSV(order.paymentMethod || '現金')},${escapeCSV(itemsStr)},${escapeCSV(order.note || '')},${escapeCSV("$" + (order.total || 0))}\n`;
+                });
+
+                const fileName = `市集銷售總表_${selectedDate.value}.csv`;
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const file = new File([blob], fileName, { type: 'text/csv' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: fileName,
+                            text: '今日銷售報表，請儲存或分享。'
+                        });
+                        return; 
+                    } catch (error) {
+                        console.log('使用者取消分享或失敗', error);
+                    }
+                }
+
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 300);
+            };
+
+            const posCartCount = computed(() => Object.values(posCart.value).reduce((a, b) => a + b.qty, 0));
+            const posCartTotal = computed(() => {
+                let total = 0;
+                for (const cartKey in posCart.value) {
+                    const cItem = posCart.value[cartKey];
+                    const p = Number(cItem.item.price) || 0;
+                    const op = Number(cItem.optionsPrice) || 0;
+                    const q = Number(cItem.qty) || 0;
+                    total += (p + op) * q;
+                }
+                return total;
+            });
+
+            const activeCheckoutOptions = computed(() => checkoutSettings.value.filter(opt => opt.active));
+            const posSelectedCheckoutOptions = ref([]);
+            const isPosModalOpen = ref(false); 
+            const isPosCheckoutView = ref(false); 
+            const isPosCheckoutOptionsOpen = ref(false); 
+            const posFinalTotal = computed(() => {
+                let optionsTotal = 0;
+                posSelectedCheckoutOptions.value.forEach(id => {
+                    const opt = activeCheckoutOptions.value.find(o => o.id === id);
+                    if (opt) optionsTotal += (Number(opt.price) || 0);
+                });
+                return (Number(posCartTotal.value) || 0) + optionsTotal;
+            });
+
+            const addPosCart = (item) => {
+                let combinedGroups = [...(item.optionGroups || [])];
+                if (item.appliedSharedGroups && item.appliedSharedGroups.length > 0) {
+                    const applied = sharedOptionGroups.value.filter(sg => item.appliedSharedGroups.includes(sg.id));
+                    combinedGroups = [...combinedGroups, ...applied];
+                }
+
+                if (combinedGroups.length > 0) {
+                    posSelectedItem.value = { ...item, displayGroups: combinedGroups };
+                    posSelections.value = {};
+                    combinedGroups.forEach((g, i) => {
+                        posSelections.value[i] = (g.type === 'single' && g.options && g.options.length > 0) ? [0] : [];
+                    });
+                } else {
+                    const cartKey = `item_${item.id}`;
+                    if (!posCart.value[cartKey]) posCart.value[cartKey] = { item: item, options: [], optionsPrice: 0, qty: 0 };
+                    posCart.value[cartKey].qty++;
+                }
+            };
+
+            const handlePosSelect = (gIdx, oIdx, type) => {
+                if (!posSelections.value[gIdx]) posSelections.value[gIdx] = [];
+                if (type === 'single') posSelections.value[gIdx] = [oIdx];
+                else {
+                    const idx = posSelections.value[gIdx].indexOf(oIdx);
+                    if (idx > -1) posSelections.value[gIdx].splice(idx, 1);
+                    else posSelections.value[gIdx].push(oIdx);
+                }
+            };
+            const isPosOptionSelected = (gIdx, oIdx) => posSelections.value[gIdx]?.includes(oIdx);
+
+            const confirmPosAddOptions = () => {
+                const item = posSelectedItem.value;
+                let finalOptNames = [];
+                let finalOptPrice = 0;
+                Object.keys(posSelections.value).forEach(gIdx => {
+                    posSelections.value[gIdx].forEach(oIdx => {
+                        const opt = item.displayGroups[gIdx].options[oIdx];
+                        if (opt) { finalOptNames.push(opt.name); finalOptPrice += (opt.price || 0); }
+                    });
+                });
+                const cartKey = `item_${item.id}_${finalOptNames.sort().join('_')}`;
+                if (!posCart.value[cartKey]) posCart.value[cartKey] = { item: item, options: finalOptNames, optionsPrice: finalOptPrice, qty: 0 };
+                posCart.value[cartKey].qty++;
+                posSelectedItem.value = null;
+            };
+
+            const increasePosCart = (cartKey) => { if (posCart.value[cartKey]) posCart.value[cartKey].qty++; };
+            const decreasePosCart = (cartKey) => { if (posCart.value[cartKey]) { posCart.value[cartKey].qty--; if (posCart.value[cartKey].qty === 0) delete posCart.value[cartKey]; } };
+
+const removePosCartItem = (cartKey) => {
+    delete posCart.value[cartKey];
+};
+
+const submitPosOrder = async () => {
+    const suffixStr = posPhoneSuffix.value.toString().trim();
+    if (!suffixStr || suffixStr.length < 3 || suffixStr.length > 5) { 
+        alert('請輸入客人的手機末三碼'); 
+        return; 
+    }
+
+    const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
+    const activeNumbers = allOrders.value
+        .filter(o => o.dateString === todayStr && o.status !== 'archived')
+        .map(o => String(o.number));
+
+let finalNumber = suffixStr;
+    if (activeNumbers.includes(suffixStr)) {
+        if (suffixStr.length === 3) {
+            let counter = Math.floor(Math.random() * 9) + 1;
+            let attempts = 0;
+            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
+                counter++;
+                if (counter > 9) counter = 1;
+                attempts++;
+            }
+            finalNumber = (attempts >= 10) ? `${suffixStr}${Math.floor(Math.random() * 90) + 10}` : `${suffixStr}${counter}`;
+            if (!confirm(`⚠️ 撞號提醒！\n單號將自動微調為「${finalNumber}」，確定結帳嗎？`)) return;
+
+        } else if (suffixStr.length === 4) {
+            let counter = Math.floor(Math.random() * 9) + 1;
+            let attempts = 0;
+            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
+                counter++;
+                if (counter > 9) counter = 1;
+                attempts++;
+            }
+            if (attempts >= 10) {
+                do { finalNumber = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(finalNumber));
+            } else {
+                finalNumber = `${suffixStr}${counter}`;
+            }
+            if (!confirm(`⚠️ 撞號提醒！\n單號將自動微調為「${finalNumber}」，確定結帳嗎？`)) return;
+
+        } else {
+            let newNum = suffixStr;
+            let attempts = 0;
+            while (activeNumbers.includes(newNum) && attempts < 20) {
+                let lastDigit = Math.floor(Math.random() * 10);
+                newNum = suffixStr.slice(0, 4) + lastDigit;
+                attempts++;
+            }
+            if (attempts >= 20) {
+                do { newNum = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(newNum));
+            }
+            finalNumber = newNum;
+            if (!confirm(`⚠️ 五碼撞號提醒！\n單號將微調為「${finalNumber}」，確定結帳嗎？`)) return;
+        }
+    }
+
+    const newCartItems = [];
+    let requiresStockCheck = false; 
+ 
+    for (const cartKey in posCart.value) {
+        const cItem = posCart.value[cartKey];
+        newCartItems.push({
+            uid: Date.now() + '_' + Math.random().toString(36).substring(2, 9), 
+            id: cItem.item.id, name: cItem.item.name,
+            price: cItem.item.price + cItem.optionsPrice,
+            qty: cItem.qty, options: cItem.options
+        });
+        const menuItem = menuSettings.value.find(m => m.id === cItem.item.id);
+        if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
+            requiresStockCheck = true;
+        }
+    }
+    
+    if (requiresStockCheck) {
+        try {
+            const result = await runTransaction(dbRef(db, 'menu'), (currentMenu) => {
+                if (currentMenu === null) return currentMenu;
+                let canFulfill = true;
+                for (const cartItem of newCartItems) {
+                    const menuItem = currentMenu.find(m => m.id === cartItem.id);
+if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) {
+                        let currentStock = parseInt(menuItem.stock);
+                        if (!isNaN(currentStock) && currentStock < cartItem.qty) { canFulfill = false; break; }
+                        if (!isNaN(currentStock)) {
+                            currentStock -= cartItem.qty;
+                            if (currentStock <= 0) { currentStock = 0; } 
+                            menuItem.stock = currentStock;
                         }
                     }
-                });
-
-                return { cash, cashCount, linepay, linepayCount, totalCount };
+                }
+                if (!canFulfill) return; 
+                return currentMenu;
             });
+            if (!result.committed) { alert('品項庫存不足，請重新確認。'); return; }
+        } catch (error) {
+            alert('網路連線不穩，請再試一次。'); return;
+        }
+    }
 
-            const updateStatus = async (order, newStatus, paymentMethod = '') => {
-                try {
-                    await callUpdateOrderStatus({ orderKey: order.key, newStatus, paymentMethod });
-                } catch (e) {
-                    alert('更新失敗：' + e.message);
+    const chosenCheckoutOptions = posSelectedCheckoutOptions.value.map(id => {
+        return activeCheckoutOptions.value.find(o => o.id === id);
+    }).filter(o => o);
+ 
+    const now = new Date();
+    push(dbRef(db, 'orders'), {
+        number: finalNumber, items: newCartItems, checkoutOptions: chosenCheckoutOptions, 
+        total: Number(posFinalTotal.value) || 0, status: 'paid', paymentMethod: posPaymentMethod.value, note: posNote.value, 
+        createdAt: serverTimestamp(),
+        timeString: `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`, 
+        dateString: todayStr
+    });
+
+    posCart.value = {}; posPhoneSuffix.value = ''; posNote.value = ''; posSelectedCheckoutOptions.value = [];
+    isPosModalOpen.value = false; isPosCheckoutView.value = false; 
+};
+
+            const updateOrderNote = (order) => { update(dbRef(db), { [`orders/${order.key}/note`]: order.note || '' }); };
+            const toggleShopStatus = () => { set(dbRef(db, 'shopStatus'), !shopIsOpen.value); };
+            const filterOrdersByDate = () => { filteredOrders.value = allOrders.value.filter(order => order.dateString === selectedDate.value.replace(/-/g, '/')); };
+
+            const addCategory = () => {
+                if (newCategory.value.trim() && !menuCategories.value.includes(newCategory.value.trim())) {
+                    menuCategories.value.push(newCategory.value.trim());
+                    newCategory.value = '';
                 }
             };
+            const removeCategory = (idx) => { if(confirm('刪除此分類？')) menuCategories.value.splice(idx, 1); };
 
-            const switchPaymentMethod = async (order) => {
-                const targetMethod = order.paymentMethod === 'linepay' ? 'cash' : 'linepay';
-                const label = targetMethod === 'linepay' ? 'LINE Pay' : '現金';
-                if (confirm(`確定將單號 #${order.number} 的付款方式改為「${label}」嗎？`)) {
-                    try {
-                        await callUpdateOrderStatus({ orderKey: order.key, paymentMethod: targetMethod });
-                    } catch (e) {
-                        alert('切換失敗：' + e.message);
+            const addSharedGroup = () => { sharedOptionGroups.value.push({ id: Date.now(), name: '', type: 'single', options: [], isExpanded: true }); };
+            const removeSharedGroup = (idx) => { if(confirm('刪除這個公版群組？')) sharedOptionGroups.value.splice(idx, 1); };
+            
+            const importSharedGroup = (item, sg) => {
+                if(confirm(`確定要將「${sg.name || '未命名'}」匯入為專屬選項嗎？\n匯入後將脫離連動，且系統會自動取消上方的套用打勾。`)) {
+                    if (!item.optionGroups) item.optionGroups = [];
+                    const newGroup = JSON.parse(JSON.stringify(sg));
+                    newGroup.id = Date.now(); 
+                    item.optionGroups.push(newGroup);
+
+                    if (!item.appliedSharedGroups) item.appliedSharedGroups = [];
+                    const idx = item.appliedSharedGroups.indexOf(sg.id);
+                    if (idx > -1) {
+                        item.appliedSharedGroups.splice(idx, 1);
                     }
                 }
             };
 
-            const deleteOrder = async (order) => {
-                if(confirm(`確定刪除/作廢訂單 #${order.number}？庫存將自動回補`)) {
-                    try {
-                        await callUpdateOrderStatus({ orderKey: order.key, isDelete: true });
-                    } catch (e) {
-                        alert('刪除失敗：' + e.message);
-                    }
+            const addOptionGroup = (item) => { 
+                if (!item.optionGroups) item.optionGroups = [];
+                item.optionGroups.push({ name: '', type: 'single', options: [] }); 
+            };
+            const removeOptionGroup = (item, gIdx) => { item.optionGroups.splice(gIdx, 1); };
+            const addOption = (group) => { 
+                if (!group.options) group.options = [];
+                group.options.push({ name: '', price: 0 }); 
+            };
+            const removeOption = (group, oIdx) => { group.options.splice(oIdx, 1); };
+
+            const moveMenuUp = (index) => { if (index > 0) [menuSettings.value[index], menuSettings.value[index - 1]] = [menuSettings.value[index - 1], menuSettings.value[index]]; };
+            const moveMenuDown = (index) => { if (index < menuSettings.value.length - 1) [menuSettings.value[index], menuSettings.value[index + 1]] = [menuSettings.value[index + 1], menuSettings.value[index]]; };
+            
+const addMenuItem = () => { 
+    menuSettings.value.push({ 
+        id: Date.now(), 
+        name: '', 
+        price: 0, 
+        desc: '', 
+        category: selectedMenuCategory.value === 'all' ? '' : selectedMenuCategory.value, 
+        active: true, 
+        stock: '', 
+        isStockLimited: false,
+        optionGroups: [], 
+        appliedSharedGroups: [] 
+    }); 
+};
+
+const removeMenuItem = (item) => { 
+    if(confirm('確定刪除這個菜單品項嗎？')) {
+        const idx = menuSettings.value.findIndex(m => m.id === item.id);
+        if(idx !== -1) menuSettings.value.splice(idx, 1);
+    }
+};
+
+            const updateStatus = (order, newStatus, paymentMethod = null) => {
+                if (!isToday.value && newStatus !== 'archived') return; 
+                const selectedMethod = paymentMethod || order.paymentMethod || '現金';
+
+                if (newStatus === 'done') {
+                    update(dbRef(db), { [`/orders/${order.key}/status`]: 'done' });
+                    set(dbRef(db, 'currentCallingNumber'), order.number);
+                    return;
                 }
+                if (order.isAddon && newStatus === 'paid') {
+                    const parent = filteredOrders.value.find(o => o.key === order.parentKey);
+                    if (parent) {
+                        const mergedItems = [...(parent.items || [])];
+                        order.items.forEach(item => { mergedItems.push({ ...item, name: item.name + ' [加點]', ready: false, readyQty: 0 }); });
+                        const updates = {};
+                        updates[`orders/${parent.key}/items`] = mergedItems;
+                        updates[`orders/${parent.key}/total`] = (Number(parent.total) || 0) + (Number(order.total) || 0);
+                        if (order.note) updates[`orders/${parent.key}/note`] = parent.note ? `${parent.note} + ${order.note}` : order.note;
+                        updates[`orders/${parent.key}/paymentMethod`] = selectedMethod;
+                        if (parent.status === 'done') updates[`orders/${parent.key}/status`] = 'paid';
+                        updates[`orders/${order.key}`] = null;
+                        update(dbRef(db), updates);
+                    } else { 
+                        update(dbRef(db), { 
+                            [`orders/${order.key}/isAddon`]: null, 
+                            [`orders/${order.key}/status`]: 'paid',
+                            [`orders/${order.key}/paymentMethod`]: selectedMethod 
+                        }); 
+                    }
+                    return;
+                }
+                update(dbRef(db), { 
+                    [`/orders/${order.key}/status`]: newStatus,
+                    [`/orders/${order.key}/paymentMethod`]: selectedMethod
+                });
             };
 
-            return {
-                shopName, isLoggedIn, isAdmin, loginUser, loginPass, loginError, loginErrorMessage, checkLogin, logout,
-                selectedDate, isToday, pendingOrders, processingOrders, historyOrders, dailyRevenue, revenueBreakdown,
-                currentTab, isDesktop, updateStatus, switchPaymentMethod, deleteOrder, showReportModal, isConnected, filterOrdersByDate,
-                toggleShopStatus, shopIsOpen, menuList, marqueeText, saveMarquee, saveMenuChanges
+            const recallOrder = (order) => {
+                if (order && order.key) {
+                    if (order.status === 'archived') update(dbRef(db), { [`orders/${order.key}/status`]: 'done' });
+                    set(dbRef(db, 'currentCallingNumber'), order.number);
+                }
+            };
+            
+const deleteOrder = (order) => { 
+    if(confirm(`⚠️ 確定要刪除訂單 #${order.number} 嗎？\n刪除後將無法復原！`)) {
+        remove(dbRef(db, `orders/${order.key}`)); 
+    }
+};
+            
+const deleteHistoryOrder = (order) => { 
+    const safeTotal = Number(order.total) || 0;
+    if(confirm(`⚠️ 確定刪除已出餐的訂單 #${order.number}？\n\n警告：這將會直接從今日總營業額中扣除 $${safeTotal}，且無法復原！`)) {
+        remove(dbRef(db, `orders/${order.key}`)); 
+    }
+};
+
+const deleteOrderItem = (order, itemIndex) => {
+    if(confirm('確定要移除這個品項嗎？金額會自動重新計算。')) {
+        const newItems = [...order.items]; 
+        newItems.splice(itemIndex, 1);
+
+        if (newItems.length === 0) {
+            remove(dbRef(db, `orders/${order.key}`));
+        } else { 
+            const itemsTotal = newItems.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
+            const optionsTotal = (order.checkoutOptions || []).reduce((sum, opt) => sum + (Number(opt.price) || 0), 0);
+            
+            update(dbRef(db), { 
+                [`orders/${order.key}/items`]: newItems, 
+                [`orders/${order.key}/total`]: itemsTotal + optionsTotal 
+            });
+        }
+    }
+};
+            
+            const toggleItemReady = (order, itemIndex) => {
+                const newItems = [...order.items]; const item = newItems[itemIndex];
+                let currentReadyQty = item.readyQty || 0;
+                if (item.qty > 1) { 
+                    currentReadyQty += 1; 
+                    if (currentReadyQty > item.qty) { currentReadyQty = 0; item.ready = false; } 
+                    else if (currentReadyQty === item.qty) { item.ready = true; } 
+                    else { item.ready = false; }
+                    item.readyQty = currentReadyQty; 
+                } else { item.ready = !(item.ready || false); item.readyQty = item.ready ? 1 : 0; }
+                update(dbRef(db), { [`orders/${order.key}/items`]: newItems });
+            };
+            
+            const deleteAllOrdersByDate = async () => { 
+                if (filteredOrders.value.length === 0 || !confirm(`確定清空所有訂單？無法復原！`)) return; 
+                const updates = {}; filteredOrders.value.forEach(order => updates[`orders/${order.key}`] = null); 
+                try { await update(dbRef(db), updates); showReport.value = false; } catch (error) { alert(error.message); } 
+            };
+
+            const addCheckoutOption = () => { 
+                checkoutSettings.value.push({ 
+                    id: 'opt_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                    name: '', 
+                    price: 0, 
+                    active: true 
+                }); 
+            };
+ 
+            const removeCheckoutOption = (index) => { if(confirm('刪除此結帳服務嗎？')) checkoutSettings.value.splice(index, 1); };
+
+            return { 
+                shopName, isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout, 
+                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders,
+                dailyRevenue, cashRevenue, linePayRevenue, completedOrdersCount, salesReport, showReport, updateStatus, exportCombinedReport,
+                shopIsOpen, toggleShopStatus, deleteOrder, deleteHistoryOrder, deleteOrderItem, toggleItemReady,
+                deleteAllOrdersByDate, currentTab, frontTab, isDesktop, menuSettings, 
+                brandSettings, 
+                menuCategories, newCategory, addCategory, removeCategory, 
+                sharedOptionGroups, addSharedGroup, removeSharedGroup, importSharedGroup, 
+                saveFrontEndSettings, addMenuItem, moveMenuUp, moveMenuDown, 
+                addOptionGroup, removeOptionGroup, addOption, removeOption, removeMenuItem, filteredOrders, 
+                posCart, posPhoneSuffix, posNote, posPaymentMethod, posSelectedItem, posSelections, activeMenuSettings,
+                posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, removePosCartItem, submitPosOrder, updateOrderNote,
+                recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
+                showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, inactiveMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
+                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
             };
         }
     }).mount('#app');
+
 </script>
 </body>
 </html>
