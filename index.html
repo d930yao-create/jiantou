@@ -10,13 +10,13 @@
         window.MARKET_CONFIG = {
             shopName: "尖頭油飯｜點餐", 
             firebase: {
-  apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
-  authDomain: "jiantou-000rlhad.firebaseapp.com",
-  databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
-  projectId: "jiantou-000rlhad",
-  storageBucket: "jiantou-000rlhad.firebasestorage.app",
-  messagingSenderId: "435285773521",
-  appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+              apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+              authDomain: "jiantou-000rlhad.firebaseapp.com",
+              databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+              projectId: "jiantou-000rlhad",
+              storageBucket: "jiantou-000rlhad.firebasestorage.app",
+              messagingSenderId: "435285773521",
+              appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
             }
         };
     </script>
@@ -34,80 +34,107 @@
         .status-paid { background-color: #FDE68A; color: #92400E; }
         .status-done { background-color: #D1FAE5; color: #065F46; }
         [v-cloak] { display: none !important; }
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } 
-        /* 跑馬燈動畫 */
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 15s linear infinite; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body class="text-stone-700 h-[100dvh] flex flex-col overflow-hidden select-none">
 
 <div id="app" v-cloak class="h-full flex flex-col relative">
 
-<div v-if="!isConnected" class="bg-orange-500 text-white text-xs py-2 text-center font-bold z-[100] w-full absolute top-0 left-0 shadow-md">
+    <div v-if="!isConnected" class="bg-orange-500 text-white text-xs py-2 text-center font-bold z-[100] w-full absolute top-0 left-0 shadow-md">
         網路連線不穩，建議檢查連線後再進行點餐 🛰️
     </div>
     
     <audio id="pickupSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
 
-<div v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto">
-    <div class="min-h-full flex flex-col items-center py-10 px-4">
-        
-        <div class="w-full max-w-sm flex flex-col items-center mt-4">
+    <div v-if="!hasEnteredShop" class="flex-1 w-full bg-[#FDFBF7] overflow-y-auto">
+        <div class="min-h-full flex flex-col items-center py-10 px-4">
             
-            <div v-if="brandInfo.logo" class="w-28 h-28 flex items-center justify-center mx-auto mb-3 animate-[fadeIn_0.5s_ease-out]">
-                <img :src="brandInfo.logo" :alt="brandInfo.name" class="w-full h-full object-contain rounded-full shadow-sm">
-            </div>
-            
-            <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">{{ brandInfo.name }}</h1>
-            <p v-if="brandInfo.slogan" class="text-xs text-brick tracking-[0.2em] font-bold animate-[fadeIn_0.5s_ease-out] uppercase">{{ brandInfo.slogan }}</p>
-            
-<div class="flex items-center justify-center gap-3 mt-4 mb-6 animate-[fadeIn_0.5s_ease-out]">
+            <div class="w-full max-w-sm flex flex-col items-center mt-4">
+                
+                <div v-if="brandInfo.logo" class="w-28 h-28 flex items-center justify-center mx-auto mb-3 animate-[fadeIn_0.5s_ease-out]">
+                    <img :src="brandInfo.logo" :alt="brandInfo.name" class="w-full h-full object-contain rounded-full shadow-sm">
+                </div>
+                
+                <h1 class="text-4xl font-bold text-stone-800 tracking-wide serif mb-2 animate-[fadeIn_0.5s_ease-out]">{{ brandInfo.name }}</h1>
+                <p v-if="brandInfo.slogan" class="text-xs text-brick tracking-[0.2em] font-bold animate-[fadeIn_0.5s_ease-out] uppercase">{{ brandInfo.slogan }}</p>
+                
+                <div class="flex items-center justify-center gap-3 mt-4 mb-6 animate-[fadeIn_0.5s_ease-out]">
+                    <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-green-200 shadow-sm">● 營業中</span>
+                    <span v-else class="bg-stone-200 text-stone-500 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-stone-300 shadow-sm">● 休息中</span>                
 
-                <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-green-200 shadow-sm">● 營業中</span>
-                <span v-else class="bg-stone-200 text-stone-500 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-stone-300 shadow-sm">● 休息中</span>                
+                    <a v-if="brandInfo.ig" :href="brandInfo.ig" target="_blank" class="px-5 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
+                        <span class="font-bold text-xs">INSTAGRAM</span>
+                    </a>
+                    <a v-if="brandInfo.line" :href="brandInfo.line" target="_blank" class="px-5 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
+                        <span class="font-bold text-xs">LINE</span>
+                    </a>
+                </div>
 
-<a v-if="brandInfo.ig" :href="brandInfo.ig" target="_blank" class="px-5 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
-    <span class="font-bold text-xs">INSTAGRAM</span>
-</a>
-<a v-if="brandInfo.line" :href="brandInfo.line" target="_blank" class="px-5 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
-    <span class="font-bold text-xs">LINE</span>
-</a>
-            </div>
+                <!-- 📢 升級版：可縮放 + 框內滑動 + 滑動提示公告欄 -->
+                <div v-if="marqueeData.text" class="w-full bg-red-50/90 border border-red-100 text-stone-700 text-sm mb-6 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 relative animate-[slideUp_0.4s_ease-out] flex flex-col">
+                    <!-- 公告標頭列 -->
+                    <div class="flex justify-between items-center px-4 pt-3 pb-1 border-b border-red-100/60 bg-red-100/30">
+                        <span class="text-xs font-bold text-brick flex items-center gap-1">
+                            <span class="material-icons-round text-sm">campaign</span> 店內公告
+                        </span>
+                        <button @click="isAnnounceExpanded = !isAnnounceExpanded" class="text-xs text-brick hover:text-red-900 font-bold flex items-center gap-0.5 bg-white/80 px-2 py-0.5 rounded-full border border-red-200 shadow-xs active:scale-95 transition-all">
+                            <span>{{ isAnnounceExpanded ? '收合' : '放大' }}</span>
+                            <span class="material-icons-round text-xs">{{ isAnnounceExpanded ? 'unfold_less' : 'unfold_more' }}</span>
+                        </button>
+                    </div>
 
-<div v-if="marqueeData.text || marqueeData.showCount" class="w-full bg-red-50 border border-red-100 text-stone-700 text-sm py-3 overflow-hidden relative flex items-center justify-center mb-6 rounded-2xl shadow-sm animate-[slideUp_0.4s_ease-out]">
-                <div class="animate-marquee px-4 flex gap-6 items-center font-bold tracking-wide">
-                    <span v-if="marqueeData.text">{{ marqueeData.text }}</span>
-                    <span v-if="marqueeData.showCount" class="text-brick"><span class="material-icons-round text-sm align-text-bottom">local_fire_department</span> 目前前面還有 {{ marqueeData.count }} 張單製作中</span>
+                    <!-- 公告內容主體 (支援內嵌滑動與展開) -->
+                    <div class="px-4 py-3 overflow-y-auto transition-all duration-300 relative text-left" 
+                         :class="isAnnounceExpanded ? 'max-h-[50vh]' : 'max-h-24'">
+                        <p class="whitespace-pre-line leading-relaxed text-stone-700 font-medium text-sm tracking-wide">
+                            {{ marqueeData.text }}
+                        </p>
+                    </div>
+
+                    <!-- 底下滑動提示條 (未展開時顯示) -->
+                    <div v-if="!isAnnounceExpanded" @click="isAnnounceExpanded = true" class="bg-gradient-to-t from-red-100/80 via-red-50/50 to-transparent py-1.5 text-center cursor-pointer border-t border-red-100/40 hover:bg-red-100/50 transition-colors flex items-center justify-center gap-1 text-[11px] font-bold text-brick/80">
+                        <span class="material-icons-round text-xs animate-bounce">expand_more</span>
+                        上下滑動觀看或點擊放大
+                    </div>
+                </div>
+
+                <!-- 操作按鈕區 -->
+                <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
+                    <button @click="enterShop" 
+                        :disabled="!shopIsOpen && !myOrder"
+                        class="w-full py-5 rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
+                        :class="(!shopIsOpen && !myOrder) ? 'bg-stone-200 text-stone-400 cursor-not-allowed' : 'bg-brick text-white hover:bg-red-900 shadow-red-100'">
+                        <span class="material-icons-round text-2xl">{{ myOrder ? 'receipt_long' : 'flatware' }}</span>
+                        {{ myOrder ? '查看我的訂單' : (shopIsOpen ? '開始點餐' : '暫停點餐') }}
+                    </button>
+
+                    <button @click="isTrackingMode=true" class="w-full py-5 bg-white border-2 border-stone-100 text-stone-600 rounded-2xl font-bold text-xl shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-stone-50 hover:border-stone-200">
+                        <span class="material-icons-round text-2xl text-yellow-500">search</span>
+                        單號追蹤
+                    </button>
                 </div>
             </div>
 
-            <div class="w-full space-y-4 animate-[slideUp_0.5s_ease-out]">
-                <button @click="enterShop" 
-                    :disabled="!shopIsOpen && !myOrder"
-                    class="w-full py-5 rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
-                    :class="(!shopIsOpen && !myOrder) ? 'bg-stone-200 text-stone-400 cursor-not-allowed' : 'bg-brick text-white hover:bg-red-900 shadow-red-100'">
-                    <span class="material-icons-round text-2xl">{{ myOrder ? 'receipt_long' : 'flatware' }}</span>
-                    {{ myOrder ? '查看我的訂單' : (shopIsOpen ? '開始點餐' : '暫停點餐') }}
-                </button>
-
-                <button @click="isTrackingMode=true" class="w-full py-5 bg-white border-2 border-stone-100 text-stone-600 rounded-2xl font-bold text-xl shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-stone-50 hover:border-stone-200">
-                    <span class="material-icons-round text-2xl text-yellow-500">search</span>
-                    單號追蹤
-                </button>
+            <!-- 叫號區 & 製作中單數 -->
+            <div class="mt-auto pt-8 pb-6 text-center animate-[slideUp_0.5s_ease-out] flex flex-col items-center">
+                <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
+                <p class="text-6xl font-bold text-stone-300 serif mb-3">#{{ currentCallingNumber || '--' }}</p>
+                
+                <!-- 🔥 製作中單數移至叫號區下方 -->
+                <div v-if="marqueeData.showCount" class="inline-flex items-center gap-1.5 px-4 py-2 bg-red-50 border border-red-100 rounded-full text-brick text-xs font-bold shadow-sm animate-[fadeIn_0.5s_ease-out]">
+                    <span class="material-icons-round text-sm">local_fire_department</span>
+                    目前前面還有 {{ marqueeData.count }} 張單製作中
+                </div>
             </div>
+            
         </div>
-
-        <div class="mt-auto pt-10 pb-6 text-center animate-[slideUp_0.5s_ease-out]">
-            <p class="text-sm text-stone-400 mb-1 tracking-[0.2em] uppercase">現在叫號</p>
-            <p class="text-6xl font-bold text-stone-300 serif">#{{ currentCallingNumber || '--' }}</p>
-        </div>
-        
     </div>
-</div>
 
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden animate-[fadeIn_0.3s_ease-out]">
         
@@ -184,7 +211,7 @@
                 </div>
             </div>
 
-<div v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[70vh] overflow-y-auto transition-transform duration-300">
+            <div v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[70vh] overflow-y-auto transition-transform duration-300">
                 
                 <div class="flex justify-between items-start mb-6">
                     <div>
@@ -264,7 +291,6 @@
         </div>
     </div>
 
-
     <div v-if="selectedItemForOptions" class="fixed inset-0 bg-black/60 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="selectedItemForOptions=null">
         <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.2s_ease-out] max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-2 flex-shrink-0">
@@ -299,7 +325,6 @@
         </div>
     </div>
 
-
     <div v-if="showPickupModal" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-6 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
         <div class="bg-white w-full max-w-sm rounded-2xl p-8 text-center relative shadow-2xl border-4 border-green-400">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-[bounce_1s_infinite]">
@@ -327,7 +352,7 @@
         </button>
     </div>
 
- <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false">
+    <div v-if="isConfirming" class="fixed inset-0 bg-black/60 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" @click.self="isConfirming=false">
         <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out] max-h-[90vh] flex flex-col">
             
             <h3 class="text-2xl font-bold text-stone-800 mb-4 serif text-center border-b border-stone-100 pb-4 flex-shrink-0">{{ isAppending ? '確認加點內容' : '確認餐點內容' }}</h3>
@@ -373,9 +398,9 @@
                 </div>
                 
                 <div v-if="!isAppending" class="mb-2 p-4 bg-stone-50 rounded-xl border border-stone-100">
-    <label class="block text-sm font-bold text-stone-600 mb-2 text-center">請輸入手機末三碼 取餐用</label>
-    <input type="tel" maxlength="5" v-model="phoneSuffix" placeholder="輸入末三碼" class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick">
-</div>
+                    <label class="block text-sm font-bold text-stone-600 mb-2 text-center">請輸入手機末三碼 取餐用</label>
+                    <input type="tel" maxlength="5" v-model="phoneSuffix" placeholder="輸入末三碼" class="w-full bg-white border border-stone-200 rounded-lg p-3 text-center text-xl font-bold outline-none focus:border-brick tracking-widest text-brick">
+                </div>
             </div>
 
             <div class="flex gap-3 mt-4 flex-shrink-0 pt-2 border-t border-stone-100">
@@ -400,8 +425,9 @@
 
     createApp({
         setup() {
-const isConnected = ref(true);
+            const isConnected = ref(true);
             const hasEnteredShop = ref(false);
+            const isAnnounceExpanded = ref(false); // 🌟 新增公告縮放狀態
             
             const brandInfo = ref({
                 name: window.MARKET_CONFIG.shopName,
@@ -440,20 +466,18 @@ const isConnected = ref(true);
 
             const phoneSuffix = ref('');
             const isAppending = ref(false);
-const checkoutOptions = ref([]);
+            const checkoutOptions = ref([]);
             const selectedCheckoutOptions = ref([]);
             const activeCheckoutOptions = computed(() => checkoutOptions.value.filter(opt => opt.active));
 
-            // 🌟 核心防呆：判斷是否處於「候餐鎖定狀態」
             const isWaitingForMeal = computed(() => {
                 const hasActiveMyOrder = myOrder.value && myOrder.value.status !== 'done' && myOrder.value.status !== 'archived';
                 const hasActiveTracked = trackedNumber.value && !isTrackedNumberCalled.value;
-                // 如果已經點了餐，而且沒有按下「我要加點」按鈕，就鎖定後方菜單
                 return (hasActiveMyOrder || hasActiveTracked) && !isAppending.value;
             });
 
-onMounted(() => {
-onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
+            onMounted(() => {
+                onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
                 onValue(dbRef(db, 'brandInfo'), (snapshot) => {
                     if (snapshot.val()) {
                         brandInfo.value = { ...brandInfo.value, ...snapshot.val() };
@@ -461,7 +485,6 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
                     }
                 }); 
  
-// 1. 安全讀取結帳附加服務
                 onValue(dbRef(db, 'checkoutOptions'), s => {
                     const raw = s.val() || [];
                     const arr = Array.isArray(raw) ? raw : Object.values(raw);
@@ -471,19 +494,16 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
                     });
                 });
                 
-                // 2. 安全讀取跑馬燈
                 onValue(dbRef(db, 'marqueeData'), (snapshot) => {
                     if (snapshot.val()) marqueeData.value = snapshot.val();
                 });
 
-                // 3. 安全讀取菜單分類 (過濾幽靈分類)
                 onValue(dbRef(db, 'menuCategories'), s => {
                     const raw = s.val() || [];
                     const arr = Array.isArray(raw) ? raw : Object.values(raw);
                     menuCategories.value = arr.filter(cat => cat);
                 });
 
-                // 4. 安全讀取共用選項群組 (過濾幽靈群組)
                 onValue(dbRef(db, 'sharedOptionGroups'), s => {
                     const raw = s.val() || [];
                     const arr = Array.isArray(raw) ? raw : Object.values(raw);
@@ -499,12 +519,10 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
                     shopIsOpen.value = (val === null) ? true : val;
                 });
 
-                // 5. 🌟 安全讀取主菜單 (最容易白屏的元凶，強力過濾！)
                 const menuRef = dbRef(db, 'menu');
                 onValue(menuRef, (snapshot) => {
                     const raw = snapshot.val() || [];
                     const arr = Array.isArray(raw) ? raw : Object.values(raw);
-                    // 徹底把 null 或壞掉的資料踢出去
                     fullMenu.value = arr.filter(item => item && typeof item === 'object'); 
                     menu.value = fullMenu.value.filter(item => item.active); 
                 });
@@ -694,7 +712,7 @@ onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val()
                 return total;
             });
 
-const finalTotal = computed(() => {
+            const finalTotal = computed(() => {
                 let optionsTotal = 0;
                 selectedCheckoutOptions.value.forEach(id => {
                     const opt = activeCheckoutOptions.value.find(o => o.id === id);
@@ -703,10 +721,9 @@ const finalTotal = computed(() => {
                 return cartTotal.value + optionsTotal;
             });
 
-
             const openConfirmation = () => { 
                 if (cartCount.value > 0) {
-                    selectedCheckoutOptions.value = []; // 清空上次打勾
+                    selectedCheckoutOptions.value = [];
                     isConfirming.value = true; 
                 }
             };
@@ -726,89 +743,83 @@ const finalTotal = computed(() => {
                 }
             };
 
-const submitOrder = async () => {
-    let finalNumber = '';
-    const ordersRef = dbRef(db, 'orders'); // 👈 統一加在最上面
+            const submitOrder = async () => {
+                let finalNumber = '';
+                const ordersRef = dbRef(db, 'orders');
 
-    if (!isAppending.value) {
-        const suffixStr = phoneSuffix.value ? phoneSuffix.value.toString().trim() : '';
-        if (suffixStr.length < 3 || suffixStr.length > 5) {
-            alert('為了方便取餐，請輸入手機「末三碼」或「末四碼」喔！');
-            return;
-        }
+                if (!isAppending.value) {
+                    const suffixStr = phoneSuffix.value ? phoneSuffix.value.toString().trim() : '';
+                    if (suffixStr.length < 3 || suffixStr.length > 5) {
+                        alert('為了方便取餐，請輸入手機「末三碼」或「末四碼」喔！');
+                        return;
+                    }
 
-        const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
-        const snapshot = await get(ordersRef);        
-        const activeNumbers = [];
-        if (snapshot.exists()) {
-            snapshot.forEach(child => {
-                const order = child.val();
-                if (order.dateString === todayStr && order.status !== 'archived') {
-                    activeNumbers.push(String(order.number));
-                }
-            });
-        }
+                    const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
+                    const snapshot = await get(ordersRef);        
+                    const activeNumbers = [];
+                    if (snapshot.exists()) {
+                        snapshot.forEach(child => {
+                            const order = child.val();
+                            if (order.dateString === todayStr && order.status !== 'archived') {
+                                activeNumbers.push(String(order.number));
+                            }
+                        });
+                    }
 
-finalNumber = suffixStr;
-        if (activeNumbers.includes(suffixStr)) {
-            // --- 霸道總裁防撞邏輯：長度鎖定在 5 碼以內 ---
-            if (suffixStr.length === 3) {
-                let counter = Math.floor(Math.random() * 9) + 1;
-                let attempts = 0;
-                // 嘗試在尾部加 1 碼
-                while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
-                    counter++;
-                    if (counter > 9) counter = 1;
-                    attempts++;
-                }
-                // 逃生門：1-9 全滿則變 5 碼
-                finalNumber = (attempts >= 10) ? `${suffixStr}${Math.floor(Math.random() * 90) + 10}` : `${suffixStr}${counter}`;
-                alert(`📢 真巧！您的末三碼有人使用了。系統自動微調取餐單號為「${finalNumber}」，請憑此號碼取餐喔！`);
+                    finalNumber = suffixStr;
+                    if (activeNumbers.includes(suffixStr)) {
+                        if (suffixStr.length === 3) {
+                            let counter = Math.floor(Math.random() * 9) + 1;
+                            let attempts = 0;
+                            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
+                                counter++;
+                                if (counter > 9) counter = 1;
+                                attempts++;
+                            }
+                            finalNumber = (attempts >= 10) ? `${suffixStr}${Math.floor(Math.random() * 90) + 10}` : `${suffixStr}${counter}`;
+                            alert(`📢 真巧！您的末三碼有人使用了。系統自動微調取餐單號為「${finalNumber}」，請憑此號碼取餐喔！`);
 
-            } else if (suffixStr.length === 4) {
-                let counter = Math.floor(Math.random() * 9) + 1;
-                let attempts = 0;
-                while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
-                    counter++;
-                    if (counter > 9) counter = 1;
-                    attempts++;
-                }
-                // 逃生門：如果 4+1 碼全滿，隨機生一組全新 5 碼
-                if (attempts >= 10) {
-                    do { finalNumber = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(finalNumber));
-                } else {
-                    finalNumber = `${suffixStr}${counter}`;
-                }
-                alert(`📢 號碼重複提醒！系統為您自動微調取餐單號為「${finalNumber}」，請以此號碼為準喔！`);
+                        } else if (suffixStr.length === 4) {
+                            let counter = Math.floor(Math.random() * 9) + 1;
+                            let attempts = 0;
+                            while (activeNumbers.includes(`${suffixStr}${counter}`) && attempts < 10) {
+                                counter++;
+                                if (counter > 9) counter = 1;
+                                attempts++;
+                            }
+                            if (attempts >= 10) {
+                                do { finalNumber = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(finalNumber));
+                            } else {
+                                finalNumber = `${suffixStr}${counter}`;
+                            }
+                            alert(`📢 號碼重複提醒！系統為您自動微調取餐單號為「${finalNumber}」，請以此號碼為準喔！`);
 
-            } else {
-                // 5 碼撞號處理：更換最後一碼 (不增加長度)
-                let newNum = suffixStr;
-                let attempts = 0;
-                while (activeNumbers.includes(newNum) && attempts < 20) {
-                    let lastDigit = Math.floor(Math.random() * 10);
-                    newNum = suffixStr.slice(0, 4) + lastDigit;
-                    attempts++;
+                        } else {
+                            let newNum = suffixStr;
+                            let attempts = 0;
+                            while (activeNumbers.includes(newNum) && attempts < 20) {
+                                let lastDigit = Math.floor(Math.random() * 10);
+                                newNum = suffixStr.slice(0, 4) + lastDigit;
+                                attempts++;
+                            }
+                            if (attempts >= 20) {
+                                do { newNum = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(newNum));
+                            }
+                            finalNumber = newNum;
+                            alert(`📢 太有緣了！五碼居然也重複。系統已微調您的取餐單號為「${finalNumber}」，請以此取餐！`);
+                        }
+                    }
                 }
-                // 逃生門：如果該區段全滿，生一組全新 5 碼
-                if (attempts >= 20) {
-                    do { newNum = String(Math.floor(Math.random() * 90000) + 10000); } while (activeNumbers.includes(newNum));
-                }
-                finalNumber = newNum;
-                alert(`📢 太有緣了！五碼居然也重複。系統已微調您的取餐單號為「${finalNumber}」，請以此取餐！`);
-            }
-        }
-}
  
-    if (isSubmitting.value) return;
-    isSubmitting.value = true;
-                
-    const audio = document.getElementById('pickupSound');
-    if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
+                if (isSubmitting.value) return;
+                isSubmitting.value = true;
+                            
+                const audio = document.getElementById('pickupSound');
+                if (audio) { audio.volume = 0; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {}); }
 
-    const newCartItems = [];
-    let requiresStockCheck = false;
-                
+                const newCartItems = [];
+                let requiresStockCheck = false;
+                            
                 for (const cartKey in cart.value) {
                     const cItem = cart.value[cartKey];
                     newCartItems.push({ id: cItem.item.id, name: cItem.item.name, price: cItem.price, qty: cItem.qty, options: cItem.options });
@@ -816,7 +827,6 @@ finalNumber = suffixStr;
                     if (menuItem && menuItem.stock !== null && menuItem.stock !== '' && menuItem.stock !== undefined) requiresStockCheck = true;
                 }
                 
-                // 🛡️ 庫存守門員 (Transaction)
                 if (requiresStockCheck) {
                     try {
                         const result = await runTransaction(dbRef(db, 'menu'), (currentMenu) => {
@@ -848,10 +858,10 @@ finalNumber = suffixStr;
                     }
                 }
                 
-const now = new Date();
-const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
-const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => {
+                const now = new Date();
+                const timeString = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                const dateString = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')}`;
+                const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => {
                     return activeCheckoutOptions.value.find(o => o.id === id);
                 }).filter(o => o);
 
@@ -873,18 +883,18 @@ const chosenCheckoutOptions = selectedCheckoutOptions.value.map(id => {
                     return; 
                 }
                 
-const newOrderData = {
-        number: finalNumber, 
-        items: newCartItems, 
-        checkoutOptions: chosenCheckoutOptions, 
-        total: finalTotal.value,                
-        status: 'pending',
-        createdAt: serverTimestamp(), 
-        timeString: timeString, 
-        dateString: dateString
-    };
+                const newOrderData = {
+                    number: finalNumber, 
+                    items: newCartItems, 
+                    checkoutOptions: chosenCheckoutOptions, 
+                    total: finalTotal.value,                
+                    status: 'pending',
+                    createdAt: serverTimestamp(), 
+                    timeString: timeString, 
+                    dateString: dateString
+                };
 
-    const newRef = push(ordersRef, newOrderData);
+                const newRef = push(ordersRef, newOrderData);
                 localStorage.setItem('jiantou_order_key', newRef.key);
                 myOrder.value = { ...newOrderData, key: newRef.key };
                 cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
@@ -899,6 +909,7 @@ const newOrderData = {
                     }
                 });
             };
+
             const resetOrder = () => {
                 myOrder.value = null;
                 trackedNumber.value = null; 
@@ -990,10 +1001,9 @@ const newOrderData = {
                 phoneSuffix, 
                 isWaitingForMeal, 
                 isAppending, startAppend, myAddonOrder, cancelAddon,
-                
-                // ✨ 把結帳選項需要的東西加在這裡匯出
                 checkoutOptions, activeCheckoutOptions, selectedCheckoutOptions, finalTotal, isConnected,
-                deleteCartItem
+                deleteCartItem,
+                isAnnounceExpanded // 🌟 匯出縮放狀態
             };
         }
     }).mount('#app');
