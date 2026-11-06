@@ -602,7 +602,6 @@
                     menu.value = fullMenu.value.filter(item => item.active); 
                 });
  
-                // 將舊版未分店的本機訂單索引保留給 A｜板橋店，避免更新後找不到進行中的訂單。
                 if (branchId === 'A') {
                     ['jiantou_order_key','jiantou_addon_key','jiantou_tracked_number'].forEach(key => {
                         if (!localStorage.getItem(storageKey(key)) && localStorage.getItem(key)) {
