@@ -51,21 +51,7 @@
         .drawer-enter-active, .drawer-leave-active { transition: transform 0.25s ease; }
         .drawer-enter-from, .drawer-leave-to { transform: translateX(100%); }
     </style>
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const isBoss = urlParams.get('boss') === 'bao';
-
-    if (!isBoss) {
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        document.addEventListener('keydown', event => {
-            if (event.keyCode === 123 || 
-               (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74)) || 
-               (event.ctrlKey && event.keyCode === 85)) {
-                event.preventDefault();
-            }
-        });
-    }
-</script>
+<!-- 已移除阻擋 F12／開發者工具的程式，方便排查問題。 -->
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
 
