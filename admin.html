@@ -17,7 +17,6 @@
   authDomain: "jiantou-000rlhad.firebaseapp.com",
   databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
   projectId: "jiantou-000rlhad",
-  storageBucket: "jiantou-000rlhad.firebasestorage.app",
   messagingSenderId: "435285773521",
   appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
             }
@@ -211,14 +210,14 @@
             </section>
 
             <section v-show="currentTab === 'processing' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-primary overflow-hidden min-h-0 lg:flex relative">
-                <header class="p-2 bg-red-50 font-bold text-primary text-xs flex justify-between items-center px-3 flex-shrink-0">
-                    <div class="flex items-center gap-2">
-                        <span>製作中</span><span class="bg-red-100 px-2 py-0.5 rounded-full text-[10px]">{{ processingOrders.length }}</span>
+                <header class="p-2 bg-red-50 text-primary flex-shrink-0 border-b border-red-100">
+                    <div class="font-bold text-xs flex justify-between items-center px-1">
+                        <div class="flex items-center gap-2"><span>製作中</span><span class="bg-red-100 px-2 py-0.5 rounded-full text-[10px]">{{ processingOrders.length }}</span></div>
+                        <button @click="showPrepStats = !showPrepStats" class="flex items-center gap-1 bg-white border border-red-200 px-2 py-1 rounded-md text-primary shadow-sm active:scale-95 transition-all">
+                            <span class="material-icons-round text-[14px]">kitchen</span><span class="text-[10px] font-bold">待製作餐點</span>
+                        </button>
                     </div>
-                    <button @click="showPrepStats = !showPrepStats" class="flex items-center gap-1 bg-white border border-red-200 px-2 py-1 rounded-md text-primary shadow-sm active:scale-95 transition-all">
-                        <span class="material-icons-round text-[14px]">kitchen</span>
-                        <span class="text-[10px] font-bold">待製作餐點</span>
-                    </button>
+                    <p class="px-1 pt-1.5 text-[10px] font-medium text-rose-500">點選餐點可逐項標記已準備好，再次點選可取消。</p>
                 </header>
                 
                 <div class="flex-1 overflow-y-auto p-2 space-y-2">
@@ -234,7 +233,7 @@
                                 <span v-if="order.status === 'cancel_requested'" class="text-[10px] px-2 py-1 rounded-full font-bold bg-amber-100 text-amber-800">取消申請中</span>
                                 <span v-else class="text-[10px] px-2 py-1 rounded-full font-bold bg-orange-100 text-orange-700">製作中</span>
                             </div>
-                            <div class="flex justify-between items-center mb-3">
+                            <div class="flex justify-between items-center mb-2">
                                 <span class="text-xs text-stone-400">{{ order.timeString }}</span>
                                 <span class="text-xs px-2 py-1 rounded-full font-bold" :class="order.paymentMethod === 'LINE Pay' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ order.paymentMethod || '現金' }}</span>
                             </div>
@@ -249,7 +248,7 @@
                                 <span class="text-xs font-bold text-orange-800">需退款</span>
                                 <span class="text-sm font-bold text-orange-700">${{ Number(order.refundDue).toLocaleString('zh-TW') }}</span>
                             </div>
-                            <div class="mt-2 space-y-1.5">
+                            <div class="mt-1 space-y-1">
                                 <div v-for="entry in getMainOrderItems(order)" :key="entry.item.uid || entry.index" @click.stop="toggleItemReady(order, entry.index)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="entry.item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2" :class="entry.item.ready ? 'line-through text-stone-400' : ''">
                                         <div class="text-sm font-bold text-stone-800">
@@ -257,6 +256,7 @@
                                             <span v-if="!entry.item.ready && (entry.item.readyQty || 0) > 0" class="bg-orange-100 text-orange-600 text-[10px] px-1.5 py-0.5 rounded ml-1 font-bold">已好 {{ entry.item.readyQty }}</span>
                                         </div>
                                         <span v-if="entry.item.options && entry.item.options.length" class="text-[10px] text-primary">{{ entry.item.options.join(', ') }}</span>
+                                        <span v-if="entry.item.note || entry.item.remark" class="text-[10px] text-stone-400">備註：{{ entry.item.note || entry.item.remark }}</span>
                                     </div>
                                     <div class="flex items-center gap-1.5">
                                         <span class="text-sm font-bold text-stone-600 w-6 text-right" :class="entry.item.ready ? 'line-through' : ''">x{{ entry.item.qty }}</span>
@@ -266,12 +266,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <div v-for="addon in getAddonPayments(order)" :key="addon.key" @click.stop class="mt-3 p-3 rounded-xl bg-rose-50/70 border border-rose-100">
+                            <div v-for="addon in getAddonPayments(order)" :key="addon.key" @click.stop class="mt-2 p-2.5 rounded-xl bg-rose-50/70 border border-rose-100">
                                 <div class="flex justify-between items-center mb-2"><span class="font-bold text-sm">＋ 加點單</span><span class="text-xs text-stone-400">{{ addon.timeString || '' }}</span></div>
                                 <div class="flex justify-end mb-2"><span class="text-xs px-2 py-1 rounded-full font-bold" :class="addon.paymentMethod === 'LINE Pay' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ addon.paymentMethod || '現金' }}</span></div>
-                                <p class="text-[10px] text-rose-500 mb-2">點選餐點可逐項標記已準備好</p>
                                 <div v-for="(item, idx) in (addon.items || [])" :key="idx" @click.stop="toggleAddonItemReady(order, addon.key, idx)" role="button" class="flex justify-between items-center gap-3 mb-1 p-2 rounded-lg border border-rose-100/70 bg-white/80 active:scale-[0.99]" :class="item.ready ? 'opacity-40 bg-stone-100' : ''">
-                                    <span class="font-bold text-base" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-800'">{{ item.name }}<small v-if="!item.ready && (item.readyQty || 0) > 0" class="ml-1 text-[10px] text-rose-600">已好 {{ item.readyQty }}</small></span>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="font-bold text-base" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-800'">{{ item.name }}<small v-if="!item.ready && (item.readyQty || 0) > 0" class="ml-1 text-[10px] text-rose-600">已好 {{ item.readyQty }}</small></span>
+                                        <span v-if="item.note || item.remark" class="block text-[10px] text-stone-400">備註：{{ item.note || item.remark }}</span>
+                                    </div>
                                     <b class="text-sm" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-600'">×{{ item.qty }}</b>
                                 </div>
                                 <div v-for="(opt, idx) in (addon.checkoutOptions || [])" :key="'ao'+idx" class="flex justify-between text-xs text-stone-400"><span>{{ opt.name }}</span><span>×1</span></div>
@@ -703,20 +705,19 @@
                 <input type="text" v-model="item.desc" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-500 focus:border-primary outline-none" placeholder="商品描述 (選填，可空白)">
 
                 <div class="flex items-center gap-3 p-2 bg-stone-50 border border-stone-200 rounded-xl">
-                    <div class="w-20 h-20 flex-shrink-0 rounded-lg bg-white border border-stone-200 overflow-hidden flex items-center justify-center">
-                        <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" class="w-full h-full object-cover">
+                    <div class="w-16 h-16 flex-shrink-0 rounded-lg bg-white border border-stone-200 overflow-hidden flex items-center justify-center">
+                        <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" loading="lazy" class="w-full h-full object-cover">
                         <span v-else class="material-icons-round text-2xl text-stone-300">add_photo_alternate</span>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-bold text-stone-700">商品照片</p>
-                        <p class="text-[10px] text-stone-400 mt-0.5">JPG、PNG 或 WEBP，單張 5MB 以內</p>
-                        <label class="inline-flex items-center gap-1 mt-2 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-stone-600 cursor-pointer active:scale-95">
-                            <span class="material-icons-round text-sm">upload</span>
-                            {{ item.imageUploading ? `上傳中 ${item.imageUploadProgress || 0}%` : (item.imageUrl ? '更換照片' : '選擇照片') }}
-                            <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" :disabled="item.imageUploading" @change="uploadMenuImage($event, item)">
-                        </label>
-                        <span v-if="item.imageUploadError" class="block text-[10px] text-red-500 mt-1">{{ item.imageUploadError }}</span>
-                        <button v-if="item.imageUrl" @click="item.imageUrl=''; item.imagePath='';" type="button" class="ml-2 text-[10px] text-red-500 underline">移除照片</button>
+                        <p class="text-[10px] text-stone-400 mt-0.5">{{ item.imageUrl ? '已設定商品照片' : '尚未選擇照片' }}</p>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button @click="openImagePicker(item)" type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-stone-600 active:scale-95">
+                                <span class="material-icons-round text-sm">photo_library</span> 選取照片
+                            </button>
+                            <button v-if="item.imageUrl" @click="item.imageUrl=''; item.imageLibraryId='';" type="button" class="text-[10px] text-red-500 underline">移除照片</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -870,6 +871,36 @@
             <button @click="addCheckoutOption" class="w-full py-2 border border-dashed border-stone-300 text-stone-500 rounded-lg text-sm font-bold mt-2"><span class="material-icons-round text-sm">add</span> 新增結帳服務選項</button>
         </div>
     </section>
+
+<section class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden mt-4">
+    <header @click="activeCategoryTab = activeCategoryTab === 'images' ? '' : 'images'" class="p-4 bg-stone-50 flex justify-between items-center cursor-pointer hover:bg-stone-100 transition-colors">
+        <h3 class="font-bold text-stone-800 flex items-center gap-2"><span class="material-icons-round text-stone-500">photo_library</span> 圖片管理</h3>
+        <div class="flex items-center gap-2"><span class="text-[10px] text-stone-400">{{ sharedImageLibrary.length }} 張</span><span class="material-icons-round text-stone-400 transition-transform" :class="activeCategoryTab === 'images' ? 'rotate-180' : ''">expand_more</span></div>
+    </header>
+    <div v-show="activeCategoryTab === 'images'" class="p-4 border-t border-stone-100 space-y-3">
+        <p class="text-[11px] text-stone-400">板橋店與永和店共用同一個圖片庫。先將照片上傳至外部圖片空間，再貼上圖片網址加入。</p>
+        <div class="space-y-2">
+            <input v-model.trim="newLibraryImage.name" type="text" placeholder="圖片名稱（例：經典豬肉油飯）" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
+            <input v-model.trim="newLibraryImage.url" type="url" placeholder="貼上圖片網址 https://..." class="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
+            <div class="flex gap-2">
+                <input v-model.trim="newLibraryImage.category" type="text" placeholder="分類（例：主食）" class="flex-1 min-w-0 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
+                <button @click="addLibraryImage" class="px-4 rounded-lg bg-stone-800 text-white text-sm font-bold active:scale-95">加入圖片庫</button>
+            </div>
+            <p v-if="imageLibraryMessage" class="text-[10px] text-red-500">{{ imageLibraryMessage }}</p>
+        </div>
+        <div v-if="sharedImageLibrary.length" class="grid grid-cols-3 gap-2">
+            <article v-for="image in sharedImageLibrary" :key="image.id" class="min-w-0 border border-stone-200 rounded-lg overflow-hidden bg-white">
+                <img :src="image.url" :alt="image.name" loading="lazy" class="w-full aspect-square object-cover bg-stone-100">
+                <div class="p-2">
+                    <p class="text-[11px] font-bold text-stone-700 truncate">{{ image.name || '未命名圖片' }}</p>
+                    <p class="text-[9px] text-stone-400 truncate">{{ image.category || '未分類' }}</p>
+                    <div class="flex gap-2 mt-1"><button @click="copyImageUrl(image.url)" class="text-[10px] text-stone-600 underline">複製網址</button><button @click="deleteLibraryImage(image)" class="text-[10px] text-red-500 underline">刪除</button></div>
+                </div>
+            </article>
+        </div>
+        <div v-else class="text-center text-xs text-stone-400 py-6 bg-stone-50 rounded-xl border border-dashed border-stone-200">圖片庫目前是空的</div>
+    </div>
+</section>
 
     <section class="bg-stone-50 rounded-xl shadow-sm border border-stone-200 overflow-hidden mt-4">
         <header @click="activeCategoryTab = activeCategoryTab === 'inactive' ? '' : 'inactive'" class="p-4 bg-stone-100 flex justify-between items-center cursor-pointer hover:bg-stone-200 transition-colors">
@@ -1060,8 +1091,25 @@
         </section>
     </div>
 
+<div v-if="showImagePicker" class="fixed inset-0 z-[90] bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4" @click.self="closeImagePicker">
+    <section class="bg-white w-full sm:max-w-lg max-h-[85vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <header class="p-4 border-b border-stone-100 flex items-center justify-between">
+            <div><h3 class="font-bold text-stone-800">選取商品照片</h3><p class="text-[10px] text-stone-400 mt-1">板橋店與永和店共用圖片庫</p></div>
+            <button @click="closeImagePicker" class="text-stone-400 p-2"><span class="material-icons-round">close</span></button>
+        </header>
+        <div class="p-3 overflow-y-auto flex-1">
+            <div v-if="sharedImageLibrary.length" class="grid grid-cols-3 gap-3">
+                <button v-for="image in sharedImageLibrary" :key="image.id" @click="selectLibraryImage(image)" class="text-left border rounded-xl overflow-hidden active:scale-95 transition-transform" :class="imagePickerTarget?.imageUrl === image.url ? 'border-primary ring-2 ring-red-100' : 'border-stone-200'">
+                    <img :src="image.url" :alt="image.name" loading="lazy" class="w-full aspect-square object-cover bg-stone-100">
+                    <span class="block p-2 text-[11px] font-bold text-stone-700 truncate">{{ image.name || '未命名圖片' }}</span>
+                </button>
+            </div>
+            <div v-else class="text-center py-10 text-sm text-stone-400">圖片庫還沒有照片，請先到「其他設定 → 圖片管理」加入。</div>
+        </div>
+    </section>
 </div>
 
+</div>
 
 <script type="module">
 
@@ -1075,13 +1123,10 @@
     
 
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
-    const storage = getStorage(app, "gs://jiantou-000rlhad.firebasestorage.app");
-    storage.maxUploadRetryTime = 120000;
     const branchId = new URLSearchParams(window.location.search).get('branch') === 'B' ? 'B' : 'A';
     const branchRootPath = `branches/${branchId}`;
     const dbRef = (database, path) => {
@@ -1247,7 +1292,12 @@ const moveCategoryDown = (idx) => {
             const activeCategoryTab = ref('categories');
             const isDesktop = ref(window.innerWidth >= 1024);
             const showPrepStats = ref(false); 
-            const expandedPrepItems = ref({}); 
+            const expandedPrepItems = ref({});
+            const sharedImageLibrary = ref([]);
+            const showImagePicker = ref(false);
+            const imagePickerTarget = ref(null);
+            const newLibraryImage = ref({ name: '', url: '', category: '' });
+            const imageLibraryMessage = ref('');
             
             const brandSettings = ref({
                 name: window.MARKET_CONFIG.shopName,
@@ -1310,6 +1360,11 @@ const moveCategoryDown = (idx) => {
                             updateMarqueeCount();
                         });
                         
+                        onValue(rawDbRef(db, 'branches/sharedImageLibrary'), s => {
+                            const data = s.val() || [];
+                            sharedImageLibrary.value = Array.isArray(data) ? data.filter(Boolean) : Object.values(data).filter(Boolean);
+                        });
+
                         onValue(dbRef(db, 'shopStatus'), s => shopIsOpen.value = s.val() === true);
                         
                         onValue(dbRef(db, 'brandInfo'), s => {
@@ -1432,69 +1487,55 @@ const copyMenuFromA = async () => {
     }
 };
 
-const prepareMenuImage = async (file) => {
-    // 大圖先縮小，減少手機網路上傳逾時；小圖維持原檔避免不必要失真
-    if (file.size <= 1.5 * 1024 * 1024) return file;
-    if (typeof createImageBitmap !== 'function') return file;
-    const bitmap = await createImageBitmap(file);
-    const maxSide = 1600;
-    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close?.();
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
-    return blob ? new File([blob], (file.name || 'menu-photo').replace(/\\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }) : file;
+const openImagePicker = (item) => { imagePickerTarget.value = item; showImagePicker.value = true; };
+const closeImagePicker = () => { showImagePicker.value = false; imagePickerTarget.value = null; };
+const selectLibraryImage = (image) => {
+    if (!imagePickerTarget.value) return;
+    imagePickerTarget.value.imageUrl = image.url;
+    imagePickerTarget.value.imageLibraryId = image.id;
+    closeImagePicker();
 };
-
-const uploadMenuImage = async (event, item) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('請選擇 JPG、PNG 或 WEBP 圖片。'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('原始照片請控制在 5MB 以內。'); return; }
-    if (!auth.currentUser) { alert('登入狀態已失效，請重新登入後再上傳照片。'); return; }
-    if (!item.id) item.id = Date.now();
-    item.imageUploading = true;
-    item.imageUploadProgress = 0;
-    item.imageUploadError = '';
+const addLibraryImage = async () => {
+    const url = newLibraryImage.value.url.trim();
+    if (!/^https?:\/\//i.test(url)) { imageLibraryMessage.value = '請輸入有效的 https:// 或 http:// 圖片網址。'; return; }
     try {
-        // 先刷新登入憑證，避免舊 token 讓 Storage 請求反覆重試
-        await auth.currentUser.getIdToken(true);
-        const uploadFile = await prepareMenuImage(file);
-        const safeName = String(uploadFile.name || 'photo').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
-        const path = `menu/${branchId}/${item.id}_${Date.now()}_${safeName}`;
-        const fileRef = storageRef(storage, path);
-        const task = uploadBytesResumable(fileRef, uploadFile, {
-            contentType: uploadFile.type,
-            cacheControl: 'public,max-age=31536000'
+        const next = [...sharedImageLibrary.value, {
+            id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            name: newLibraryImage.value.name.trim() || '未命名圖片',
+            category: newLibraryImage.value.category.trim() || '未分類',
+            url,
+            createdAt: Date.now()
+        }];
+        await set(rawDbRef(db, 'branches/sharedImageLibrary'), next);
+        newLibraryImage.value = { name: '', url: '', category: '' };
+        imageLibraryMessage.value = '';
+        alert('已加入共用圖片庫！');
+    } catch (error) { imageLibraryMessage.value = '新增失敗：' + (error?.message || error); }
+};
+const copyImageUrl = async (url) => {
+    try { await navigator.clipboard.writeText(url); alert('圖片網址已複製！'); }
+    catch { window.prompt('請複製圖片網址：', url); }
+};
+const deleteLibraryImage = async (image) => {
+    if (!confirm(`確定刪除「${image.name || '未命名圖片'}」？`)) return;
+    try {
+        const [aSnap, bSnap] = await Promise.all([get(rawDbRef(db, 'branches/A/menu')), get(rawDbRef(db, 'branches/B/menu'))]);
+        const inUse = [aSnap.val(), bSnap.val()].some(menu => {
+            const items = Array.isArray(menu) ? menu : Object.values(menu || {});
+            return items.some(item => item && item.imageUrl === image.url);
         });
-        await new Promise((resolve, reject) => task.on('state_changed',
-            snapshot => { item.imageUploadProgress = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100); },
-            reject, resolve
-        ));
-        item.imageUrl = await getDownloadURL(task.snapshot.ref);
-        item.imagePath = path;
-        item.imageUploadProgress = 100;
-        alert('照片上傳完成！記得按下方「同步更新至前台」儲存商品設定。');
-    } catch (error) {
-        console.error('商品照片上傳失敗', error);
-        const code = error?.code || '';
-        const message = code.includes('retry-limit-exceeded')
-            ? 'Firebase Storage 連線重試逾時。已縮小照片並刷新登入憑證；若仍失敗，請確認 Storage 已建立、Bucket 為 jiantou-000rlhad.firebasestorage.app，並檢查 Storage Rules 允許已登入使用者寫入 menu/A 或 menu/B。'
-            : code.includes('unauthorized') || code.includes('unauthenticated')
-                ? '上傳權限不足，請確認 Storage Rules 允許已登入使用者寫入 menu/A 或 menu/B。'
-                : (error?.message || '請確認 Firebase Storage 已啟用及 Storage Rules 權限。');
-        item.imageUploadError = `${code ? code + '：' : ''}${message}`;
-        alert('照片上傳失敗：' + item.imageUploadError);
-    } finally { item.imageUploading = false; }
+        if (inUse) { alert('這張照片目前有商品正在使用，請先替商品更換照片，再刪除。'); return; }
+        await set(rawDbRef(db, 'branches/sharedImageLibrary'), sharedImageLibrary.value.filter(entry => entry.id !== image.id));
+    } catch (error) { alert('刪除圖片失敗：' + (error?.message || error)); }
 };
 
 const saveFrontEndSettings = () => { 
     const menuToSave = menuSettings.value.map(item => {
         let processedItem = { ...item };
+        delete processedItem.imagePath;
+        delete processedItem.imageUploading;
+        delete processedItem.imageUploadProgress;
+        delete processedItem.imageUploadError;
         if (!processedItem.isStockLimited) {
             processedItem.stock = ''; 
         }
@@ -1951,7 +1992,7 @@ const addMenuItem = () => {
         price: 0, 
         desc: '', 
         imageUrl: '',
-        imagePath: '',
+        imageLibraryId: '',
         category: selectedMenuCategory.value === 'all' ? '' : selectedMenuCategory.value, 
         active: true, 
         stock: '', 
@@ -2336,13 +2377,13 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
                 brandSettings, 
                 menuCategories, newCategory, addCategory, removeCategory, 
                 sharedOptionGroups, addSharedGroup, removeSharedGroup, importSharedGroup, 
-                saveFrontEndSettings, copyMenuFromA, uploadMenuImage, addMenuItem, moveMenuUp, moveMenuDown, 
+                saveFrontEndSettings, copyMenuFromA, addMenuItem, moveMenuUp, moveMenuDown, 
                 addOptionGroup, removeOptionGroup, addOption, removeOption, removeMenuItem, filteredOrders, 
                 posCart, posPhoneSuffix, posNote, posPaymentMethod, posSelectedItem, posSelections, activeMenuSettings,
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, removePosCartItem, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
                 showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, inactiveMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
-                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, togglePosCheckoutOption, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
+                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, sharedImageLibrary, showImagePicker, imagePickerTarget, newLibraryImage, imageLibraryMessage, openImagePicker, closeImagePicker, selectLibraryImage, addLibraryImage, copyImageUrl, deleteLibraryImage, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, togglePosCheckoutOption, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
             };
         }
     }).mount('#app');
