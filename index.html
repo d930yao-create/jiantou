@@ -452,7 +452,7 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as rawDbRef, push, onValue, serverTimestamp, remove, get, query, orderByChild, equalTo, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as rawDbRef, push, onValue, serverTimestamp, remove, get, set, query, orderByChild, equalTo, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
@@ -889,7 +889,15 @@
                         checkoutOptions: chosenCheckoutOptions, total: finalTotal.value, status: 'pending', stockDeducted: false,
                         createdAt: serverTimestamp(), timeString: timeString, dateString: dateString
                     };
-                    const newRef = push(ordersRef, addonData);
+                    const newRef = push(ordersRef);
+                    try {
+                        await set(newRef, addonData);
+                    } catch (error) {
+                        console.error('加點訂單寫入 Firebase 失敗：', error);
+                        isSubmitting.value = false;
+                        alert('加點單送出失敗，資料尚未成功存入，購物車已保留。請確認網路後再試一次。\n錯誤：' + (error?.message || error));
+                        return;
+                    }
                     localStorage.setItem(storageKey('jiantou_addon_key'), newRef.key);
                     
                     onValue(dbRef(db, `orders/${newRef.key}`), (snapshot) => {
@@ -914,7 +922,15 @@
                     dateString: dateString
                 };
 
-                const newRef = push(ordersRef, newOrderData);
+                const newRef = push(ordersRef);
+                try {
+                    await set(newRef, newOrderData);
+                } catch (error) {
+                    console.error('訂單寫入 Firebase 失敗：', error);
+                    isSubmitting.value = false;
+                    alert('訂單送出失敗，資料尚未成功存入，購物車已保留。請確認網路或聯絡店家。\n錯誤：' + (error?.message || error));
+                    return;
+                }
                 localStorage.setItem(storageKey('jiantou_order_key'), newRef.key);
                 myOrder.value = { ...newOrderData, key: newRef.key };
                 cart.value = {}; isConfirming.value = false; isSubmitting.value = false;
