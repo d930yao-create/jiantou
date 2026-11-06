@@ -544,37 +544,7 @@
                     selectedCheckoutOptions.value = selectedCheckoutOptions.value.filter(existing => existing !== id);
                 }
             };
-            const checkoutOptionGroups = computed(() => {
-                const groups = new Map();
-                activeCheckoutOptions.value.forEach((opt, idx) => {
-                    const name = opt.groupName || '其他附加服務';
-                    const type = opt.selectionType === 'single' ? 'single' : 'multiple';
-                    const key = `${name}__${type}`;
-                    if (!groups.has(key)) groups.set(key, { key, name, type, options: [] });
-                    groups.get(key).options.push(opt);
-                });
-                return Array.from(groups.values());
-            });
-            const toggleCheckoutOption = (opt, checked) => {
-                const id = opt.id;
-                const groupName = opt.groupName || '其他附加服務';
-                const type = opt.selectionType === 'single' ? 'single' : 'multiple';
-                const sameGroupIds = activeCheckoutOptions.value
-                    .filter(item => (item.groupName || '其他附加服務') === groupName &&
-                        (item.selectionType === 'single' ? 'single' : 'multiple') === type)
-                    .map(item => item.id);
-                if (type === 'single') {
-                    selectedCheckoutOptions.value = checked
-                        ? [...selectedCheckoutOptions.value.filter(existing => !sameGroupIds.includes(existing)), id]
-                        : selectedCheckoutOptions.value.filter(existing => existing !== id);
-                } else if (checked && !selectedCheckoutOptions.value.includes(id)) {
-                    selectedCheckoutOptions.value.push(id);
-                } else if (!checked) {
-                    selectedCheckoutOptions.value = selectedCheckoutOptions.value.filter(existing => existing !== id);
-                }
-            };
-
-            const isWaitingForMeal = computed(() => {
+                        const isWaitingForMeal = computed(() => {
                 const hasActiveMyOrder = myOrder.value && !['done', 'archived', 'cancelled'].includes(myOrder.value.status);
                 const hasActiveTracked = trackedNumber.value && !isTrackedNumberCalled.value;
                 return (hasActiveMyOrder || hasActiveTracked) && !isAppending.value;

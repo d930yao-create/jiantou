@@ -171,7 +171,7 @@
                                     </div>
                                     <div class="flex items-center gap-1">
                                         <span class="text-sm font-bold text-stone-500">x{{ item.qty }}</span>
-                                        <button @click.stop.prevent="deleteOrderItem(order, idx)" class="text-stone-300 hover:text-red-400 p-2 -mr-2 active:scale-90 touch-manipulation">
+                                        <button @click.stop.prevent="deleteOrderItem(order, entry.index)" class="text-stone-300 hover:text-red-400 p-2 -mr-2 active:scale-90 touch-manipulation">
                                             <span class="material-icons-round text-sm pointer-events-none">close</span>
                                         </button>
                                     </div>
@@ -250,26 +250,30 @@
                                 <span class="text-sm font-bold text-orange-700">${{ Number(order.refundDue).toLocaleString('zh-TW') }}</span>
                             </div>
                             <div class="mt-2 space-y-1.5">
-                                <div v-for="(item, idx) in order.items.filter(item => !String(item.name).includes(' [加點]'))" :key="item.uid || idx" @click.stop="toggleItemReady(order, idx)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
-                                    <div class="flex flex-col min-w-0 flex-1 pr-2" :class="item.ready ? 'line-through text-stone-400' : ''">
+                                <div v-for="entry in getMainOrderItems(order)" :key="entry.item.uid || entry.index" @click.stop="toggleItemReady(order, entry.index)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="entry.item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
+                                    <div class="flex flex-col min-w-0 flex-1 pr-2" :class="entry.item.ready ? 'line-through text-stone-400' : ''">
                                         <div class="text-sm font-bold text-stone-800">
-                                            {{ item.name }}
-                                            <span v-if="!item.ready && (item.readyQty || 0) > 0" class="bg-orange-100 text-orange-600 text-[10px] px-1.5 py-0.5 rounded ml-1 font-bold">已好 {{ item.readyQty }}</span>
+                                            {{ entry.item.name }}
+                                            <span v-if="!entry.item.ready && (entry.item.readyQty || 0) > 0" class="bg-orange-100 text-orange-600 text-[10px] px-1.5 py-0.5 rounded ml-1 font-bold">已好 {{ entry.item.readyQty }}</span>
                                         </div>
-                                        <span v-if="item.options && item.options.length" class="text-[10px] text-primary">{{ item.options.join(', ') }}</span>
+                                        <span v-if="entry.item.options && entry.item.options.length" class="text-[10px] text-primary">{{ entry.item.options.join(', ') }}</span>
                                     </div>
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-sm font-bold text-stone-600 w-6 text-right" :class="item.ready ? 'line-through' : ''">x{{ item.qty }}</span>
-                                        <button v-if="order.status === 'paid'" @click.stop.prevent="deleteOrderItem(order, idx)" class="p-1.5 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50" title="移除此品項並計算退款">
+                                        <span class="text-sm font-bold text-stone-600 w-6 text-right" :class="entry.item.ready ? 'line-through' : ''">x{{ entry.item.qty }}</span>
+                                        <button v-if="order.status === 'paid'" @click.stop.prevent="deleteOrderItem(order, entry.index)" class="p-1.5 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50" title="移除此品項並計算退款">
                                             <span class="material-icons-round text-base">delete_outline</span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                            <div v-for="addon in getAddonPayments(order)" :key="addon.key" class="mt-3 p-3 rounded-xl bg-rose-50/70 border border-rose-100">
+                            <div v-for="addon in getAddonPayments(order)" :key="addon.key" @click.stop class="mt-3 p-3 rounded-xl bg-rose-50/70 border border-rose-100">
                                 <div class="flex justify-between items-center mb-2"><span class="font-bold text-sm">＋ 加點單</span><span class="text-xs text-stone-400">{{ addon.timeString || '' }}</span></div>
                                 <div class="flex justify-end mb-2"><span class="text-xs px-2 py-1 rounded-full font-bold" :class="addon.paymentMethod === 'LINE Pay' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ addon.paymentMethod || '現金' }}</span></div>
-                                <div v-for="(item, idx) in (addon.items || [])" :key="idx" class="flex justify-between gap-3 mb-1"><span class="font-bold text-base">{{ item.name }}</span><b>×{{ item.qty }}</b></div>
+                                <p class="text-[10px] text-rose-500 mb-2">點選餐點可逐項標記已準備好</p>
+                                <div v-for="(item, idx) in (addon.items || [])" :key="idx" @click.stop="toggleAddonItemReady(order, addon.key, idx)" role="button" class="flex justify-between items-center gap-3 mb-1 p-2 rounded-lg border border-rose-100/70 bg-white/80 active:scale-[0.99]" :class="item.ready ? 'opacity-40 bg-stone-100' : ''">
+                                    <span class="font-bold text-base" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-800'">{{ item.name }}<small v-if="!item.ready && (item.readyQty || 0) > 0" class="ml-1 text-[10px] text-rose-600">已好 {{ item.readyQty }}</small></span>
+                                    <b class="text-sm" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-600'">×{{ item.qty }}</b>
+                                </div>
                                 <div v-for="(opt, idx) in (addon.checkoutOptions || [])" :key="'ao'+idx" class="flex justify-between text-xs text-stone-400"><span>{{ opt.name }}</span><span>×1</span></div>
                                 <div class="flex justify-between border-t border-rose-100 mt-2 pt-2"><b>加點金額</b><b>${{ Number(addon.amount || 0).toLocaleString('zh-TW') }}</b></div>
                             </div>
@@ -1064,12 +1068,13 @@
     
 
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, setMaxUploadRetryTime } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
-    const storage = getStorage(app);
+    const storage = getStorage(app, "gs://jiantou-000rlhad.firebasestorage.app");
+    setMaxUploadRetryTime(storage, 120000);
     const branchId = new URLSearchParams(window.location.search).get('branch') === 'B' ? 'B' : 'A';
     const branchRootPath = `branches/${branchId}`;
     const dbRef = (database, path) => {
@@ -1420,22 +1425,45 @@ const copyMenuFromA = async () => {
     }
 };
 
+const prepareMenuImage = async (file) => {
+    // 大圖先縮小，減少手機網路上傳逾時；小圖維持原檔避免不必要失真
+    if (file.size <= 1.5 * 1024 * 1024) return file;
+    if (typeof createImageBitmap !== 'function') return file;
+    const bitmap = await createImageBitmap(file);
+    const maxSide = 1600;
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    return blob ? new File([blob], (file.name || 'menu-photo').replace(/\\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }) : file;
+};
+
 const uploadMenuImage = async (event, item) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('請選擇 JPG、PNG 或 WEBP 圖片。'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('照片請控制在 5MB 以內。'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('原始照片請控制在 5MB 以內。'); return; }
     if (!auth.currentUser) { alert('登入狀態已失效，請重新登入後再上傳照片。'); return; }
     if (!item.id) item.id = Date.now();
     item.imageUploading = true;
     item.imageUploadProgress = 0;
     item.imageUploadError = '';
     try {
-        const safeName = String(file.name || 'photo').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
+        // 先刷新登入憑證，避免舊 token 讓 Storage 請求反覆重試
+        await auth.currentUser.getIdToken(true);
+        const uploadFile = await prepareMenuImage(file);
+        const safeName = String(uploadFile.name || 'photo').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
         const path = `menu/${branchId}/${item.id}_${Date.now()}_${safeName}`;
         const fileRef = storageRef(storage, path);
-        const task = uploadBytesResumable(fileRef, file, { contentType: file.type });
+        const task = uploadBytesResumable(fileRef, uploadFile, {
+            contentType: uploadFile.type,
+            cacheControl: 'public,max-age=31536000'
+        });
         await new Promise((resolve, reject) => task.on('state_changed',
             snapshot => { item.imageUploadProgress = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100); },
             reject, resolve
@@ -1448,12 +1476,12 @@ const uploadMenuImage = async (event, item) => {
         console.error('商品照片上傳失敗', error);
         const code = error?.code || '';
         const message = code.includes('retry-limit-exceeded')
-            ? '網路連線不穩，Firebase 重試逾時。請確認網路後重新選擇照片上傳。'
+            ? 'Firebase Storage 連線重試逾時。已縮小照片並刷新登入憑證；若仍失敗，請確認 Storage 已建立、Bucket 為 jiantou-000rlhad.firebasestorage.app，並檢查 Storage Rules 允許已登入使用者寫入 menu/A 或 menu/B。'
             : code.includes('unauthorized') || code.includes('unauthenticated')
-                ? '上傳權限不足，請確認 Storage Rules 與登入狀態。'
+                ? '上傳權限不足，請確認 Storage Rules 允許已登入使用者寫入 menu/A 或 menu/B。'
                 : (error?.message || '請確認 Firebase Storage 已啟用及 Storage Rules 權限。');
-        item.imageUploadError = message;
-        alert('照片上傳失敗：' + message);
+        item.imageUploadError = `${code ? code + '：' : ''}${message}`;
+        alert('照片上傳失敗：' + item.imageUploadError);
     } finally { item.imageUploading = false; }
 };
 
@@ -2011,7 +2039,7 @@ const removeMenuItem = (item) => {
                     const parent = filteredOrders.value.find(o => o.key === order.parentKey);
                     if (parent) {
                         const mergedItems = [...(parent.items || [])];
-                        order.items.forEach(item => { mergedItems.push({ ...item, name: item.name + ' [加點]', ready: false, readyQty: 0 }); });
+                        order.items.forEach((item, addonItemIndex) => { mergedItems.push({ ...item, name: item.name + ' [加點]', ready: false, readyQty: 0, addonPaymentKey: order.key, addonItemIndex }); });
                         const updates = {};
                         updates[`orders/${parent.key}/items`] = mergedItems;
                         updates[`orders/${parent.key}/baseTotal`] = parent.baseTotal !== undefined ? Number(parent.baseTotal) : (Number(parent.total) || 0);
@@ -2120,6 +2148,52 @@ const markRefundCompleted = async (order) => {
     } catch (error) { alert('更新退款狀態失敗：' + (error?.message || error)); }
 };
 const getAddonPayments = (order) => Object.entries(order?.addonPayments || {}).map(([key, payment]) => ({ key, ...payment }));
+const getMainOrderItems = (order) => (order?.items || [])
+    .map((item, index) => ({ item, index }))
+    .filter(entry => !String(entry.item.name || '').includes(' [加點]'));
+
+const toggleAddonItemReady = async (order, addonKey, itemIndex) => {
+    const payment = order?.addonPayments?.[addonKey];
+    if (!payment || !Array.isArray(payment.items) || !payment.items[itemIndex]) return;
+    const addonItems = payment.items.map(item => ({ ...item }));
+    const item = addonItems[itemIndex];
+    let readyQty = Number(item.readyQty) || 0;
+    if (Number(item.qty) > 1) {
+        readyQty = readyQty >= Number(item.qty) ? 0 : readyQty + 1;
+        item.ready = readyQty === Number(item.qty);
+    } else {
+        item.ready = !item.ready;
+        readyQty = item.ready ? 1 : 0;
+    }
+    item.readyQty = readyQty;
+
+    const parentItems = (order.items || []).map(entry => ({ ...entry }));
+    let mergedIndex = parentItems.findIndex(entry =>
+        entry.addonPaymentKey === addonKey && Number(entry.addonItemIndex) === itemIndex
+    );
+    // 舊訂單沒有 addonPaymentKey，改用加點品名與選項尋找對應項目
+    if (mergedIndex < 0) {
+        const targetName = `${String(item.name || '')} [加點]`;
+        mergedIndex = parentItems.findIndex(entry =>
+            entry.name === targetName &&
+            JSON.stringify(entry.options || []) === JSON.stringify(item.options || [])
+        );
+    }
+    if (mergedIndex >= 0) {
+        parentItems[mergedIndex].ready = !!item.ready;
+        parentItems[mergedIndex].readyQty = readyQty;
+    }
+
+    try {
+        await update(dbRef(db), {
+            [`orders/${order.key}/addonPayments/${addonKey}/items`]: addonItems,
+            [`orders/${order.key}/items`]: parentItems
+        });
+    } catch (error) {
+        alert('更新加點餐點備妥狀態失敗：' + (error?.message || error));
+    }
+};
+
 
 const deleteHistoryOrder = (order) => { 
     const safeTotal = Number(order.total) || 0;
@@ -2248,7 +2322,7 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
             return { 
                 shopName, isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
                 branchId, branchNames, branchName, switchBranch, editBranchName, 
-                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, historyView, markRefundCompleted, getAddonPayments,
+                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, historyView, markRefundCompleted, getAddonPayments, getMainOrderItems, toggleAddonItemReady,
                 dailyRevenue, cashRevenue, linePayRevenue, completedOrdersCount, salesReport, showReport, updateStatus, exportCombinedReport, cancelRequestedOrders, approveCancellation, rejectCancellation, archiveOrder,
                 shopIsOpen, toggleShopStatus, deleteOrder, deleteHistoryOrder, deleteOrderItem, toggleItemReady,
                 deleteAllOrdersByDate, currentTab, frontTab, isDesktop, menuSettings, 
