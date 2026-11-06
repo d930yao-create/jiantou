@@ -31,9 +31,9 @@
         .text-brick { color: #9E5A5A; }
         .bg-brick { background-color: #9E5A5A; }
         .status-paid { background-color: #FDE68A; color: #92400E; }
-        .status-done { background-color: #D1FAE5; color: #065F46; }
+        .status-done { background-color: #F2E6D5; color: #8B6245; }
         .progress-step-active { background-color: #9E5A5A; color: #fff; }
-        .progress-step-done { background-color: #D1FAE5; color: #047857; }
+        .progress-step-done { background-color: #F2E6D5; color: #8B6245; }
         [v-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 4px; }
@@ -66,7 +66,7 @@
                 <p v-if="brandInfo.slogan" class="text-xs text-brick tracking-[0.2em] font-bold animate-[fadeIn_0.5s_ease-out] uppercase">{{ brandInfo.slogan }}</p>
                 
                 <div class="flex items-center justify-center gap-3 mt-4 mb-6 animate-[fadeIn_0.5s_ease-out]">
-                    <span v-if="shopIsOpen" class="bg-green-100 text-green-700 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-green-200 shadow-sm">● 營業中</span>
+                    <span v-if="shopIsOpen" class="bg-[#F2E6D5] text-[#8B6245] px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-[#D8B99A] shadow-sm">● 營業中</span>
                     <span v-else class="bg-stone-200 text-stone-500 px-4 h-10 flex items-center justify-center rounded-full text-sm font-bold border border-stone-300 shadow-sm">● 休息中</span>                
 
                     <a v-if="brandInfo.ig" :href="brandInfo.ig" target="_blank" class="px-5 h-10 bg-stone-100 border border-stone-200 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-800 transition-colors shadow-sm active:scale-95">
@@ -223,7 +223,7 @@
                     </div>
                     <div class="text-right flex flex-col items-end gap-1.5">
                         <span v-if="trackedNumber" class="px-4 py-2 rounded-full text-sm font-bold shadow-sm" :class="isTrackedNumberCalled ? 'status-done animate-pulse' : 'bg-gray-200 text-gray-600'">{{ isTrackedNumberCalled ? '可取餐' : '等待叫號' }}</span>
-                        <span v-else class="px-4 py-2 rounded-full text-sm font-bold shadow-sm" :class="getStatusBadgeClass(myOrder.status)">{{ getStatusText(myOrder.status) }}</span>
+
                         
                     </div>
                 </div>
@@ -238,11 +238,11 @@
                     <div class="grid grid-cols-4 gap-1">
                         <div v-for="(step, idx) in progressSteps" :key="step.label" class="text-center min-w-0">
                             <div class="flex items-center mb-2">
-                                <div class="h-1 flex-1 rounded-full" :class="idx === 0 ? 'bg-transparent' : (getProgressStep(myOrder.status) >= idx ? 'bg-emerald-300' : 'bg-stone-100')"></div>
+                                <div class="h-1 flex-1 rounded-full" :class="idx === 0 ? 'bg-transparent' : (getProgressStep(myOrder.status) >= idx ? 'bg-[#C28D69]' : 'bg-stone-100')"></div>
                                 <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="getProgressStep(myOrder.status) > idx ? 'progress-step-done' : (getProgressStep(myOrder.status) === idx ? 'progress-step-active' : 'bg-stone-100 text-stone-400')">
                                     <span class="material-icons-round text-sm">{{ getProgressStep(myOrder.status) > idx ? 'check' : step.icon }}</span>
                                 </div>
-                                <div class="h-1 flex-1 rounded-full" :class="idx === 3 ? 'bg-transparent' : (getProgressStep(myOrder.status) > idx ? 'bg-emerald-300' : 'bg-stone-100')"></div>
+                                <div class="h-1 flex-1 rounded-full" :class="idx === 3 ? 'bg-transparent' : (getProgressStep(myOrder.status) > idx ? 'bg-[#C28D69]' : 'bg-stone-100')"></div>
                             </div>
                             <p class="text-[10px] leading-tight" :class="getProgressStep(myOrder.status) >= idx ? 'font-bold text-stone-700' : 'text-stone-400'">{{ step.label }}</p>
                         </div>
@@ -275,7 +275,7 @@
                     <p class="font-bold mb-1">🔍 正在追蹤叫號機...</p>
                     <p class="opacity-70">餐點完成時會自動跳出通知</p>
                 </div>
-                <p v-if="myOrder?.status === 'done' || isTrackedNumberCalled" class="text-center text-xl font-bold text-green-600 mb-6 animate-pulse">🎉 餐點好囉！請取餐</p>
+                <p v-if="myOrder?.status === 'done' || isTrackedNumberCalled" class="text-center text-xl font-bold text-[#A87550] mb-6 animate-pulse">🎉 餐點好囉！請取餐</p>
 
                 <div v-if="(!isTrackedNumberCalled && myOrder?.status !== 'done')" class="bg-orange-50/50 border border-orange-100 p-4 rounded-xl flex items-start gap-3 mb-6">
                     <span class="material-icons-round text-orange-400 text-xl mt-0.5">screen_lock_portrait</span>
@@ -359,10 +359,10 @@
     </div>
 
     <div v-if="showPickupModal" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-6 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-8 pt-12 text-center relative shadow-2xl border-4 border-green-400">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-8 pt-12 text-center relative shadow-2xl border-4 border-[#D8B99A]">
             <button @click="closePickupModal" aria-label="確認取餐並關閉" class="absolute top-2 right-2 w-10 h-10 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center active:scale-95"><span class="material-icons-round text-2xl">close</span></button>
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-[bounce_1s_infinite]">
-                <span class="material-icons-round text-5xl text-green-500">restaurant</span>
+            <div class="w-20 h-20 bg-[#F2E6D5] rounded-full flex items-center justify-center mx-auto mb-4 animate-[bounce_1s_infinite]">
+                <span class="material-icons-round text-5xl text-[#A87550]">restaurant</span>
             </div>
             <h2 class="text-2xl font-bold text-stone-800 mb-2">餐點好囉！</h2>
             <p class="text-stone-500 mb-6 text-lg">呼叫號碼</p>
@@ -1110,7 +1110,15 @@
                             if (Object.keys(updates).length) await update(dbRef(db), updates);
                         }
                     }
-                    if (archivedAny) await update(dbRef(db), { currentCallingNumber: null });
+                    // 訂單已成功更新後，清除叫號資料屬於輔助整理；
+                    // 若此欄位因權限或網路問題無法更新，不應阻擋顧客關閉取餐視窗。
+                    if (archivedAny) {
+                        try {
+                            await update(dbRef(db), { currentCallingNumber: null });
+                        } catch (cleanupError) {
+                            console.warn('叫號資料清除失敗，訂單取餐狀態已更新：', cleanupError);
+                        }
+                    }
                 } catch (error) {
                     console.error('取餐狀態更新失敗', error);
                     alert('取餐狀態更新失敗，請確認網路後再試一次。');
@@ -1129,8 +1137,8 @@
             const getStatusText = (status) => ({ pending: '已下單・待付款', paid: '餐點製作中', done: '餐點可取餐', archived: '已完成取餐', cancel_requested: '取消申請處理中', cancelled: '訂單已取消' }[status] || '訂單處理中');
             const getStatusIcon = (status) => ({ pending: 'receipt_long', paid: 'soup_kitchen', done: 'takeout_dining', archived: 'check_circle', cancel_requested: 'hourglass_top', cancelled: 'cancel' }[status] || 'receipt_long');
             const getStatusDescription = (status) => ({ pending: '請至攤位付款，完成付款後開始製作', paid: '店家正在為您準備餐點，請稍候 ♡', done: '餐點已完成，請前往櫃檯取餐', archived: '感謝您的光臨，期待再次為您服務', cancel_requested: '已送出申請，等待店員確認', cancelled: '這筆訂單已取消' }[status] || '訂單狀態更新中');
-            const getStatusBadgeClass = (status) => ({ pending: 'bg-stone-100 text-stone-600', paid: 'status-paid', done: 'status-done', archived: 'bg-emerald-100 text-emerald-700', cancel_requested: 'bg-amber-100 text-amber-800', cancelled: 'bg-stone-200 text-stone-500' }[status] || 'bg-stone-100 text-stone-600');
-            const getStatusPanelClass = (status) => ({ pending: 'bg-stone-100 text-stone-700', paid: 'bg-amber-50 text-amber-800', done: 'bg-emerald-50 text-emerald-800', archived: 'bg-emerald-50 text-emerald-800', cancel_requested: 'bg-amber-50 text-amber-800', cancelled: 'bg-stone-100 text-stone-600' }[status] || 'bg-stone-100 text-stone-700');
+            const getStatusBadgeClass = (status) => ({ pending: 'bg-stone-100 text-stone-600', paid: 'status-paid', done: 'status-done', archived: 'bg-[#F2E6D5] text-[#8B6245]', cancel_requested: 'bg-amber-100 text-amber-800', cancelled: 'bg-stone-200 text-stone-500' }[status] || 'bg-stone-100 text-stone-600');
+            const getStatusPanelClass = (status) => ({ pending: 'bg-stone-100 text-stone-700', paid: 'bg-amber-50 text-amber-800', done: 'bg-[#F2E6D5] text-[#8B6245]', archived: 'bg-[#F2E6D5] text-[#8B6245]', cancel_requested: 'bg-amber-50 text-amber-800', cancelled: 'bg-stone-100 text-stone-600' }[status] || 'bg-stone-100 text-stone-700');
 
             return { 
                 brandInfo, marqueeData, 
