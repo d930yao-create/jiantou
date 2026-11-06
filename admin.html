@@ -86,26 +86,21 @@
     </div>
 
     <div v-else class="flex-1 flex flex-col h-full overflow-hidden">
-        <header class="bg-white px-3 sm:px-4 py-2 border-b flex flex-wrap justify-between items-center gap-x-3 gap-y-2 shadow-sm z-10 flex-shrink-0">
-            <div class="flex flex-wrap items-center gap-2 min-w-0">
-                <span class="text-[10px] font-black px-2 py-1 rounded-md bg-stone-800 text-white">{{ branchId }}</span>
-                <select :value="branchId" @change="switchBranch($event.target.value)" class="text-sm font-bold bg-stone-100 border border-stone-200 rounded-lg px-2 py-1 max-w-[145px]">
+        <header class="bg-white px-2.5 sm:px-4 py-2 border-b flex items-center justify-between gap-2 shadow-sm z-10 flex-shrink-0 min-w-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+                <select :value="branchId" @change="switchBranch($event.target.value)" class="text-xs sm:text-sm font-bold bg-stone-100 border border-stone-200 rounded-lg px-2 py-2 max-w-[112px] sm:max-w-[150px] min-w-0">
                     <option value="A">{{ branchNames.A }}</option>
                     <option value="B">{{ branchNames.B }}</option>
                 </select>
-                <button @click="editBranchName" class="text-[10px] text-stone-500 underline whitespace-nowrap">改名稱</button>
-                <button @click="toggleShopStatus" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all whitespace-nowrap" :class="shopIsOpen ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-stone-200 text-stone-500 border border-stone-300'">
-                    <span class="material-icons-round text-sm">{{ shopIsOpen ? 'store' : 'storefront' }}</span>{{ shopIsOpen ? '營業中' : '休息中' }}
+                <button @click="editBranchName" class="w-7 h-7 flex-shrink-0 rounded-full text-stone-400 hover:bg-stone-100" title="修改店名"><span class="material-icons-round text-sm">edit</span></button>
+                <button @click="toggleShopStatus" class="flex items-center gap-1 px-2 py-2 rounded-full text-[11px] sm:text-xs font-bold whitespace-nowrap" :class="shopIsOpen ? 'bg-green-100 text-green-700' : 'bg-stone-200 text-stone-500'">
+                    <span class="w-1.5 h-1.5 rounded-full" :class="shopIsOpen ? 'bg-green-500' : 'bg-stone-400'"></span>{{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
-                <div class="flex items-center gap-1 whitespace-nowrap">
-                    <span class="material-icons-round text-stone-400 text-sm">calendar_today</span>
-                    <input type="date" v-model="selectedDate" class="text-xs text-stone-600 bg-transparent border-b border-stone-200 outline-none focus:border-primary font-medium">
-                </div>
             </div>
-            <div class="flex items-center gap-2 ml-auto">
-                <div class="text-right leading-tight"><p class="text-[10px] text-stone-400">{{ isToday ? '今日營收' : '歷史營收' }}</p><p class="text-xl font-bold text-primary">${{ dailyRevenue }}</p></div>
-                <button @click="showReport=true" class="bg-stone-100 hover:bg-stone-200 rounded-full p-2 transition-colors" title="營收報表"><span class="material-icons-round text-sm">poll</span></button>
-            </div>
+            <button @click="showReport=true" class="flex items-center gap-2 ml-auto min-w-0 rounded-lg px-2 py-1 hover:bg-stone-50 active:bg-stone-100" title="營收報表">
+                <span class="text-right leading-tight"><span class="block text-[10px] text-stone-400">{{ isToday ? '今日營收' : '歷史營收' }}</span><span class="block text-lg sm:text-xl font-bold text-primary tabular-nums">${{ dailyRevenue }}</span></span>
+                <span class="material-icons-round text-stone-400 text-lg">bar_chart</span>
+            </button>
         </header>
 
         <nav class="flex lg:hidden bg-stone-100 p-1 gap-1 border-b border-stone-200 flex-shrink-0 overflow-x-auto nav-scrollbar">
@@ -388,14 +383,9 @@
 
             <section v-show="currentTab === 'history' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-300 overflow-hidden min-h-0 lg:flex">
                 <header class="p-2 bg-stone-200 text-stone-600 text-xs flex-shrink-0">
-                    <div class="flex justify-between items-center mb-2"><span class="font-bold">訂單紀錄</span><span class="bg-stone-300 px-2 rounded-full">{{ historyView === 'done' ? historyOrders.length : (historyView === 'cancelled' ? cancelledOrders.length : refundOrders.length) }}</span></div>
-                    <div class="grid grid-cols-3 gap-1 bg-stone-300/70 p-1 rounded-lg">
-                        <button @click="historyView='done'" class="py-2 rounded-md font-bold" :class="historyView==='done' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500'">已出餐</button>
-                        <button @click="historyView='cancelled'" class="py-2 rounded-md font-bold" :class="historyView==='cancelled' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500'">取消訂單</button>
-                        <button @click="historyView='refunds'" class="py-2 rounded-md font-bold" :class="historyView==='refunds' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500'">退款總覽</button>
-                    </div>
+                    <div class="flex justify-between items-center"><span class="font-bold">訂單紀錄</span><span class="bg-stone-300 px-2 rounded-full">{{ historyOrders.length }}</span></div>
                 </header>
-                <div v-if="historyView === 'done'" class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
+                <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
                     <article v-for="order in historyOrders" :key="order.key" class="p-3 bg-white rounded-xl border border-stone-200 shadow-sm text-sm">
                         <div class="flex justify-between items-center"><span class="font-bold text-xl">#{{ order.number }}</span><span class="text-[10px] px-2 py-1 rounded-full font-bold" :class="order.status==='done' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'">{{ order.status==='done' ? '可取餐' : '已取餐' }}</span></div>
                         <div class="flex justify-between items-center mt-2 mb-3"><span class="text-xs text-stone-400">{{ order.timeString }}</span><span class="text-xs px-2 py-1 rounded-full" :class="order.paymentMethod==='LINE Pay' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ order.paymentMethod || '現金' }}</span></div>
@@ -413,28 +403,6 @@
                         <div class="flex justify-end gap-2 mt-3"><button @click="recallOrder(order)" class="text-[10px] bg-stone-100 px-3 py-1.5 rounded-full">再叫</button><button v-if="order.status==='done'" @click="archiveOrder(order)" class="text-[10px] bg-emerald-600 text-white px-3 py-1.5 rounded-full">確認已取餐</button><span v-else class="text-[10px] text-emerald-700 self-center">已取餐</span></div>
                     </article>
                     <p v-if="!historyOrders.length" class="text-center text-xs text-stone-400 py-8">目前沒有已出餐訂單</p>
-                </div>
-                <div v-else-if="historyView === 'cancelled'" class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
-                    <article v-for="order in cancelledOrders" :key="order.key" class="p-3 rounded-xl border border-stone-200 bg-stone-100 shadow-sm text-sm">
-                        <div class="flex justify-between items-center"><b class="text-xl">#{{ order.number }}</b><span class="text-[10px] px-2 py-1 rounded-full font-bold bg-emerald-100 text-emerald-700">取消品項・退款結案</span></div>
-                        <p class="text-xs text-stone-400 mt-1">原訂單時間：{{ order.timeString }}</p>
-                        <div v-for="record in getRefundRecords(order).filter(r => r.status === 'completed')" :key="record.id" class="mt-3 p-2 rounded-lg bg-white border border-stone-200">
-                            <div class="flex justify-between gap-2"><b>{{ (record.items || []).map(i => i.name + ' ×' + i.qty).join('、') || record.label || '取消品項' }}</b><b class="text-primary">${{ Number(record.amount || 0).toLocaleString('zh-TW') }}</b></div>
-                            <div class="grid grid-cols-2 gap-2 mt-2 text-[11px] text-stone-500"><span>退款方式：{{ record.method || '未記錄' }}</span><span>退款日期：{{ formatRecordTime(record.completedAt) }}</span></div>
-                        </div>
-                        <div class="flex justify-between border-t border-stone-300 mt-3 pt-3"><b>退款結案總額</b><b class="text-lg text-primary">${{ getRefundRecords(order).filter(r => r.status === 'completed').reduce((sum,r) => sum + (Number(r.amount)||0),0).toLocaleString('zh-TW') }}</b></div>
-                    </article>
-                    <p v-if="!cancelledOrders.length" class="text-center text-xs text-stone-400 py-8">目前沒有已退款結案的取消品項</p>
-                </div>
-                <div v-else class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
-                    <article v-for="order in refundOrders" :key="'refund-'+order.key" class="p-3 bg-white rounded-xl border border-stone-200 shadow-sm text-sm">
-                        <div class="flex justify-between items-center"><b class="text-lg">#{{ order.number }}</b><span class="text-[10px] text-stone-400">{{ order.timeString }}</span></div>
-                        <div v-for="record in getRefundRecords(order)" :key="record.id" class="mt-2 p-2 rounded-lg border" :class="record.status==='completed' ? 'bg-stone-50 border-stone-200' : 'bg-orange-50 border-orange-200'">
-                            <div class="flex justify-between gap-2"><b class="text-xs">{{ (record.items||[]).map(i=>i.name+' ×'+i.qty).join('、') || record.label || '取消品項' }}</b><b>${{ Number(record.amount||0).toLocaleString('zh-TW') }}</b></div>
-                            <div class="flex justify-between mt-1 text-[10px] text-stone-500"><span>{{ record.status==='completed' ? '已退款' : '待退款' }}・{{ record.method || '未選擇' }}</span><span>{{ formatRecordTime(record.completedAt || record.createdAt) }}</span></div>
-                        </div>
-                    </article>
-                    <p v-if="!refundOrders.length" class="text-center text-xs text-stone-400 py-8">目前沒有退款紀錄</p>
                 </div>
             </section>
 
@@ -1010,7 +978,11 @@
                 <h3 class="font-bold text-sm">{{ formattedDateString }} 銷售報表</h3>
                 <button @click="showReport=false" class="text-stone-300 hover:text-white transition-colors">✕</button>
             </header>
-            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+            <div class="flex-1 overflow-y-auto p-4 space-y-5">
+                <div class="flex items-center justify-between gap-3">
+                    <label class="text-xs font-bold text-stone-500">查詢日期</label>
+                    <input type="date" v-model="selectedDate" class="text-sm bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-stone-700 outline-none focus:border-primary">
+                </div>
                 <div class="flex justify-between items-end pb-4 border-b border-dashed border-stone-200">
                     <div class="text-stone-500 text-xs space-y-1">
                         <div>總訂單: <span class="font-bold text-stone-800">{{ completedOrdersCount }}</span> 筆</div>
@@ -1047,6 +1019,23 @@
     </template>
 </tbody>
                 </table>
+
+                <section class="pt-4 border-t border-stone-100 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-bold text-stone-700">退款紀錄</h4>
+                        <span class="text-[10px] text-stone-400">{{ reportRefundRecords.length }} 筆</span>
+                    </div>
+                    <div v-if="reportRefundRecords.length" class="space-y-2">
+                        <article v-for="entry in reportRefundRecords" :key="entry.order.key + '-' + entry.record.id" class="rounded-lg border border-stone-100 bg-stone-50 p-2.5">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="min-w-0"><p class="text-xs font-bold text-stone-700">#{{ entry.order.number }}・{{ (entry.record.items || []).map(i => i.name + ' ×' + i.qty).join('、') || entry.record.label || '取消品項' }}</p><p class="text-[10px] text-stone-400 mt-1">{{ entry.record.status === 'completed' ? '已退款' : '待退款' }}・{{ entry.record.method || '尚未確認方式' }}</p></div>
+                                <b class="text-sm whitespace-nowrap" :class="entry.record.status === 'completed' ? 'text-stone-600' : 'text-orange-700'">${{ Number(entry.record.amount || 0).toLocaleString('zh-TW') }}</b>
+                            </div>
+                            <p class="text-[10px] text-stone-400 mt-1">{{ formatRecordTime(entry.record.completedAt || entry.record.createdAt) }}</p>
+                        </article>
+                    </div>
+                    <p v-else class="text-center text-xs text-stone-400 py-3">這一天沒有退款紀錄</p>
+                </section>
                 
                 <div class="pt-4 border-t border-stone-100 space-y-3">
                     <button @click="exportCombinedReport" class="w-full py-3 bg-stone-100 text-stone-700 rounded-lg font-bold text-xs hover:bg-stone-200 transition-colors flex justify-center items-center gap-1 touch-manipulation">
@@ -1097,11 +1086,12 @@
                 <button @click="showSearchModal=false" class="text-stone-300 hover:text-white transition-colors"><span class="material-icons-round">close</span></button>
             </header>
             <div class="bg-white p-4 border-b border-stone-200 shadow-sm flex-shrink-0 z-10">
-                <div class="flex bg-stone-100 rounded-lg p-1 mb-3">
+                <div class="grid grid-cols-2 sm:grid-cols-5 bg-stone-100 rounded-lg p-1 mb-3 gap-1">
                     <button @click="searchStatus='all'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='all' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">全部</button>
                     <button @click="searchStatus='pending'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='pending' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">待結帳</button>
                     <button @click="searchStatus='paid'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='paid' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">製作中</button>
                     <button @click="searchStatus='done'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='done' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">已出餐</button>
+                    <button @click="searchStatus='cancelled'" class="flex-1 text-xs font-bold py-1.5 rounded-md" :class="searchStatus==='cancelled' ? 'bg-white shadow text-stone-800' : 'text-stone-400'">已取消訂單</button>
                 </div>
                 <div class="relative">
                     <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">search</span>
@@ -1341,6 +1331,7 @@ const moveCategoryDown = (idx) => {
             const selectedDate = ref('');
             const shopIsOpen = ref(false);
             const cancelSelection = ref({});
+            const cancellationLocks = ref({});
             
             const currentTab = ref('pending'); 
             const frontTab = ref('menu'); 
@@ -1482,14 +1473,14 @@ const moveCategoryDown = (idx) => {
             const cancelRequestedOrders = computed(() => filteredOrders.value.filter(o => o.status === 'cancel_requested').sort((a,b)=>(a.cancellationRequestedAt||a.createdAt||0)-(b.cancellationRequestedAt||b.createdAt||0)));
             const processingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'cancel_requested').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
             const historyOrders = computed(() => filteredOrders.value.filter(o => o.status === 'done' || o.status === 'archived').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));
-            const cancelledOrders = computed(() => filteredOrders.value.filter(o => getRefundRecords(o).some(r => r.status === 'completed')).sort((a,b)=>(Number(b.lastRefundCompletedAt || b.createdAt || 0) - Number(a.lastRefundCompletedAt || a.createdAt || 0))));
+            const cancelledOrders = computed(() => filteredOrders.value.filter(o => o.status === 'cancelled').sort((a,b)=>(Number(b.cancelledAt || b.lastRefundCompletedAt || b.createdAt || 0) - Number(a.cancelledAt || a.lastRefundCompletedAt || a.createdAt || 0))));
             const refundOrders = computed(() => filteredOrders.value.filter(o => getRefundRecords(o).length > 0).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));
-            const historyView = ref('done');
 
             const searchResults = computed(() => {
                 let list = filteredOrders.value;
                 if (searchStatus.value !== 'all') {
                     if (searchStatus.value === 'done') list = list.filter(o => o.status === 'done' || o.status === 'archived');
+                    else if (searchStatus.value === 'cancelled') list = list.filter(o => o.status === 'cancelled');
                     else list = list.filter(o => o.status === searchStatus.value);
                 }
                 if (searchQuery.value) {
@@ -1517,6 +1508,15 @@ const moveCategoryDown = (idx) => {
                 return sum + baseLinePay + addons.filter(a => a.paymentMethod === 'LINE Pay').reduce((n, a) => n + (Number(a.amount) || 0), 0);
             }, 0));
             const completedOrdersCount = computed(() => validOrders.value.filter(o => o.total > 0).length);
+            const reportRefundRecords = computed(() => allOrders.value.flatMap(order =>
+                getRefundRecords(order).filter(record => {
+                    const stamp = Number(record.completedAt || record.createdAt || 0);
+                    if (!stamp) return false;
+                    const d = new Date(stamp);
+                    const day = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    return day === selectedDate.value;
+                }).map(record => ({ order, record }))
+            ).sort((a,b) => Number(b.record.completedAt || b.record.createdAt || 0) - Number(a.record.completedAt || a.record.createdAt || 0)));
             
             const waitingOrdersCount = computed(() => {
                 const todayOrders = allOrders.value.filter(order => order.dateString === `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`);
@@ -2178,83 +2178,191 @@ const removeMenuItem = (item) => {
             const openCancelSelector = (order, source, index, addonKey = null) => {
                 const item = source === 'addon' ? order?.addonPayments?.[addonKey]?.items?.[index] : order?.items?.[index];
                 if (!item) return;
-                cancelSelection.value = { ...cancelSelection.value, [order.key]: { source, index, addonKey, qty: 1, max: Number(item.qty) || 1 } };
+                cancelSelection.value = { ...cancelSelection.value, [order.key]: { source, index, addonKey, itemUid: item.uid || null, itemName: item.name || '', itemPrice: Number(item.price) || 0, qty: 1, max: Number(item.qty) || 1 } };
             };
             const adjustCancelQty = (order, delta) => {
                 const selection = cancelSelection.value[order.key];
                 if (!selection) return;
                 selection.qty = Math.max(1, Math.min(selection.max, Number(selection.qty || 1) + delta));
             };
+            const countRemainingOrderItems = (order) => {
+                const mainItems = Array.isArray(order?.items) ? order.items : [];
+                let count = mainItems.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+                Object.entries(order?.addonPayments || {}).forEach(([key, payment]) => {
+                    (Array.isArray(payment?.items) ? payment.items : []).forEach((item, index) => {
+                        const mirrored = mainItems.some(parentItem =>
+                            (parentItem.addonPaymentKey === key && Number(parentItem.addonItemIndex) === index) ||
+                            (!parentItem.addonPaymentKey && parentItem.name === `${item.name} [加點]` && Number(parentItem.price) === Number(item.price))
+                        );
+                        if (!mirrored) count += Number(item.qty) || 0;
+                    });
+                });
+                return count;
+            };
+
             const confirmItemCancellation = async (order) => {
                 const selection = cancelSelection.value[order.key];
-                if (!selection) return;
-                const isAddon = selection.source === 'addon';
-                const sourceItems = isAddon ? (order.addonPayments?.[selection.addonKey]?.items || []) : (order.items || []);
-                const item = sourceItems[selection.index];
-                if (!item) { cancelSelection.value = { ...cancelSelection.value, [order.key]: null }; return; }
-                const qty = Math.max(1, Math.min(Number(item.qty)||1, Number(selection.qty)||1));
-                const paymentForAddon = isAddon ? order.addonPayments?.[selection.addonKey] : null;
-                const isLastAddonItem = isAddon && sourceItems.length === 1 && qty >= Number(item.qty || 0);
-                const amount = isLastAddonItem ? (Number(paymentForAddon?.amount) || ((Number(item.price)||0) * qty)) : Math.max(0, (Number(item.price)||0) * qty);
-                const itemLabel = `${item.name || '餐點'} ×${qty}`;
-                if (!confirm(`確認取消「${itemLabel}」？
-本次待退款 $${amount.toLocaleString('zh-TW')}。`)) return;
+                if (!selection || cancellationLocks.value[order.key]) return;
+                cancellationLocks.value = { ...cancellationLocks.value, [order.key]: true };
                 let stockRestored = false;
+                let stockItem = null;
                 try {
-                    if (hasStockBeenDeducted(order) && !order.stockRestored) {
-                        const stockOk = await adjustOrderStock({ items: [{ ...item, qty }] }, 1);
+                    const freshSnap = await get(dbRef(db, `orders/${order.key}`));
+                    const freshOrder = freshSnap.val();
+                    if (!freshOrder || !['paid', 'cancel_requested'].includes(freshOrder.status)) {
+                        alert('訂單狀態已更新，請重新整理後再操作。');
+                        return;
+                    }
+
+                    const isAddon = selection.source === 'addon';
+                    const addonKey = selection.addonKey || null;
+                    const sourceItems = isAddon ? (freshOrder.addonPayments?.[addonKey]?.items || []) : (freshOrder.items || []);
+                    const selectedIndex = selection.itemUid
+                        ? sourceItems.findIndex(i => i.uid === selection.itemUid)
+                        : Number(selection.index);
+                    const previewItem = sourceItems[selectedIndex];
+                    const matches = previewItem && (selection.itemUid
+                        ? previewItem.uid === selection.itemUid
+                        : previewItem.name === selection.itemName && Number(previewItem.price || 0) === Number(selection.itemPrice || 0));
+                    if (!matches) {
+                        alert('這筆餐點資料已更新，請重新選取，避免取消到其他品項。');
+                        return;
+                    }
+
+                    const qty = Number(selection.qty);
+                    if (!Number.isInteger(qty) || qty < 1 || qty > (Number(previewItem.qty) || 0)) {
+                        alert('取消份數已超過目前可取消數量，請重新選取。');
+                        return;
+                    }
+
+                    // 刪除加點節點前先保留付款資訊，避免最後一項刪除後遺失付款方式。
+                    const paymentForAddon = isAddon ? { ...(freshOrder.addonPayments?.[addonKey] || {}) } : null;
+                    const isLastAddonItem = isAddon && sourceItems.length === 1 && qty >= Number(previewItem.qty || 0);
+                    const sourcePaymentMethod = (isAddon ? paymentForAddon?.paymentMethod : freshOrder.paymentMethod) === 'LINE Pay' ? 'LINE Pay' : '現金';
+                    const amount = isLastAddonItem
+                        ? Math.max(0, Number(paymentForAddon?.amount) || ((Number(previewItem.price) || 0) * qty))
+                        : Math.max(0, (Number(previewItem.price) || 0) * qty);
+                    const remainingOrderAmount = Math.max(0, Number(freshOrder.total) || 0);
+                    if (!Number.isFinite(amount) || amount <= 0 || amount > remainingOrderAmount) {
+                        alert(`退款金額異常，已暫停取消，避免超額退款。
+本次計算：$${Number(amount || 0).toLocaleString('zh-TW')}
+訂單剩餘金額：$${remainingOrderAmount.toLocaleString('zh-TW')}
+請先確認訂單金額與加點紀錄。`);
+                        return;
+                    }
+                    if (!confirm(`確認取消「${previewItem.name || '餐點'} ×${qty}」？
+本次待退款 $${amount.toLocaleString('zh-TW')}。`)) return;
+
+                    // 庫存交易獨立於訂單交易；若訂單交易未提交，會反向補償。
+                    if (hasStockBeenDeducted(freshOrder) && !freshOrder.stockRestored) {
+                        stockItem = { ...previewItem, qty };
+                        const stockOk = await adjustOrderStock({ items: [stockItem] }, 1);
                         if (!stockOk) { alert('庫存回補失敗，餐點尚未取消。'); return; }
                         stockRestored = true;
                     }
-                    const nextSource = sourceItems.map(i => ({ ...i }));
-                    if (qty >= Number(item.qty || 0)) nextSource.splice(selection.index, 1);
-                    else nextSource[selection.index].qty = Number(item.qty) - qty;
-                    const nextParent = (order.items || []).map(i => ({ ...i }));
-                    const updates = {};
-                    if (isAddon) {
-                        const key = selection.addonKey;
-                        const payment = order.addonPayments[key];
-                        if (isLastAddonItem) {
-                            // 刪除整筆加點付款紀錄時，不可同時更新其子節點，避免 Firebase ancestor path 衝突。
-                            updates[`orders/${order.key}/addonPayments/${key}`] = null;
+
+                    const recordId = `rf_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+                    const createdAt = Date.now();
+                    let abortReason = '訂單資料已被其他操作更新，請重新選取品項後再試。';
+
+                    const result = await runTransaction(dbRef(db, `orders/${order.key}`), current => {
+                        if (!current || !['paid', 'cancel_requested'].includes(current.status)) {
+                            abortReason = '訂單狀態已變更，取消操作未完成。';
+                            return;
+                        }
+                        const nextMain = (current.items || []).map(i => ({ ...i }));
+                        const nextPayments = JSON.parse(JSON.stringify(current.addonPayments || {}));
+                        const currentSource = isAddon ? (nextPayments[addonKey]?.items || []) : nextMain;
+                        const currentIndex = selection.itemUid ? currentSource.findIndex(i => i.uid === selection.itemUid) : selectedIndex;
+                        const currentItem = currentSource[currentIndex];
+                        const stillMatches = currentItem && (selection.itemUid
+                            ? currentItem.uid === selection.itemUid
+                            : currentItem.name === selection.itemName && Number(currentItem.price || 0) === Number(selection.itemPrice || 0));
+                        if (!stillMatches || Number(currentItem.qty || 0) < qty) {
+                            abortReason = '這筆餐點已被其他操作修改，為避免取消錯誤品項，請重新選取。';
+                            return;
+                        }
+
+                        const currentPayment = isAddon ? { ...(nextPayments[addonKey] || {}) } : null;
+                        const currentIsLastAddon = isAddon && currentSource.length === 1 && qty >= Number(currentItem.qty || 0);
+                        const calculatedAmount = currentIsLastAddon
+                            ? Math.max(0, Number(currentPayment?.amount) || ((Number(currentItem.price) || 0) * qty))
+                            : Math.max(0, (Number(currentItem.price) || 0) * qty);
+                        if (Math.abs(calculatedAmount - amount) > 0.001 || calculatedAmount > (Number(current.total) || 0)) {
+                            abortReason = '訂單金額已變動，取消操作已停止，請重新確認金額。';
+                            return;
+                        }
+
+                        const nextSource = currentSource.map(i => ({ ...i }));
+                        if (qty >= Number(currentItem.qty || 0)) nextSource.splice(currentIndex, 1);
+                        else nextSource[currentIndex].qty = Number(currentItem.qty) - qty;
+
+                        if (isAddon) {
+                            if (currentIsLastAddon) delete nextPayments[addonKey];
+                            else nextPayments[addonKey] = {
+                                ...currentPayment,
+                                items: nextSource,
+                                amount: Math.max(0, (Number(currentPayment.amount) || 0) - amount)
+                            };
+
+                            let parentIndex = nextMain.findIndex(i => i.addonPaymentKey === addonKey && Number(i.addonItemIndex) === currentIndex);
+                            if (parentIndex < 0) parentIndex = nextMain.findIndex(i => i.name === `${currentItem.name} [加點]` && Number(i.price) === Number(currentItem.price));
+                            if (parentIndex >= 0) {
+                                if (qty >= Number(nextMain[parentIndex].qty || 0)) nextMain.splice(parentIndex, 1);
+                                else nextMain[parentIndex].qty = Number(nextMain[parentIndex].qty) - qty;
+                            }
+                            if (qty >= Number(currentItem.qty || 0)) {
+                                nextMain.forEach(i => {
+                                    if (i.addonPaymentKey === addonKey && Number(i.addonItemIndex) > currentIndex) i.addonItemIndex -= 1;
+                                });
+                            }
+                            current.items = nextMain;
+                            current.addonPayments = nextPayments;
                         } else {
-                            updates[`orders/${order.key}/addonPayments/${key}/items`] = nextSource;
-                            updates[`orders/${order.key}/addonPayments/${key}/amount`] = Math.max(0, (Number(payment.amount)||0) - amount);
+                            current.items = nextSource;
+                            if (current.baseTotal !== undefined) current.baseTotal = Math.max(0, (Number(current.baseTotal) || 0) - amount);
                         }
-                        let parentIndex = nextParent.findIndex(i => i.addonPaymentKey === key && Number(i.addonItemIndex) === selection.index);
-                        if (parentIndex < 0) parentIndex = nextParent.findIndex(i => i.name === `${item.name} [加點]` && Number(i.price) === Number(item.price));
-                        if (parentIndex >= 0) {
-                            const parentItem = nextParent[parentIndex];
-                            if (qty >= Number(parentItem.qty || 0)) nextParent.splice(parentIndex,1);
-                            else parentItem.qty = Number(parentItem.qty) - qty;
+
+                        current.total = Math.max(0, (Number(current.total) || 0) - amount);
+                        current.cancelAllRequested = countRemainingOrderItems(current) === 0;
+
+                        const recordItems = [{ name: currentItem.name || '', qty, unitPrice: Number(currentItem.price) || 0 }];
+                        if (currentIsLastAddon && (currentPayment?.checkoutOptions || []).length) {
+                            currentPayment.checkoutOptions.forEach(opt => recordItems.push({ name: `附加服務：${opt.name}`, qty: 1, unitPrice: Number(opt.price) || 0 }));
                         }
-                        nextParent.forEach(i => { if (i.addonPaymentKey === key && Number(i.addonItemIndex) > selection.index) i.addonItemIndex -= 1; });
-                        updates[`orders/${order.key}/items`] = nextParent;
-                    } else {
-                        if (qty >= Number(item.qty || 0)) nextSource.splice(selection.index,1);
-                        else nextSource[selection.index].qty = Number(item.qty) - qty;
-                        updates[`orders/${order.key}/items`] = nextSource;
-                        if (order.baseTotal !== undefined) updates[`orders/${order.key}/baseTotal`] = Math.max(0,(Number(order.baseTotal)||0)-amount);
+                        const records = getRefundRecords(current).map(r => ({ ...r }));
+                        records.push({
+                            id: recordId, items: recordItems, amount, status: 'pending', method: '現金',
+                            sourcePaymentMethod, createdAt, addonPaymentKey: addonKey, stockRestored
+                        });
+                        current.refundRecords = records;
+                        current.refundStatus = 'pending';
+                        current.refundDue = records.filter(r => r.status !== 'completed').reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+                        current.lastItemRemovedAt = createdAt;
+                        return current;
+                    });
+
+                    if (!result.committed) {
+                        if (stockRestored && stockItem) {
+                            const rollbackOk = await adjustOrderStock({ items: [stockItem] }, -1);
+                            if (!rollbackOk) console.error('取消交易未提交，庫存反向補償失敗，請人工核對庫存。', order.key, recordId);
+                        }
+                        alert(abortReason);
+                        return;
                     }
-                    const remainingMainCount = (isAddon ? nextParent : nextSource).filter(i => !String(i.name || '').includes(' [加點]')).length;
-                    const remainingAddonCount = isAddon
-                        ? Object.entries(order.addonPayments || {}).reduce((sum, [key, payment]) => sum + (key === selection.addonKey ? nextSource.length : (payment.items || []).length), 0)
-                        : Object.values(order.addonPayments || {}).reduce((sum, payment) => sum + (payment.items || []).length, 0);
-                    if (remainingMainCount === 0 && remainingAddonCount === 0) updates[`orders/${order.key}/cancelAllRequested`] = true;
-                    const recordItems = [{ name: item.name || '', qty, unitPrice: Number(item.price)||0 }];
-                    if (isLastAddonItem && (paymentForAddon.checkoutOptions || []).length) (paymentForAddon.checkoutOptions || []).forEach(opt => recordItems.push({ name: `附加服務：${opt.name}`, qty: 1, unitPrice: Number(opt.price)||0 }));
-                    const record = { id: `rf_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, items: recordItems, amount, status: 'pending', method: '現金', sourcePaymentMethod: (isAddon ? paymentForAddon?.paymentMethod : order.paymentMethod) === 'LINE Pay' ? 'LINE Pay' : '現金', createdAt: Date.now(), addonPaymentKey: selection.addonKey || null };
-                    const records = [...getRefundRecords(order), record];
-                    updates[`orders/${order.key}/refundRecords`] = records;
-                    updates[`orders/${order.key}/refundStatus`] = 'pending';
-                    updates[`orders/${order.key}/refundDue`] = getPendingRefundAmount(order) + amount;
-                    updates[`orders/${order.key}/total`] = Math.max(0,(Number(order.total)||0)-amount);
-                    updates[`orders/${order.key}/lastItemRemovedAt`] = serverTimestamp();
-                    await update(dbRef(db), updates);
                     cancelSelection.value = { ...cancelSelection.value, [order.key]: null };
                 } catch (error) {
-                    if (stockRestored) { try { await adjustOrderStock({ items: [{ ...item, qty }] }, -1); } catch (e) { console.error('庫存回復失敗',e); } }
+                    if (stockRestored && stockItem) {
+                        try {
+                            const rollbackOk = await adjustOrderStock({ items: [stockItem] }, -1);
+                            if (!rollbackOk) console.error('取消失敗，庫存反向補償未提交，請人工核對庫存。', order.key);
+                        } catch (rollbackError) { console.error('庫存回復失敗', rollbackError); }
+                    }
                     alert('取消餐點失敗：' + (error?.message || error));
+                } finally {
+                    const nextLocks = { ...cancellationLocks.value };
+                    delete nextLocks[order.key];
+                    cancellationLocks.value = nextLocks;
                 }
             };
             const markRefundGroupCompleted = async (order, sourceMethod, selectedMethod = null) => {
@@ -2267,9 +2375,12 @@ const removeMenuItem = (item) => {
                     const snap = await get(dbRef(db, `orders/${order.key}`));
                     const fresh = snap.val();
                     if (!fresh) return;
-                    let records = Array.isArray(fresh.refundRecords) ? fresh.refundRecords.map(r => ({ ...r })) : getRefundRecords(fresh).map(r => ({ ...r }));
-                    const pendingGroup = records.filter(r => r.status !== 'completed' && getRefundSourceMethod(fresh, r) === sourceMethod);
-                    if (!pendingGroup.length) return;
+                    const initialRecords = getRefundRecords(fresh);
+                    const targetIds = initialRecords
+                        .filter(r => r.status !== 'completed' && getRefundSourceMethod(fresh, r) === sourceMethod)
+                        .map(r => r.id);
+                    if (!targetIds.length) return;
+                    const pendingGroup = initialRecords.filter(r => targetIds.includes(r.id));
                     const method = sourceMethod === '現金' ? '現金' : (selectedMethod === 'LINE Pay' ? 'LINE Pay' : '現金');
                     const amount = pendingGroup.reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
                     const itemSummary = pendingGroup.flatMap(record => (record.items || []).map(item => `${item.name} ×${item.qty}`)).join('、');
@@ -2277,15 +2388,34 @@ const removeMenuItem = (item) => {
 ${itemSummary || '取消品項'}
 合計 $${amount.toLocaleString('zh-TW')}（${pendingGroup.length} 筆退款紀錄）。
 確認後這組退款將一併結案。`)) return;
+
                     const completedAt = Date.now();
-                    records = records.map(record => {
-                        if (record.status === 'completed' || getRefundSourceMethod(fresh, record) !== sourceMethod) return record;
-                        return { ...record, status: 'completed', method, completedAt };
+                    const result = await runTransaction(dbRef(db, `orders/${order.key}`), current => {
+                        if (!current) return;
+                        const records = getRefundRecords(current).map(record => {
+                            if (targetIds.includes(record.id) && record.status !== 'completed' && getRefundSourceMethod(current, record) === sourceMethod) {
+                                return { ...record, status: 'completed', method, completedAt };
+                            }
+                            return { ...record };
+                        });
+                        const pending = records.filter(r => r.status !== 'completed').reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+                        current.refundRecords = records;
+                        current.refundDue = pending;
+                        current.refundStatus = pending > 0 ? 'pending' : 'completed';
+                        current.lastRefundCompletedAt = completedAt;
+                        const remainingCount = countRemainingOrderItems(current);
+                        if (current.cancelAllRequested === true && pending === 0 && remainingCount === 0) {
+                            current.status = 'cancelled';
+                            current.cancelledAt = completedAt;
+                        } else if (remainingCount > 0 && current.cancelAllRequested === true) {
+                            current.cancelAllRequested = false;
+                        }
+                        return current;
                     });
-                    const pending = records.filter(r => r.status !== 'completed').reduce((sum,r)=>sum+(Number(r.amount)||0),0);
-                    const updates = { refundRecords: records, refundDue: pending, refundStatus: pending > 0 ? 'pending' : 'completed', lastRefundCompletedAt: completedAt };
-                    if (fresh.cancelAllRequested && pending === 0) { updates.status = 'cancelled'; updates.cancelledAt = completedAt; }
-                    await update(dbRef(db, `orders/${order.key}`), updates);
+                    if (!result.committed) {
+                        alert('退款資料已被其他操作更新，請重新整理後確認退款狀態。');
+                        return;
+                    }
                     delete refundMethodSelections.value[`${order.key}:${sourceMethod}`];
                 } catch (error) { alert('更新退款狀態失敗：' + (error?.message || error)); }
             };
@@ -2537,8 +2667,8 @@ const toggleItemReady = (order, itemIndex) => {
             return { 
                 shopName, isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
                 branchId, branchNames, branchName, switchBranch, editBranchName, 
-                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, refundOrders, historyView, markRefundGroupCompleted, getRefundRecords, getPendingRefundAmount, getPendingRefundGroups, getRefundSourceMethod, refundMethodSelections, formatRecordTime, canCompleteOrder, areAllItemsReady, cancelSelection, openCancelSelector, adjustCancelQty, confirmItemCancellation, getAddonPayments, getBaseOrderAmount, getAddonOrderAmount, getMainOrderItems, toggleAddonItemReady, deleteAddonPaymentItem,
-                dailyRevenue, cashRevenue, linePayRevenue, completedOrdersCount, salesReport, showReport, updateStatus, exportCombinedReport, cancelRequestedOrders, approveCancellation, rejectCancellation, archiveOrder,
+                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, refundOrders, markRefundGroupCompleted, getRefundRecords, getPendingRefundAmount, getPendingRefundGroups, getRefundSourceMethod, refundMethodSelections, formatRecordTime, canCompleteOrder, areAllItemsReady, cancelSelection, openCancelSelector, adjustCancelQty, confirmItemCancellation, getAddonPayments, getBaseOrderAmount, getAddonOrderAmount, getMainOrderItems, toggleAddonItemReady, deleteAddonPaymentItem,
+                dailyRevenue, cashRevenue, linePayRevenue, completedOrdersCount, reportRefundRecords, salesReport, showReport, updateStatus, exportCombinedReport, cancelRequestedOrders, approveCancellation, rejectCancellation, archiveOrder,
                 shopIsOpen, toggleShopStatus, deleteOrder, deleteHistoryOrder, deleteOrderItem, toggleItemReady,
                 deleteAllOrdersByDate, currentTab, frontTab, isDesktop, menuSettings, 
                 brandSettings, 
