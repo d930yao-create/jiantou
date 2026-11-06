@@ -103,8 +103,8 @@
     // 🚀 統一從這裡抓資料！
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
-    document.title = `叫號顯示器｜${branchId}分店`;
     const branchId = new URLSearchParams(window.location.search).get('branch') === 'B' ? 'B' : 'A';
+    document.title = `叫號顯示器｜${branchId}分店`;
     const branchRootPath = `branches/${branchId}`;
     const dbRef = (database, path) => {
         if (path === '.info/connected') return rawDbRef(database, path);

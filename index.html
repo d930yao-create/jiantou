@@ -154,6 +154,7 @@
                          class="flex justify-between items-start bg-white p-5 rounded-2xl shadow-sm border border-stone-100 transition-all"
                          :class="(item.stock !== null && item.stock !== '' && Number(item.stock) <= 0) ? 'opacity-40 grayscale pointer-events-none' : ''">
                         <div class="flex-1 pr-2">
+                            <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" loading="lazy" class="w-full max-h-48 object-cover rounded-xl mb-3 border border-stone-100">
                             <h3 class="text-xl font-bold text-stone-800 serif leading-tight">{{ item.name }}</h3>
                             <p v-if="item.desc" class="text-sm text-stone-400 mt-2">{{ item.desc }}</p>
                             

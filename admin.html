@@ -609,6 +609,16 @@
                 </div>
 
 <div v-show="frontTab === 'menu'" class="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+    <div v-if="branchId === 'B'" class="bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+            <p class="text-sm font-bold text-blue-900">永和店菜單尚未設定？</p>
+            <p class="text-[11px] text-blue-700 mt-0.5">可將板橋店的商品、分類、調味群組與附加選項複製過來，再各自調整價格與庫存。</p>
+        </div>
+        <button @click="copyMenuFromA" class="flex-shrink-0 px-4 py-2 rounded-lg bg-blue-700 text-white text-xs font-bold shadow-sm active:scale-95">
+            <span class="material-icons-round text-sm align-middle mr-1">content_copy</span>從 A 店複製菜單
+        </button>
+    </div>
+
     
 <div class="bg-yellow-50 border border-yellow-200 rounded-xl mb-4 shadow-sm overflow-hidden">
         <header @click="isMenuNoticeOpen = !isMenuNoticeOpen" class="p-3 flex justify-between items-center cursor-pointer hover:bg-yellow-100/50 transition-colors">
@@ -691,6 +701,23 @@
 
             <div v-show="!isMenuCompactMode" class="space-y-2 mt-1">
                 <input type="text" v-model="item.desc" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-500 focus:border-primary outline-none" placeholder="商品描述 (選填，可空白)">
+
+                <div class="flex items-center gap-3 p-2 bg-stone-50 border border-stone-200 rounded-xl">
+                    <div class="w-20 h-20 flex-shrink-0 rounded-lg bg-white border border-stone-200 overflow-hidden flex items-center justify-center">
+                        <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" class="w-full h-full object-cover">
+                        <span v-else class="material-icons-round text-2xl text-stone-300">add_photo_alternate</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-stone-700">商品照片</p>
+                        <p class="text-[10px] text-stone-400 mt-0.5">JPG、PNG 或 WEBP，單張 5MB 以內</p>
+                        <label class="inline-flex items-center gap-1 mt-2 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-stone-600 cursor-pointer active:scale-95">
+                            <span class="material-icons-round text-sm">upload</span>
+                            {{ item.imageUploading ? '上傳中…' : (item.imageUrl ? '更換照片' : '選擇照片') }}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" :disabled="item.imageUploading" @change="uploadMenuImage($event, item)">
+                        </label>
+                        <button v-if="item.imageUrl" @click="item.imageUrl=''; item.imagePath='';" type="button" class="ml-2 text-[10px] text-red-500 underline">移除照片</button>
+                    </div>
+                </div>
                 
                 <div class="mt-2 pt-2 border-t border-stone-100 border-dashed">
                     <p class="text-[10px] font-bold text-stone-400 mb-1">公版調味群組 (選擇套用或匯入)：</p>
@@ -1045,10 +1072,12 @@
     
 
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
+    const storage = getStorage(app);
     const branchId = new URLSearchParams(window.location.search).get('branch') === 'B' ? 'B' : 'A';
     const branchRootPath = `branches/${branchId}`;
     const dbRef = (database, path) => {
@@ -1370,6 +1399,60 @@ const moveCategoryDown = (idx) => {
                 return todayOrders.filter(o => o.status === 'paid' || o.status === 'cancel_requested').length;
             });
             const updateMarqueeCount = () => { if (marqueeSettings.value.showCount) update(dbRef(db), { 'marqueeData/count': waitingOrdersCount.value }); };
+
+const copyMenuFromA = async () => {
+    if (branchId !== 'B') return;
+    if (!confirm('確定要用板橋店 A 的菜單設定覆蓋永和店 B 目前的菜單嗎？\\n\\n會複製：商品、分類、調味群組、附加選項。\\n不會複製：訂單、分店名稱、營業狀態與公告。')) return;
+    try {
+        const keys = ['menu', 'menuCategories', 'sharedOptionGroups', 'checkoutOptions'];
+        const snaps = await Promise.all(keys.map(key => get(rawDbRef(db, `branches/A/${key}`))));
+        const values = snaps.map(s => s.val());
+        if (!Array.isArray(values[0]) || values[0].length === 0) {
+            alert('板橋店目前沒有可複製的菜單，請先確認 A 店資料。');
+            return;
+        }
+        const updates = {};
+        keys.forEach((key, idx) => {
+            const value = values[idx];
+            updates[`branches/B/${key}`] = value == null ? [] : value;
+        });
+        await update(rawDbRef(db), updates);
+        alert(`已將板橋店的 ${values[0].length} 個商品複製到永和店！\\n接著可在 B 店調整價格、庫存及商品照片。`);
+    } catch (error) {
+        console.error('複製 A 店菜單失敗', error);
+        alert('複製菜單失敗：' + (error?.message || '請檢查 Firebase 權限與網路連線'));
+    }
+};
+
+const uploadMenuImage = async (event, item) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        alert('請選擇 JPG、PNG 或 WEBP 圖片。');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        alert('照片請控制在 5MB 以內。');
+        return;
+    }
+    if (!item.id) item.id = Date.now();
+    item.imageUploading = true;
+    try {
+        const safeName = String(file.name || 'photo').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
+        const path = `menu/${branchId}/${item.id}_${Date.now()}_${safeName}`;
+        const fileRef = storageRef(storage, path);
+        await uploadBytes(fileRef, file, { contentType: file.type });
+        item.imageUrl = await getDownloadURL(fileRef);
+        item.imagePath = path;
+        alert('照片上傳完成！記得按下方「同步更新至前台」儲存商品設定。');
+    } catch (error) {
+        console.error('商品照片上傳失敗', error);
+        alert('照片上傳失敗：' + (error?.message || '請確認 Firebase Storage 已啟用及 Storage Rules 權限'));
+    } finally {
+        item.imageUploading = false;
+    }
+};
 
 const saveFrontEndSettings = () => { 
     const menuToSave = menuSettings.value.map(item => {
@@ -1816,6 +1899,8 @@ const addMenuItem = () => {
         name: '', 
         price: 0, 
         desc: '', 
+        imageUrl: '',
+        imagePath: '',
         category: selectedMenuCategory.value === 'all' ? '' : selectedMenuCategory.value, 
         active: true, 
         stock: '', 
@@ -2138,7 +2223,7 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
                 brandSettings, 
                 menuCategories, newCategory, addCategory, removeCategory, 
                 sharedOptionGroups, addSharedGroup, removeSharedGroup, importSharedGroup, 
-                saveFrontEndSettings, addMenuItem, moveMenuUp, moveMenuDown, 
+                saveFrontEndSettings, copyMenuFromA, uploadMenuImage, addMenuItem, moveMenuUp, moveMenuDown, 
                 addOptionGroup, removeOptionGroup, addOption, removeOption, removeMenuItem, filteredOrders, 
                 posCart, posPhoneSuffix, posNote, posPaymentMethod, posSelectedItem, posSelections, activeMenuSettings,
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, removePosCartItem, submitPosOrder, updateOrderNote,
