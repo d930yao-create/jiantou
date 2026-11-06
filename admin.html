@@ -168,7 +168,8 @@
                                         <span class="text-base font-bold text-stone-800 leading-snug">{{ item.name }}</span>
                                         <span v-if="item.options && item.options.length" class="text-[10px] text-primary">{{ item.options.join(', ') }}</span>
                                     </div>
-                                    <div class="flex items-center gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-stone-700">${{ (Number(item.price) * Number(item.qty || 0)).toLocaleString('zh-TW') }}</span>
                                         <span class="text-sm font-bold text-stone-500">x{{ item.qty }}</span>
                                         <button @click.stop.prevent="deleteOrderItem(order, entry.index)" class="text-stone-300 hover:text-red-400 p-2 -mr-2 active:scale-90 touch-manipulation">
                                             <span class="material-icons-round text-sm pointer-events-none">close</span>
@@ -250,6 +251,10 @@
                                 <span class="text-xs font-bold text-orange-800">需退款</span>
                                 <span class="text-sm font-bold text-orange-700">${{ Number(order.refundDue).toLocaleString('zh-TW') }}</span>
                             </div>
+                            <div class="mb-2 rounded-lg bg-white/80 border border-red-100 px-2.5 py-2">
+                                <div class="flex justify-between text-xs text-stone-500"><span>原始訂單金額</span><b class="text-stone-700">${{ getBaseOrderAmount(order).toLocaleString('zh-TW') }}</b></div>
+                                <div class="flex justify-between text-sm font-bold text-primary mt-1"><span>目前整筆訂單總額</span><span>${{ Number(order.total || 0).toLocaleString('zh-TW') }}</span></div>
+                            </div>
                             <div class="space-y-0.5">
                                 <div v-for="entry in getMainOrderItems(order)" :key="entry.item.uid || entry.index" @click.stop="toggleItemReady(order, entry.index)" class="flex justify-between items-center px-2 py-1.5 rounded-md border bg-white/80 border-red-100/40" :class="entry.item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2" :class="entry.item.ready ? 'line-through text-stone-400' : ''">
@@ -260,7 +265,8 @@
                                         <span v-if="entry.item.options && entry.item.options.length" class="text-[10px] text-primary">{{ entry.item.options.join(', ') }}</span>
                                         <span v-if="entry.item.note || entry.item.remark" class="text-[10px] text-stone-400">備註：{{ entry.item.note || entry.item.remark }}</span>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
+                                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                                        <span class="text-sm font-bold text-stone-700" :class="entry.item.ready ? 'line-through text-stone-400' : ''">${{ (Number(entry.item.price) * Number(entry.item.qty || 0)).toLocaleString('zh-TW') }}</span>
                                         <span class="text-sm font-bold text-stone-600 w-6 text-right" :class="entry.item.ready ? 'line-through' : ''">x{{ entry.item.qty }}</span>
                                         <button v-if="order.status === 'paid'" @click.stop.prevent="deleteOrderItem(order, entry.index)" class="p-1.5 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50" title="移除此品項並計算退款">
                                             <span class="material-icons-round text-base">delete_outline</span>
@@ -288,7 +294,13 @@
                                         <span class="font-bold text-base" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-800'">{{ item.name }}<small v-if="!item.ready && (item.readyQty || 0) > 0" class="ml-1 text-[10px] text-rose-600">已好 {{ item.readyQty }}</small></span>
                                         <span v-if="item.note || item.remark" class="block text-[10px] text-stone-400">備註：{{ item.note || item.remark }}</span>
                                     </div>
-                                    <b class="text-sm" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-600'">×{{ item.qty }}</b>
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <b class="text-sm" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-700'">${{ (Number(item.price) * Number(item.qty || 0)).toLocaleString('zh-TW') }}</b>
+                                        <b class="text-sm" :class="item.ready ? 'line-through text-stone-400' : 'text-stone-600'">×{{ item.qty }}</b>
+                                        <button v-if="order.status === 'paid'" @click.stop.prevent="deleteAddonPaymentItem(order, addon.key, idx)" class="p-1.5 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50" title="移除此加點品項並計算退款">
+                                            <span class="material-icons-round text-base">delete_outline</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div v-for="(opt, idx) in (addon.checkoutOptions || [])" :key="'ao'+idx" class="flex justify-between text-xs text-stone-400"><span>{{ opt.name }}</span><span>×1</span></div>
                                 <div class="flex justify-between border-t border-rose-100 mt-1.5 pt-1.5 text-xs"><b>加點金額</b><b>${{ Number(addon.amount || 0).toLocaleString('zh-TW') }}</b></div>
@@ -365,7 +377,7 @@
                     <article v-for="order in historyOrders" :key="order.key" class="p-3 bg-white rounded-xl border border-stone-200 shadow-sm text-sm">
                         <div class="flex justify-between items-center"><span class="font-bold text-xl">#{{ order.number }}</span><span class="text-[10px] px-2 py-1 rounded-full font-bold" :class="order.status==='done' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'">{{ order.status==='done' ? '可取餐' : '已取餐' }}</span></div>
                         <div class="flex justify-between items-center mt-2 mb-3"><span class="text-xs text-stone-400">{{ order.timeString }}</span><span class="text-xs px-2 py-1 rounded-full" :class="order.paymentMethod==='LINE Pay' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ order.paymentMethod || '現金' }}</span></div>
-                        <div v-for="(item,idx) in (order.items||[]).filter(item => !String(item.name).includes(' [加點]'))" :key="idx" class="flex justify-between items-start gap-3 mb-2"><span class="font-bold text-base text-stone-800">{{ item.name }}<small v-if="item.options && item.options.length" class="block text-[10px] font-normal text-stone-400">{{ item.options.join('、') }}</small></span><b class="text-sm text-stone-500">×{{ item.qty }}</b></div>
+                        <div v-for="(item,idx) in (order.items||[]).filter(item => !String(item.name).includes(' [加點]'))" :key="idx" class="flex justify-between items-start gap-3 mb-2"><span class="font-bold text-base text-stone-800">{{ item.name }}<small v-if="item.options && item.options.length" class="block text-[10px] font-normal text-stone-400">{{ item.options.join('、') }}</small></span><span class="flex items-center gap-2"><b class="text-sm text-stone-700">${{ (Number(item.price) * Number(item.qty || 0)).toLocaleString('zh-TW') }}</b><b class="text-sm text-stone-500">×{{ item.qty }}</b></span></div>
                         <div v-for="addon in getAddonPayments(order)" :key="addon.key" class="mt-3 p-3 rounded-xl bg-rose-50/60 border border-rose-100">
                             <div class="flex justify-between items-center mb-2"><b>＋ 加點單</b><span class="text-xs text-stone-400">{{ addon.timeString || '' }}</span></div>
                             <div class="flex justify-end mb-2"><span class="text-xs px-2 py-1 rounded-full" :class="addon.paymentMethod==='LINE Pay' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ addon.paymentMethod || '現金' }}</span></div>
@@ -2230,6 +2242,12 @@ const markRefundCompleted = async (order) => {
     } catch (error) { alert('更新退款狀態失敗：' + (error?.message || error)); }
 };
 const getAddonPayments = (order) => Object.entries(order?.addonPayments || {}).map(([key, payment]) => ({ key, ...payment }));
+const getBaseOrderAmount = (order) => {
+    if (order?.baseTotal !== undefined && order?.baseTotal !== null) return Math.max(0, Number(order.baseTotal) || 0);
+    const addonTotal = Object.values(order?.addonPayments || {}).reduce((sum, payment) => sum + (Number(payment?.amount) || 0), 0);
+    return Math.max(0, (Number(order?.total) || 0) - addonTotal);
+};
+
 const getMainOrderItems = (order) => (order?.items || [])
     .map((item, index) => ({ item, index }))
     .filter(entry => !String(entry.item.name || '').includes(' [加點]'));
@@ -2372,7 +2390,75 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
     }
 };
             
-            const toggleItemReady = (order, itemIndex) => {
+            const deleteAddonPaymentItem = async (order, addonKey, itemIndex) => {
+    const payment = order?.addonPayments?.[addonKey];
+    const currentAddonItems = Array.isArray(payment?.items) ? payment.items : [];
+    const removedItem = currentAddonItems[itemIndex];
+    if (!removedItem) return;
+
+    const refundAmount = Math.max(0, (Number(removedItem.price) || 0) * (Number(removedItem.qty) || 0));
+    const label = `${removedItem.name || '加點品項'} x${removedItem.qty || 1}`;
+    if (!confirm(`確定移除加點品項「${label}」？\\n此品項已付款，需另外退款 $${refundAmount.toLocaleString('zh-TW')}，並回補庫存。`)) return;
+
+    let stockRestored = false;
+    try {
+        if (hasStockBeenDeducted(order) && !order.stockRestored) {
+            const stockOk = await adjustOrderStock({ items: [removedItem] }, 1);
+            if (!stockOk) { alert('庫存回補失敗，品項尚未移除，請稍後重試。'); return; }
+            stockRestored = true;
+        }
+
+        const nextAddonItems = currentAddonItems.map(item => ({ ...item }));
+        nextAddonItems.splice(itemIndex, 1);
+
+        const nextParentItems = (order.items || []).filter(item => !(
+            item.addonPaymentKey === addonKey &&
+            Number(item.addonItemIndex) === itemIndex
+        )).map(item => ({ ...item }));
+
+        // 同步調整舊訂單中未帶 addonPaymentKey 的加點品項
+        if (nextParentItems.length === (order.items || []).length) {
+            const mergedName = `${String(removedItem.name || '')} [加點]`;
+            const fallbackIndex = nextParentItems.findIndex(item =>
+                item.name === mergedName &&
+                Number(item.price) === Number(removedItem.price) &&
+                Number(item.qty) === Number(removedItem.qty) &&
+                JSON.stringify(item.options || []) === JSON.stringify(removedItem.options || [])
+            );
+            if (fallbackIndex >= 0) nextParentItems.splice(fallbackIndex, 1);
+        } else {
+            // 刪除同一加點單中位於被刪項目之後的索引標記，避免索引錯位
+            nextParentItems.forEach(item => {
+                if (item.addonPaymentKey === addonKey && Number(item.addonItemIndex) > itemIndex) item.addonItemIndex -= 1;
+            });
+        }
+
+        const updates = {
+            [`orders/${order.key}/addonPayments/${addonKey}/items`]: nextAddonItems,
+            [`orders/${order.key}/addonPayments/${addonKey}/amount`]: Math.max(0, (Number(payment.amount) || 0) - refundAmount),
+            [`orders/${order.key}/items`]: nextParentItems,
+            [`orders/${order.key}/total`]: Math.max(0, (Number(order.total) || 0) - refundAmount),
+            [`orders/${order.key}/refundDue`]: (Number(order.refundDue) || 0) + refundAmount,
+            [`orders/${order.key}/refundStatus`]: refundAmount > 0 ? 'pending' : (order.refundStatus || null),
+            [`orders/${order.key}/lastItemRemovedAt`]: serverTimestamp(),
+            [`orders/${order.key}/refundItems`]: [ ...(order.refundItems || []), {
+                name: removedItem.name || '', qty: Number(removedItem.qty) || 0,
+                unitPrice: Number(removedItem.price) || 0, amount: refundAmount,
+                addonPaymentKey: addonKey, removedAt: Date.now()
+            } ]
+        };
+
+        await update(dbRef(db), updates);
+        alert(`加點品項已移除，整筆訂單金額已更新。\\n請記得退款 $${refundAmount.toLocaleString('zh-TW')} 給顧客。`);
+    } catch (error) {
+        if (stockRestored) {
+            try { await adjustOrderStock({ items: [removedItem] }, -1); } catch (rollbackError) { console.error('庫存回復失敗', rollbackError); }
+        }
+        alert('移除加點品項失敗：' + (error?.message || error));
+    }
+};
+
+const toggleItemReady = (order, itemIndex) => {
                 const newItems = [...order.items]; const item = newItems[itemIndex];
                 let currentReadyQty = item.readyQty || 0;
                 if (item.qty > 1) { 
@@ -2406,7 +2492,7 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
             return { 
                 shopName, isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
                 branchId, branchNames, branchName, switchBranch, editBranchName, 
-                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, historyView, markRefundCompleted, getAddonPayments, getMainOrderItems, toggleAddonItemReady,
+                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, historyView, markRefundCompleted, getAddonPayments, getBaseOrderAmount, getMainOrderItems, toggleAddonItemReady, deleteAddonPaymentItem,
                 dailyRevenue, cashRevenue, linePayRevenue, completedOrdersCount, salesReport, showReport, updateStatus, exportCombinedReport, cancelRequestedOrders, approveCancellation, rejectCancellation, archiveOrder,
                 shopIsOpen, toggleShopStatus, deleteOrder, deleteHistoryOrder, deleteOrderItem, toggleItemReady,
                 deleteAllOrdersByDate, currentTab, frontTab, isDesktop, menuSettings, 

@@ -209,6 +209,13 @@
 
             <div v-else-if="!isAppending" class="bg-white border-t border-brick shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 pb-8 max-h-[70vh] overflow-y-auto transition-transform duration-300">
                 
+                <button
+                    @click="resetOrder"
+                    v-if="['done', 'archived', 'cancelled'].includes(myOrder?.status) || isTrackedNumberCalled"
+                    class="w-full mb-5 py-4 bg-stone-800 text-white rounded-xl text-lg font-bold active:scale-95 transition-transform shadow-lg flex items-center justify-center gap-2">
+                    <span class="material-icons-round">home</span> 關閉並回首頁
+                </button>
+
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <p class="text-sm text-stone-400 uppercase tracking-widest mb-1">YOUR NUMBER</p>
@@ -264,11 +271,6 @@
                         <span class="material-icons-round text-base">add_circle_outline</span> 我想加點
                     </button>
                 </div>
-                <div v-if="myOrder?.status === 'archived' || (trackedNumber && isTrackedNumberCalled)" class="mb-5">
-                    <button @click="startNewOrder" class="w-full py-3 px-4 text-sm font-bold text-white bg-brick rounded-xl shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-1">
-                        <span class="material-icons-round text-base">replay</span> 再買一次
-                    </button>
-                </div>
                 <div v-if="trackedNumber && !isTrackedNumberCalled" class="text-center p-6 bg-stone-50 rounded-xl text-stone-500 text-sm mb-6 border border-stone-100">
                     <p class="font-bold mb-1">🔍 正在追蹤叫號機...</p>
                     <p class="opacity-70">餐點完成時會自動跳出通知</p>
@@ -317,7 +319,6 @@
                     </div>
                 </div>
 
-                <button @click="resetOrder" v-if="myOrder?.status==='done' || myOrder?.status==='archived' || myOrder?.status==='cancelled' || isTrackedNumberCalled" class="w-full py-4 bg-stone-800 text-white rounded-xl text-lg font-bold active:scale-95 transition-transform shadow-lg">關閉並回首頁</button>
                 <button @click="stopTracking" v-if="trackedNumber && !isTrackedNumberCalled" class="w-full text-sm text-stone-400 underline p-2">停止單號追蹤</button>
             </div>
         </div>
@@ -602,6 +603,7 @@
                     menu.value = fullMenu.value.filter(item => item.active); 
                 });
  
+                // 將舊版未分店的本機訂單索引保留給 A｜板橋店，避免更新後找不到進行中的訂單。
                 if (branchId === 'A') {
                     ['jiantou_order_key','jiantou_addon_key','jiantou_tracked_number'].forEach(key => {
                         if (!localStorage.getItem(storageKey(key)) && localStorage.getItem(key)) {
@@ -980,10 +982,16 @@
 
             const resetOrder = () => {
                 myOrder.value = null;
+                myAddonOrder.value = null;
                 trackedNumber.value = null;
                 isTrackedNumberCalled.value = false;
+                showPickupModal.value = false;
+                isAppending.value = false;
+                isConfirming.value = false;
+                cart.value = {};
                 hasEnteredShop.value = false;
                 localStorage.removeItem(storageKey('jiantou_order_key'));
+                localStorage.removeItem(storageKey('jiantou_addon_key'));
                 localStorage.removeItem(storageKey('jiantou_tracked_number'));
             };
 
