@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>市集叫號顯示器</title>
+    <title>市集叫號顯示器 (滿版大字版)</title>
 
     <script>
         window.MARKET_CONFIG = {
             firebase: {
-              apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
-              authDomain: "jiantou-000rlhad.firebaseapp.com",
-              databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
-              projectId: "jiantou-000rlhad",
-              storageBucket: "jiantou-000rlhad.firebasestorage.app",
-              messagingSenderId: "435285773521",
-              appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+  apiKey: "AIzaSyCrXoKUHMvQ8LMr_YuaQYTWEdLfWFYeLYY",
+  authDomain: "jiantou-000rlhad.firebaseapp.com",
+  databaseURL: "https://jiantou-000rlhad-default-rtdb.firebaseio.com",
+  projectId: "jiantou-000rlhad",
+  storageBucket: "jiantou-000rlhad.firebasestorage.app",
+  messagingSenderId: "435285773521",
+  appId: "1:435285773521:web:d6ce66a7d35bf3bbd049f0"
+
             }
         };
     </script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
         :root { --color-primary: #9E5A5A; }
@@ -28,6 +31,7 @@
         .serif { font-family: 'Noto Serif TC', serif; }
         .text-primary { color: var(--color-primary); }
         .bg-primary { background-color: var(--color-primary); }
+        .border-primary { border-color: var(--color-primary); }
         @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .number-pop { animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         [v-cloak] { display: none !important; }
@@ -43,16 +47,16 @@
     
     <audio id="dingSound" src="https://github.com/d930yao-create/jiantou/raw/refs/heads/main/image/mixkit-home-standard-ding-dong-109.wav" preload="auto"></audio>
 
-    <div class="absolute top-4 left-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 border border-stone-600 shadow-lg">
+<div class="absolute top-4 left-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 border border-stone-600 shadow-lg">
         <div class="w-2 h-2 rounded-full" :class="isConnected ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500 animate-ping'"></div>
         <span class="text-[10px] font-bold text-stone-300">{{ isConnected ? '連線正常' : '連線中斷' }}</span>
     </div>
 
     <div class="absolute top-16 left-4 z-50 flex flex-col gap-3">
-        <button @click="toggleMute" class="p-3 rounded-full bg-stone-800/80 text-white border border-stone-600 shadow-lg">
+        <button @click="toggleMute" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
             <span class="material-icons-round text-2xl">{{ isMuted ? 'volume_off' : 'volume_up' }}</span>
         </button>
-        <button @click="toggleFullScreen" class="p-3 rounded-full bg-stone-800/80 text-white border border-stone-600 shadow-lg">
+        <button @click="toggleFullScreen" class="p-3 rounded-full bg-stone-800/80 text-white hover:bg-stone-700 transition-colors border border-stone-600 shadow-lg active:scale-95">
             <span class="material-icons-round text-2xl">fullscreen</span>
         </button>
     </div>
@@ -63,12 +67,12 @@
         </div>
     </div>
 
-    <div class="flex-1 flex flex-col items-center justify-center relative bg-stone-900 z-10 transition-colors">
+    <div class="flex-1 flex flex-col items-center justify-center relative bg-stone-900 z-10 group">
         <div class="absolute top-8 text-stone-500 tracking-[0.8em] text-lg uppercase opacity-50 font-bold">Current Call</div>
         <p class="text-3xl mb-4 font-light tracking-widest text-stone-400">🙌 餐點現點現做，感謝耐心等候 🙌</p>
         
         <div :key="currentNumber" class="number-pop flex items-center justify-center my-4">
-            <h1 class="text-[38vw] leading-none font-black serif text-yellow-400" :class="currentNumber ? 'animate-pulse' : ''" style="text-shadow: 0 0 80px rgba(250, 204, 21, 0.7), 0 0 20px rgba(250, 204, 21, 0.4);">
+            <h1 class="text-[38vw] leading-none font-black serif text-yellow-400 group-hover:scale-105 transition-transform" :class="currentNumber ? 'animate-pulse' : ''" style="text-shadow: 0 0 80px rgba(250, 204, 21, 0.7), 0 0 20px rgba(250, 204, 21, 0.4);">
                 {{ currentNumber || '--' }}
             </h1>
         </div>
@@ -94,16 +98,26 @@
 <script type="module">
     import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref as rawDbRef, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // 🚀 統一從這裡抓資料！
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
+    document.title = `叫號顯示器｜${branchId}分店`;
+    const branchId = new URLSearchParams(window.location.search).get('branch') === 'B' ? 'B' : 'A';
+    const branchRootPath = `branches/${branchId}`;
+    const dbRef = (database, path) => {
+        if (path === '.info/connected') return rawDbRef(database, path);
+        return rawDbRef(database, path ? `${branchRootPath}/${path}` : branchRootPath);
+    };
+
 
     createApp({
         setup() {
-            const isConnected = ref(true);
+const isConnected = ref(true);
             const currentNumber = ref(null);
             const doneOrders = ref([]);
+            
             const isMuted = ref(true);
             const marqueeData = ref({ text: '', showCount: false, count: 0 });
 
@@ -111,30 +125,34 @@
                 isMuted.value = !isMuted.value;
                 if (!isMuted.value) {
                     const audio = document.getElementById('dingSound');
-                    if (audio) { audio.volume = 1; audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => console.log('解鎖失敗', e)); }
+                    if (audio) {
+                        audio.volume = 1;
+                        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => console.log('解鎖音效失敗', e));
+                    }
                     const unlockSpeech = new SpeechSynthesisUtterance(' ');
                     window.speechSynthesis.speak(unlockSpeech);
                 }
             };
 
             onMounted(() => {
-                onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
-                onValue(dbRef(db, 'currentCallingNumber'), (snapshot) => { currentNumber.value = snapshot.val(); });
-                onValue(dbRef(db, 'marqueeData'), (snapshot) => { if (snapshot.val()) marqueeData.value = snapshot.val(); });
+onValue(dbRef(db, '.info/connected'), (snap) => { isConnected.value = snap.val() === true; });
+                const callRef = dbRef(db, 'currentCallingNumber');
+                onValue(callRef, (snapshot) => { currentNumber.value = snapshot.val(); });
 
-                onValue(dbRef(db, 'orders'), (snapshot) => {
+                onValue(dbRef(db, 'marqueeData'), (snapshot) => { 
+                    const data = snapshot.val();
+                    if (data) marqueeData.value = data; 
+                });
+
+                const ordersRef = dbRef(db, 'orders');
+                onValue(ordersRef, (snapshot) => {
                     const data = snapshot.val();
                     const list = [];
                     const todayStr = `${new Date().getFullYear()}/${(new Date().getMonth()+1).toString().padStart(2,'0')}/${new Date().getDate().toString().padStart(2,'0')}`;
-
-                    if (data) {
-                        Object.keys(data).forEach(key => {
-                            const order = data[key];
-                            if (order.status === 'done' && order.dateString === todayStr && !order.isAddon) {
-                                list.push({ ...order, key: key });
-                            }
-                        });
-                    }
+                    if (data) Object.keys(data).forEach(key => {
+                        const order = data[key];
+                        if (order.status === 'done' && order.dateString === todayStr && !order.isAddon) list.push({ ...order, key });
+                    });
                     list.sort((a, b) => b.createdAt - a.createdAt);
                     const uniqueNumbers = new Map();
                     list.forEach(o => { if (!uniqueNumbers.has(o.number)) uniqueNumbers.set(o.number, o); });
@@ -143,9 +161,7 @@
             });
 
             const finalMarqueeText = computed(() => {
-                let text = marqueeData.value.text || '';
-                let showCount = marqueeData.value.showCount;
-                let count = marqueeData.value.count || 0;
+                let text = marqueeData.value.text || ''; let showCount = marqueeData.value.showCount; let count = marqueeData.value.count || 0;
                 let parts = [];
                 if (text) parts.push(text);
                 if (showCount) {
@@ -156,7 +172,8 @@
                 return parts.join(' ｜ ');
             });
 
-            const recentDoneOrders = computed(() => doneOrders.value.filter(o => String(o.number) !== String(currentNumber.value)));
+            const recentDoneOrders = computed(() => { return doneOrders.value.filter(o => String(o.number) !== String(currentNumber.value)); });
+
             const readyNumbersText = computed(() => {
                 if (recentDoneOrders.value.length === 0) return '目前無其他待取餐號碼';
                 const nums = recentDoneOrders.value.map(o => `#${o.number}`).join('、');
@@ -166,7 +183,7 @@
             watch(currentNumber, (newVal) => {
                 if (newVal && !isMuted.value) {
                     const audio = document.getElementById('dingSound');
-                    if (audio) audio.play().catch(() => {});
+                    if(audio) { audio.play().catch(() => {}); }
 
                     setTimeout(() => {
                         const spacedNumber = String(newVal).split('').join(' ');
@@ -180,17 +197,17 @@
 
             const toggleFullScreen = () => {
                 const doc = window.document; const docEl = doc.documentElement;
-                const request = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
-                const cancel = doc.exitFullscreen || doc.webkitExitFullscreen;
-                if(!doc.fullscreenElement && !doc.webkitFullscreenElement) {
-                    if(request) request.call(docEl);
+                const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
+                const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+                if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                    if(requestFullScreen) requestFullScreen.call(docEl);
                 } else {
-                    if(cancel) cancel.call(doc);
+                    if(cancelFullScreen) cancelFullScreen.call(doc);
                 }
             };
 
             return { 
-                currentNumber, isMuted, toggleFullScreen, toggleMute, finalMarqueeText, readyNumbersText, isConnected
+                currentNumber, isMuted, toggleFullScreen, toggleMute, finalMarqueeText, readyNumbersText, isConnected,
             };
         }
     }).mount('#app');
