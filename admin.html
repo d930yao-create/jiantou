@@ -853,24 +853,25 @@
             <span class="material-icons-round text-stone-400 transition-transform" :class="activeCategoryTab === 'checkout' ? 'rotate-180' : ''">expand_more</span>
         </header>
         
-        <div v-show="activeCategoryTab === 'checkout'" class="p-4 border-t border-stone-100">
-            <p class="text-[11px] text-stone-400 mb-3">相同群組名稱的選項會放在一起。單選只能選一項；複選可以同時勾選多項。</p>
-            <div class="space-y-3">
-                <article v-for="(opt, index) in checkoutSettings" :key="opt.id || index" class="bg-white p-3 rounded-xl shadow-sm border border-stone-200 space-y-2">
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="text-[10px] text-stone-400">群組名稱</label><label class="text-[10px] text-stone-400">選擇方式</label>
-                        <input type="text" v-model="opt.groupName" class="min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-xs font-bold" placeholder="例：餐盒選擇">
-                        <select v-model="opt.selectionType" class="min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-xs font-bold"><option value="multiple">可複選</option><option value="single">單選</option></select>
-                    </div>
+        <div v-show="activeCategoryTab === 'checkout'" class="p-4 border-t border-stone-100 space-y-3">
+            <p class="text-[11px] text-stone-400">先建立選項群組，再在群組內新增服務。單選群組只能選一項；複選群組可同時選多項。</p>
+            <article v-for="(group, gIdx) in checkoutGroups" :key="group.id" class="bg-stone-50 border border-stone-200 rounded-xl p-3 space-y-2">
+                <div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-stone-500">群組 {{ gIdx + 1 }}</span><button @click="removeCheckoutGroup(gIdx)" class="text-stone-300 hover:text-red-500 p-1" title="刪除群組及其選項"><span class="material-icons-round text-base">delete_outline</span></button></div>
+                <div class="flex gap-2">
+                    <input type="text" v-model="group.name" class="flex-1 min-w-0 bg-white border border-stone-200 rounded-lg px-2.5 py-2 text-sm font-bold" placeholder="群組名稱（例：餐盒選擇）">
+                    <select v-model="group.type" class="w-28 bg-white border border-stone-200 rounded-lg px-2 py-2 text-xs font-bold"><option value="single">單選</option><option value="multiple">可複選</option></select>
+                </div>
+                <div v-for="(opt, oIdx) in group.options" :key="opt.id" class="bg-white border border-stone-200 rounded-lg p-2">
                     <div class="flex gap-2 items-center">
-                        <input type="text" v-model="opt.name" class="flex-1 min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold" placeholder="選項名稱（例：租借餐盒）">
+                        <input type="text" v-model="opt.name" class="flex-1 min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold" placeholder="服務名稱">
                         <span class="text-xs text-stone-400">+$</span><input type="number" inputmode="numeric" v-model.number="opt.price" class="w-16 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold text-center" placeholder="0">
-                        <button @click="opt.active = !opt.active" class="w-8 h-4 rounded-full flex items-center p-0.5" :class="opt.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full"></div></button>
-                        <button @click="removeCheckoutOption(index)" class="text-stone-300"><span class="material-icons-round text-base">close</span></button>
+                        <button @click="opt.active = !opt.active" class="w-8 h-4 rounded-full flex items-center p-0.5 flex-shrink-0" :class="opt.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'" :title="opt.active ? '前台顯示中' : '目前隱藏'"><div class="w-3 h-3 bg-white rounded-full"></div></button>
+                        <button @click="removeCheckoutGroupOption(group, oIdx)" class="text-stone-300 hover:text-red-500 p-1"><span class="material-icons-round text-base">close</span></button>
                     </div>
-                </article>
-            </div>
-            <button @click="addCheckoutOption" class="w-full py-2 border border-dashed border-stone-300 text-stone-500 rounded-lg text-sm font-bold mt-2"><span class="material-icons-round text-sm">add</span> 新增結帳服務選項</button>
+                </div>
+                <button @click="addCheckoutGroupOption(group)" class="w-full py-2 border border-dashed border-stone-300 text-stone-500 rounded-lg text-xs font-bold hover:bg-white">＋ 新增群組選項</button>
+            </article>
+            <button @click="addCheckoutGroup" class="w-full py-3 border-2 border-dashed border-stone-300 text-stone-500 rounded-xl text-sm font-bold hover:bg-stone-50 flex items-center justify-center gap-1"><span class="material-icons-round text-base">add</span> 新增結帳服務群組</button>
         </div>
     </section>
 
@@ -1323,6 +1324,7 @@ const moveCategoryDown = (idx) => {
             const sharedOptionGroups = ref([]); 
             const marqueeSettings = ref({ text: '', showCount: false });
             const checkoutSettings = ref([]);
+            const checkoutGroups = ref([]);
 
             const showSearchModal = ref(false); 
             const searchQuery = ref(''); 
@@ -1388,6 +1390,15 @@ const moveCategoryDown = (idx) => {
                                 if (!opt.selectionType) opt.selectionType = 'multiple';
                                 return opt;
                             });
+                            const grouped = new Map();
+                            checkoutSettings.value.forEach((opt, idx) => {
+                                const groupName = opt.groupName || '其他附加服務';
+                                const type = opt.selectionType === 'single' ? 'single' : 'multiple';
+                                const key = `${groupName}__${type}`;
+                                if (!grouped.has(key)) grouped.set(key, { id: `checkout_group_${idx}_${key}`, name: groupName, type, options: [] });
+                                grouped.get(key).options.push({ id: opt.id, name: opt.name || '', price: Number(opt.price) || 0, active: opt.active !== false });
+                            });
+                            checkoutGroups.value = Array.from(grouped.values());
                         });
                         onValue(dbRef(db, 'menu'), s => {
                             const data = s.val();
@@ -1530,7 +1541,18 @@ const deleteLibraryImage = async (image) => {
     } catch (error) { alert('刪除圖片失敗：' + (error?.message || error)); }
 };
 
-const saveFrontEndSettings = () => { 
+const saveFrontEndSettings = () => {
+    checkoutSettings.value = checkoutGroups.value.flatMap(group =>
+        (group.options || []).map(opt => ({
+            id: opt.id || ('opt_' + Date.now() + Math.random().toString(36).slice(2, 6)),
+            name: opt.name || '',
+            groupName: group.name || '其他附加服務',
+            selectionType: group.type === 'single' ? 'single' : 'multiple',
+            price: Number(opt.price) || 0,
+            active: opt.active !== false
+        }))
+    );
+    
     const menuToSave = menuSettings.value.map(item => {
         let processedItem = { ...item };
         delete processedItem.imagePath;
@@ -1744,7 +1766,18 @@ const salesReport = computed(() => {
                 return total;
             });
 
-            const activeCheckoutOptions = computed(() => checkoutSettings.value.filter(opt => opt.active));
+            const activeCheckoutOptions = computed(() => checkoutSettings.value.filter(opt => opt.active !== false));
+            const checkoutOptionGroups = computed(() => {
+                const groups = new Map();
+                activeCheckoutOptions.value.forEach(opt => {
+                    const name = opt.groupName || '其他附加服務';
+                    const type = opt.selectionType === 'single' ? 'single' : 'multiple';
+                    const key = `${name}__${type}`;
+                    if (!groups.has(key)) groups.set(key, { key, name, type, options: [] });
+                    groups.get(key).options.push(opt);
+                });
+                return Array.from(groups.values());
+            });
             const posSelectedCheckoutOptions = ref([]);
             const togglePosCheckoutOption = (opt, checked) => {
                 const groupName = opt.groupName || '其他附加服務';
@@ -2358,15 +2391,17 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
                 try { await update(dbRef(db), updates); showReport.value = false; } catch (error) { alert(error.message); } 
             };
 
-            const addCheckoutOption = () => { 
-                checkoutSettings.value.push({ 
-                    id: 'opt_' + Date.now() + Math.random().toString(36).substr(2, 4),
-                    name: '', groupName: '其他附加服務', selectionType: 'multiple',
-                    price: 0, active: true 
-                }); 
+            const addCheckoutGroup = () => {
+                checkoutGroups.value.push({ id: 'checkout_group_' + Date.now() + Math.random().toString(36).slice(2, 6), name: '', type: 'single', options: [] });
             };
- 
-            const removeCheckoutOption = (index) => { if(confirm('刪除此結帳服務嗎？')) checkoutSettings.value.splice(index, 1); };
+            const removeCheckoutGroup = (index) => {
+                if (confirm('確定刪除此群組及群組內所有選項嗎？')) checkoutGroups.value.splice(index, 1);
+            };
+            const addCheckoutGroupOption = (group) => {
+                if (!group.options) group.options = [];
+                group.options.push({ id: 'opt_' + Date.now() + Math.random().toString(36).slice(2, 6), name: '', price: 0, active: true });
+            };
+            const removeCheckoutGroupOption = (group, index) => { group.options.splice(index, 1); };
 
             return { 
                 shopName, isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
@@ -2384,7 +2419,7 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, removePosCartItem, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
                 showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, inactiveMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
-                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, sharedImageLibrary, showImagePicker, imagePickerTarget, newLibraryImage, imageLibraryMessage, openImagePicker, closeImagePicker, selectLibraryImage, addLibraryImage, copyImageUrl, deleteLibraryImage, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, togglePosCheckoutOption, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
+                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, checkoutGroups, sharedImageLibrary, showImagePicker, imagePickerTarget, newLibraryImage, imageLibraryMessage, openImagePicker, closeImagePicker, selectLibraryImage, addLibraryImage, copyImageUrl, deleteLibraryImage, addCheckoutGroup, removeCheckoutGroup, addCheckoutGroupOption, removeCheckoutGroupOption, activeCheckoutOptions, checkoutOptionGroups, posSelectedCheckoutOptions, togglePosCheckoutOption, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
             };
         }
     }).mount('#app');
