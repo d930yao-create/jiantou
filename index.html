@@ -413,16 +413,20 @@
                 </div>
 
                 <div v-if="activeCheckoutOptions.length > 0" class="mb-4 pt-3 border-t border-stone-100">
-                    <p class="text-sm font-bold text-stone-500 mb-2">需要其他服務嗎？</p>
-                    <div class="space-y-2">
-                        <label v-for="opt in activeCheckoutOptions" :key="opt.id || opt.name" class="flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all" :class="selectedCheckoutOptions.includes(opt.id) ? 'border-brick bg-red-50' : 'border-stone-200 bg-white'">
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" :value="opt.id" v-model="selectedCheckoutOptions" class="w-4 h-4 accent-brick">
-                                <span class="font-bold text-stone-700 text-sm">{{ opt.name }}</span>
-                            </div>
-                            <span v-if="opt.price > 0" class="text-brick font-bold text-sm">+${{ opt.price }}</span>
-                            <span v-else class="text-stone-400 text-sm font-bold">免費</span>
-                        </label>
+                    <p class="text-sm font-bold text-stone-500 mb-3">需要其他服務嗎？</p>
+                    <div v-for="group in checkoutOptionGroups" :key="group.key" class="mb-3 last:mb-0">
+                        <p class="text-xs font-bold text-stone-500 mb-2">{{ group.name }} <span class="font-normal text-stone-400">（{{ group.type === 'single' ? '單選' : '可複選' }}）</span></p>
+                        <div class="space-y-2">
+                            <label v-for="opt in group.options" :key="opt.id" class="flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all" :class="selectedCheckoutOptions.includes(opt.id) ? 'border-brick bg-red-50' : 'border-stone-200 bg-white'">
+                                <div class="flex items-center gap-2">
+                                    <input v-if="group.type === 'single'" type="radio" :name="'checkout-'+group.key" :checked="selectedCheckoutOptions.includes(opt.id)" @change="toggleCheckoutOption(opt, true)" class="w-4 h-4 accent-brick">
+                                    <input v-else type="checkbox" :checked="selectedCheckoutOptions.includes(opt.id)" @change="toggleCheckoutOption(opt, $event.target.checked)" class="w-4 h-4 accent-brick">
+                                    <span class="font-bold text-stone-700 text-sm">{{ opt.name }}</span>
+                                </div>
+                                <span v-if="Number(opt.price) > 0" class="text-brick font-bold text-sm">+${{ opt.price }}</span>
+                                <span v-else class="text-stone-400 text-sm font-bold">免費</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -511,6 +515,64 @@
             const checkoutOptions = ref([]);
             const selectedCheckoutOptions = ref([]);
             const activeCheckoutOptions = computed(() => checkoutOptions.value.filter(opt => opt.active));
+            const checkoutOptionGroups = computed(() => {
+                const groups = new Map();
+                activeCheckoutOptions.value.forEach(opt => {
+                    const name = opt.groupName || '其他附加服務';
+                    const type = opt.selectionType === 'single' ? 'single' : 'multiple';
+                    const key = `${name}__${type}`;
+                    if (!groups.has(key)) groups.set(key, { key, name, type, options: [] });
+                    groups.get(key).options.push(opt);
+                });
+                return Array.from(groups.values());
+            });
+            const toggleCheckoutOption = (opt, checked) => {
+                const id = opt.id;
+                const groupName = opt.groupName || '其他附加服務';
+                const type = opt.selectionType === 'single' ? 'single' : 'multiple';
+                const idsInGroup = activeCheckoutOptions.value
+                    .filter(item => (item.groupName || '其他附加服務') === groupName &&
+                        (item.selectionType === 'single' ? 'single' : 'multiple') === type)
+                    .map(item => item.id);
+                if (type === 'single') {
+                    selectedCheckoutOptions.value = checked
+                        ? [...selectedCheckoutOptions.value.filter(existing => !idsInGroup.includes(existing)), id]
+                        : selectedCheckoutOptions.value.filter(existing => existing !== id);
+                } else if (checked && !selectedCheckoutOptions.value.includes(id)) {
+                    selectedCheckoutOptions.value.push(id);
+                } else if (!checked) {
+                    selectedCheckoutOptions.value = selectedCheckoutOptions.value.filter(existing => existing !== id);
+                }
+            };
+            const checkoutOptionGroups = computed(() => {
+                const groups = new Map();
+                activeCheckoutOptions.value.forEach((opt, idx) => {
+                    const name = opt.groupName || '其他附加服務';
+                    const type = opt.selectionType === 'single' ? 'single' : 'multiple';
+                    const key = `${name}__${type}`;
+                    if (!groups.has(key)) groups.set(key, { key, name, type, options: [] });
+                    groups.get(key).options.push(opt);
+                });
+                return Array.from(groups.values());
+            });
+            const toggleCheckoutOption = (opt, checked) => {
+                const id = opt.id;
+                const groupName = opt.groupName || '其他附加服務';
+                const type = opt.selectionType === 'single' ? 'single' : 'multiple';
+                const sameGroupIds = activeCheckoutOptions.value
+                    .filter(item => (item.groupName || '其他附加服務') === groupName &&
+                        (item.selectionType === 'single' ? 'single' : 'multiple') === type)
+                    .map(item => item.id);
+                if (type === 'single') {
+                    selectedCheckoutOptions.value = checked
+                        ? [...selectedCheckoutOptions.value.filter(existing => !sameGroupIds.includes(existing)), id]
+                        : selectedCheckoutOptions.value.filter(existing => existing !== id);
+                } else if (checked && !selectedCheckoutOptions.value.includes(id)) {
+                    selectedCheckoutOptions.value.push(id);
+                } else if (!checked) {
+                    selectedCheckoutOptions.value = selectedCheckoutOptions.value.filter(existing => existing !== id);
+                }
+            };
 
             const isWaitingForMeal = computed(() => {
                 const hasActiveMyOrder = myOrder.value && !['done', 'archived', 'cancelled'].includes(myOrder.value.status);
@@ -531,7 +593,9 @@
                     const raw = s.val() || [];
                     const arr = Array.isArray(raw) ? raw : Object.values(raw);
                     checkoutOptions.value = arr.filter(opt => opt && typeof opt === 'object').map((opt, idx) => {
-                        if (!opt.id) opt.id = 'opt_legacy_' + idx; 
+                        if (!opt.id) opt.id = 'opt_legacy_' + idx;
+                        if (!opt.groupName) opt.groupName = '其他附加服務';
+                        if (!opt.selectionType) opt.selectionType = 'multiple';
                         return opt;
                     });
                 });
@@ -971,12 +1035,15 @@
 
             const cancelOrder = async () => {
                 if (!myOrder.value?.key || myOrder.value.status !== 'pending') return;
-                if (confirm('確定要直接取消這筆尚未付款的訂單嗎？')) {
-                    const result = await runTransaction(dbRef(db, `orders/${myOrder.value.key}`), current => {
-                        if (!current || current.status !== 'pending') return;
-                        return { ...current, status: 'cancelled', cancelledAt: Date.now(), cancellationType: 'customer_direct' };
-                    });
-                    if (!result.committed) alert('訂單狀態已更新，請重新確認目前進度。');
+                if (confirm('確定要直接取消這筆尚未付款的訂單嗎？取消後將直接移除訂單。')) {
+                    try {
+                        await remove(dbRef(db, `orders/${myOrder.value.key}`));
+                        myOrder.value = null;
+                        localStorage.removeItem(storageKey('jiantou_order_key'));
+                        hasEnteredShop.value = false;
+                    } catch (error) {
+                        alert('取消訂單失敗，請確認網路後再試一次。');
+                    }
                 }
             };
 
@@ -1103,7 +1170,7 @@
                 phoneSuffix, 
                 isWaitingForMeal, 
                 isAppending, startAppend, myAddonOrder, cancelAddon,
-                checkoutOptions, activeCheckoutOptions, selectedCheckoutOptions, finalTotal, isConnected,
+                checkoutOptions, activeCheckoutOptions, checkoutOptionGroups, toggleCheckoutOption, selectedCheckoutOptions, finalTotal, isConnected,
                 deleteCartItem,
                 isAnnounceExpanded // 🌟 匯出縮放狀態
             };

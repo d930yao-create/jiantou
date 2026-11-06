@@ -155,21 +155,18 @@
                         </button>
                         
                         <div>
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] text-stone-400 bg-white/60 px-1 rounded">{{ order.timeString }}</span>
-                                <span class="font-bold text-xl text-stone-800">
-                                    #{{ order.number }}
-                                    <span v-if="order.isAddon" class="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">加點</span>
-                                </span>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-xl text-stone-800">#{{ order.number }} <span v-if="order.isAddon" class="text-[10px] bg-orange-100 text-orange-600 px-2 py-1 rounded-full">加點單</span></span>
+                                <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-bold">待結帳</span>
                             </div>
-                            <div class="flex justify-between items-end border-b border-dashed border-stone-100 pb-2 mb-2">
-                                <span class="text-xs text-stone-400">金額</span>
-                                <span class="text-xl font-bold text-primary">${{ order.total }}</span>
+                            <div class="flex justify-between items-center border-b border-dashed border-stone-100 pb-2 mb-2">
+                                <span class="text-xs text-stone-400">{{ order.timeString }}</span>
+                                <span class="text-lg font-bold text-primary">${{ order.total }}</span>
                             </div>
                             <div class="mt-2 space-y-1">
                                 <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2">
-                                        <span class="text-sm font-bold text-stone-700 leading-tight">{{ item.name }}</span>
+                                        <span class="text-base font-bold text-stone-800 leading-snug">{{ item.name }}</span>
                                         <span v-if="item.options && item.options.length" class="text-[10px] text-primary">{{ item.options.join(', ') }}</span>
                                     </div>
                                     <div class="flex items-center gap-1">
@@ -232,17 +229,14 @@
                         </button>
                         
                         <div @click="isToday ? updateStatus(order, 'done') : null" role="button">
-                            <div class="flex justify-between items-center mb-1">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-[10px] text-stone-400 bg-white/50 px-1 rounded">{{ order.timeString }}</span>
-                                    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold border" :class="order.paymentMethod === 'LINE Pay' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-100 text-stone-600 border-stone-200'">
-                                        {{ order.paymentMethod || '現金' }}
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span v-if="order.status === 'cancel_requested'" class="text-[10px] px-2 py-1 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-200">⚠ 取消申請中</span>
-                                    <span class="font-bold text-2xl text-primary">#{{ order.number }}</span>
-                                </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-xl text-stone-800">#{{ order.number }}</span>
+                                <span v-if="order.status === 'cancel_requested'" class="text-[10px] px-2 py-1 rounded-full font-bold bg-amber-100 text-amber-800">取消申請中</span>
+                                <span v-else class="text-[10px] px-2 py-1 rounded-full font-bold bg-orange-100 text-orange-700">製作中</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-xs text-stone-400">{{ order.timeString }}</span>
+                                <span class="text-xs px-2 py-1 rounded-full font-bold" :class="order.paymentMethod === 'LINE Pay' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ order.paymentMethod || '現金' }}</span>
                             </div>
                             <div v-if="order.status === 'cancel_requested'" class="mb-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-bold">
                                 顧客已提出取消申請，請先確認取消或駁回，再繼續製作。
@@ -256,7 +250,7 @@
                                 <span class="text-sm font-bold text-orange-700">${{ Number(order.refundDue).toLocaleString('zh-TW') }}</span>
                             </div>
                             <div class="mt-2 space-y-1.5">
-                                <div v-for="(item, idx) in order.items" :key="item.uid || idx" @click.stop="toggleItemReady(order, idx)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
+                                <div v-for="(item, idx) in order.items.filter(item => !String(item.name).includes(' [加點]'))" :key="item.uid || idx" @click.stop="toggleItemReady(order, idx)" class="flex justify-between items-center p-2 rounded-lg border bg-white/80 border-red-100/40" :class="item.ready ? 'opacity-30 bg-stone-100 border-transparent' : ''">
                                     <div class="flex flex-col min-w-0 flex-1 pr-2" :class="item.ready ? 'line-through text-stone-400' : ''">
                                         <div class="text-sm font-bold text-stone-800">
                                             {{ item.name }}
@@ -271,6 +265,13 @@
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                            <div v-for="addon in getAddonPayments(order)" :key="addon.key" class="mt-3 p-3 rounded-xl bg-rose-50/70 border border-rose-100">
+                                <div class="flex justify-between items-center mb-2"><span class="font-bold text-sm">＋ 加點單</span><span class="text-xs text-stone-400">{{ addon.timeString || '' }}</span></div>
+                                <div class="flex justify-end mb-2"><span class="text-xs px-2 py-1 rounded-full font-bold" :class="addon.paymentMethod === 'LINE Pay' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ addon.paymentMethod || '現金' }}</span></div>
+                                <div v-for="(item, idx) in (addon.items || [])" :key="idx" class="flex justify-between gap-3 mb-1"><span class="font-bold text-base">{{ item.name }}</span><b>×{{ item.qty }}</b></div>
+                                <div v-for="(opt, idx) in (addon.checkoutOptions || [])" :key="'ao'+idx" class="flex justify-between text-xs text-stone-400"><span>{{ opt.name }}</span><span>×1</span></div>
+                                <div class="flex justify-between border-t border-rose-100 mt-2 pt-2"><b>加點金額</b><b>${{ Number(addon.amount || 0).toLocaleString('zh-TW') }}</b></div>
                             </div>
                             <div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-1.5 space-y-1.5">
                                 <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'popt'+oIdx" class="flex justify-between items-center p-2 rounded-lg border bg-stone-50/80 border-stone-100">
@@ -336,58 +337,42 @@
             </section>
 
             <section v-show="currentTab === 'history' || isDesktop" class="flex-1 min-w-[220px] bg-white rounded-xl shadow-sm flex flex-col border-t-4 border-stone-300 overflow-hidden min-h-0 lg:flex">
-                <header class="p-2 bg-stone-200 font-bold text-stone-600 text-xs text-center flex justify-between px-2 flex-shrink-0">
-                    <span>已出餐 / 歷史</span><span class="bg-stone-300 px-2 rounded-full text-[10px] text-stone-700">{{ historyOrders.length }}</span>
+                <header class="p-2 bg-stone-200 text-stone-600 text-xs flex-shrink-0">
+                    <div class="flex justify-between items-center mb-2"><span class="font-bold">訂單紀錄</span><span class="bg-stone-300 px-2 rounded-full">{{ historyView === 'done' ? historyOrders.length : cancelledOrders.length }}</span></div>
+                    <div class="grid grid-cols-2 gap-1 bg-stone-300/70 p-1 rounded-lg">
+                        <button @click="historyView='done'" class="py-2 rounded-md font-bold" :class="historyView==='done' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500'">已出餐</button>
+                        <button @click="historyView='cancelled'" class="py-2 rounded-md font-bold" :class="historyView==='cancelled' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500'">取消訂單</button>
+                    </div>
                 </header>
-                <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
-                    <article v-for="order in historyOrders" :key="order.key" class="p-3 bg-white rounded-lg border border-stone-200 shadow-sm text-sm relative">
-                        
-                        <button @click.stop.prevent="deleteHistoryOrder(order)" class="absolute -top-2 -left-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg z-[40] active:scale-90 touch-manipulation">
-                            <span class="material-icons-round text-base pointer-events-none">close</span>
-                        </button>
-                        
-                        <div class="flex justify-between items-center pb-2 border-b border-stone-100 mb-2">
-                            <div class="flex items-baseline gap-2">
-                                <span class="font-bold text-xl text-stone-700">#{{ order.number }}</span>
-                                <span v-if="order.status === 'cancelled'" class="text-[9px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 font-bold">已取消</span>
-                                <span v-else-if="order.status === 'done'" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold">可取餐</span>
-                                <span v-else class="text-[9px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 font-bold">已取餐</span>
-                                <span class="text-[10px] text-stone-400">{{ order.timeString }}</span>
-                                <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border" :class="order.paymentMethod === 'LINE Pay' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-100 text-stone-500 border-stone-200'">
-                                    {{ order.paymentMethod || '現金' }}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold text-primary mr-1">${{ order.total }}</span>
-                                <span v-if="Number(order.refundDue) > 0" class="text-[9px] font-bold px-1.5 py-1 rounded bg-orange-50 text-orange-700 border border-orange-200">需退款 ${{ Number(order.refundDue).toLocaleString('zh-TW') }}</span>
-                                <button @click="recallOrder(order)" class="text-[10px] bg-stone-100 text-stone-600 px-2 py-1 rounded-full border border-stone-200 active:scale-95 flex items-center gap-1">
-                                    <span class="material-icons-round text-[10px]">campaign</span> 再叫
-                                </button>
-                                <button v-if="order.status === 'done'" @click="archiveOrder(order)" class="text-[10px] bg-emerald-600 text-white px-2 py-1 rounded-full active:scale-95">確認已取餐</button>
-                                <span v-else-if="order.status === 'archived'" class="text-[9px] text-emerald-700 font-bold">已取餐</span>
-                                <span v-else-if="order.status === 'cancelled'" class="text-[9px] text-stone-400 font-bold">取消紀錄</span>
-                            </div>
+                <div v-if="historyView === 'done'" class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
+                    <article v-for="order in historyOrders" :key="order.key" class="p-3 bg-white rounded-xl border border-stone-200 shadow-sm text-sm">
+                        <div class="flex justify-between items-center"><span class="font-bold text-xl">#{{ order.number }}</span><span class="text-[10px] px-2 py-1 rounded-full font-bold" :class="order.status==='done' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'">{{ order.status==='done' ? '可取餐' : '已取餐' }}</span></div>
+                        <div class="flex justify-between items-center mt-2 mb-3"><span class="text-xs text-stone-400">{{ order.timeString }}</span><span class="text-xs px-2 py-1 rounded-full" :class="order.paymentMethod==='LINE Pay' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ order.paymentMethod || '現金' }}</span></div>
+                        <div v-for="(item,idx) in (order.items||[]).filter(item => !String(item.name).includes(' [加點]'))" :key="idx" class="flex justify-between items-start gap-3 mb-2"><span class="font-bold text-base text-stone-800">{{ item.name }}<small v-if="item.options && item.options.length" class="block text-[10px] font-normal text-stone-400">{{ item.options.join('、') }}</small></span><b class="text-sm text-stone-500">×{{ item.qty }}</b></div>
+                        <div v-for="addon in getAddonPayments(order)" :key="addon.key" class="mt-3 p-3 rounded-xl bg-rose-50/60 border border-rose-100">
+                            <div class="flex justify-between items-center mb-2"><b>＋ 加點單</b><span class="text-xs text-stone-400">{{ addon.timeString || '' }}</span></div>
+                            <div class="flex justify-end mb-2"><span class="text-xs px-2 py-1 rounded-full" :class="addon.paymentMethod==='LINE Pay' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ addon.paymentMethod || '現金' }}</span></div>
+                            <div v-for="(item,idx) in (addon.items||[])" :key="idx" class="flex justify-between gap-3 mb-1"><b class="text-base">{{ item.name }}</b><b>×{{ item.qty }}</b></div>
+                            <div v-for="(opt,idx) in (addon.checkoutOptions||[])" :key="idx" class="flex justify-between text-xs text-stone-400"><span>{{ opt.name }}</span><span>×1</span></div>
+                            <div class="flex justify-between border-t border-rose-100 mt-2 pt-2"><b>加點金額</b><b>${{ Number(addon.amount||0).toLocaleString('zh-TW') }}</b></div>
                         </div>
-                        <div class="space-y-1">
-                            <div v-for="(item, idx) in order.items" :key="item.uid || idx" class="flex justify-between items-start text-xs">
-                                <div class="flex flex-col">
-                                    <span class="font-medium text-stone-600">{{ item.name }}</span>
-                                    <span v-if="item.options && item.options.length" class="text-[9px] text-stone-400">{{ item.options.join(', ') }}</span>
-                                </div>
-                                <span class="text-stone-400 font-bold">x{{ item.qty }}</span>
-                            </div>
-                            <div v-if="order.checkoutOptions && order.checkoutOptions.length > 0" class="mt-1 pt-1 border-t border-stone-50 space-y-1">
-                                <div v-for="(opt, oIdx) in order.checkoutOptions" :key="'hopt'+oIdx" class="flex justify-between items-start text-xs">
-                                    <span class="font-medium text-stone-400">🛒 {{ opt.name }}</span>
-                                    <span class="text-stone-400 font-bold">x1</span>
-                                </div>
-                            </div>
-                            <div v-if="order.note" class="mt-1 pt-1 border-t border-dashed border-stone-100 flex items-start gap-1">
-                                <span class="material-icons-round text-yellow-600 text-[12px] mt-0.5">edit_note</span>
-                                <span class="text-[10px] text-stone-500 font-medium">{{ order.note }}</span>
-                            </div>
-                        </div>
+                        <div v-if="order.checkoutOptions && order.checkoutOptions.length" class="mt-2 pt-2 border-t border-stone-100 text-xs text-stone-400"><div v-for="(opt,idx) in order.checkoutOptions" :key="idx" class="flex justify-between"><span>🛒 {{ opt.name }}</span><span>×1</span></div></div>
+                        <div v-if="order.note" class="mt-2 pt-2 border-t border-dashed text-xs text-stone-400">{{ order.note }}</div>
+                        <div class="flex justify-between items-center border-t mt-3 pt-3"><b>訂單總額</b><strong class="text-xl text-primary">${{ Number(order.total||0).toLocaleString('zh-TW') }}</strong></div>
+                        <div class="flex justify-end gap-2 mt-3"><button @click="recallOrder(order)" class="text-[10px] bg-stone-100 px-3 py-1.5 rounded-full">再叫</button><button v-if="order.status==='done'" @click="archiveOrder(order)" class="text-[10px] bg-emerald-600 text-white px-3 py-1.5 rounded-full">確認已取餐</button><span v-else class="text-[10px] text-emerald-700 self-center">已取餐</span></div>
                     </article>
+                    <p v-if="!historyOrders.length" class="text-center text-xs text-stone-400 py-8">目前沒有已出餐訂單</p>
+                </div>
+                <div v-else class="flex-1 overflow-y-auto p-2 space-y-2 bg-stone-50/50">
+                    <article v-for="order in cancelledOrders" :key="order.key" class="p-3 rounded-xl border shadow-sm text-sm" :class="order.refundStatus==='completed' ? 'bg-stone-100 border-stone-200 opacity-60' : 'bg-white border-orange-200'">
+                        <div class="flex justify-between items-center"><b class="text-xl">#{{ order.number }}</b><span class="text-[10px] px-2 py-1 rounded-full font-bold" :class="order.refundStatus==='completed' ? 'bg-stone-200 text-stone-500' : 'bg-orange-100 text-orange-700'">{{ order.refundStatus==='completed' ? '已退款' : '待退款' }}</span></div>
+                        <div class="flex justify-between mt-2 mb-3"><span class="text-xs text-stone-400">{{ order.timeString }}</span><span class="text-xs px-2 py-1 rounded-full" :class="order.paymentMethod==='LINE Pay' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-600'">{{ order.paymentMethod || '現金' }}</span></div>
+                        <div v-for="(item,idx) in (order.items||[])" :key="idx" class="flex justify-between text-sm text-stone-500"><span>{{ item.name }}</span><span>×{{ item.qty }}</span></div>
+                        <div class="flex justify-between border-t mt-3 pt-3"><b>退款金額</b><b>${{ Number(order.refundAmount || order.refundDue || order.total || 0).toLocaleString('zh-TW') }}</b></div>
+                        <p v-if="order.refundStatus==='completed'" class="text-[10px] text-stone-400 mt-2">退款完成：{{ order.refundMethod || order.paymentMethod }}・{{ new Date(order.refundCompletedAt).toLocaleString('zh-TW') }}</p>
+                        <button v-else @click="markRefundCompleted(order)" class="w-full mt-3 py-2 rounded-lg bg-primary text-white text-xs font-bold">確認已退款</button>
+                    </article>
+                    <p v-if="!cancelledOrders.length" class="text-center text-xs text-stone-400 py-8">目前沒有需要退款的取消訂單</p>
                 </div>
             </section>
 
@@ -464,14 +449,18 @@
                             <div class="bg-white border-t border-stone-100 p-6 mt-auto shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
                                 <div v-if="activeCheckoutOptions.length > 0" class="mb-5">
                                     <p class="text-sm font-bold text-stone-400 mb-3 tracking-wide">附加服務</p>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <label v-for="opt in activeCheckoutOptions" :key="opt.id || opt.name" class="flex items-center justify-between p-3.5 border-2 rounded-xl cursor-pointer transition-all" :class="posSelectedCheckoutOptions.includes(opt.id) ? 'border-stone-800 bg-stone-800 text-white shadow-md' : 'border-stone-100 bg-white text-stone-600 hover:border-stone-200'">
-                                            <div class="flex items-center gap-3">
-                                                <input type="checkbox" :value="opt.id" v-model="posSelectedCheckoutOptions" class="w-5 h-5 rounded border-stone-300 accent-stone-800">
-                                                <span class="font-bold text-base">{{ opt.name }}</span>
-                                            </div>
-                                            <span class="font-bold text-sm" :class="posSelectedCheckoutOptions.includes(opt.id) ? 'text-white' : 'text-stone-400'">{{ opt.price > 0 ? '+$' + opt.price : '免費' }}</span>
-                                        </label>
+                                    <div v-for="group in checkoutOptionGroups" :key="'pos-'+group.key" class="mb-3">
+                                        <p class="text-xs font-bold text-stone-500 mb-2">{{ group.name }}（{{ group.type === 'single' ? '單選' : '可複選' }}）</p>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <label v-for="opt in group.options" :key="opt.id" class="flex items-center justify-between p-3 border-2 rounded-xl cursor-pointer" :class="posSelectedCheckoutOptions.includes(opt.id) ? 'border-stone-800 bg-stone-800 text-white' : 'border-stone-100 bg-white text-stone-600'">
+                                                <div class="flex items-center gap-2">
+                                                    <input v-if="group.type === 'single'" type="radio" :name="'pos-checkout-'+group.key" :checked="posSelectedCheckoutOptions.includes(opt.id)" @change="togglePosCheckoutOption(opt,true)" class="w-4 h-4 accent-stone-800">
+                                                    <input v-else type="checkbox" :checked="posSelectedCheckoutOptions.includes(opt.id)" @change="togglePosCheckoutOption(opt,$event.target.checked)" class="w-4 h-4 accent-stone-800">
+                                                    <span class="font-bold text-sm">{{ opt.name }}</span>
+                                                </div>
+                                                <span class="font-bold text-xs">{{ Number(opt.price)>0 ? '+$'+opt.price : '免費' }}</span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -712,9 +701,10 @@
                         <p class="text-[10px] text-stone-400 mt-0.5">JPG、PNG 或 WEBP，單張 5MB 以內</p>
                         <label class="inline-flex items-center gap-1 mt-2 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-stone-600 cursor-pointer active:scale-95">
                             <span class="material-icons-round text-sm">upload</span>
-                            {{ item.imageUploading ? '上傳中…' : (item.imageUrl ? '更換照片' : '選擇照片') }}
+                            {{ item.imageUploading ? `上傳中 ${item.imageUploadProgress || 0}%` : (item.imageUrl ? '更換照片' : '選擇照片') }}
                             <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" :disabled="item.imageUploading" @change="uploadMenuImage($event, item)">
                         </label>
+                        <span v-if="item.imageUploadError" class="block text-[10px] text-red-500 mt-1">{{ item.imageUploadError }}</span>
                         <button v-if="item.imageUrl" @click="item.imageUrl=''; item.imagePath='';" type="button" class="ml-2 text-[10px] text-red-500 underline">移除照片</button>
                     </div>
                 </div>
@@ -850,21 +840,23 @@
         </header>
         
         <div v-show="activeCategoryTab === 'checkout'" class="p-4 border-t border-stone-100">
-            <p class="text-[11px] text-stone-400 mb-3">客人在結帳頁面可勾選的額外服務，例如提袋、自備餐具等。</p>
-            
-            <div class="space-y-2">
-                <article v-for="(opt, index) in checkoutSettings" :key="index" class="bg-white p-2.5 rounded-xl shadow-sm border border-stone-200 flex gap-2 items-center">
-                    <input type="text" v-model="opt.name" class="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold outline-none focus:border-primary" placeholder="名稱 (例: 加購提袋)">
-                    <span class="text-xs text-stone-400">+$</span>
-                    <input type="number" inputmode="numeric" v-model="opt.price" class="w-16 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold text-center outline-none focus:border-primary" placeholder="0">
-                    
-                    <button @click="opt.active = !opt.active" class="ml-2 w-8 h-4 rounded-full flex items-center p-0.5 transition-colors" :class="opt.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full shadow-sm"></div></button>
-                    <button @click="removeCheckoutOption(index)" class="text-stone-300 hover:text-red-400 transition-colors ml-1"><span class="material-icons-round text-base">close</span></button>
+            <p class="text-[11px] text-stone-400 mb-3">相同群組名稱的選項會放在一起。單選只能選一項；複選可以同時勾選多項。</p>
+            <div class="space-y-3">
+                <article v-for="(opt, index) in checkoutSettings" :key="opt.id || index" class="bg-white p-3 rounded-xl shadow-sm border border-stone-200 space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="text-[10px] text-stone-400">群組名稱</label><label class="text-[10px] text-stone-400">選擇方式</label>
+                        <input type="text" v-model="opt.groupName" class="min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-xs font-bold" placeholder="例：餐盒選擇">
+                        <select v-model="opt.selectionType" class="min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-xs font-bold"><option value="multiple">可複選</option><option value="single">單選</option></select>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <input type="text" v-model="opt.name" class="flex-1 min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold" placeholder="選項名稱（例：租借餐盒）">
+                        <span class="text-xs text-stone-400">+$</span><input type="number" inputmode="numeric" v-model.number="opt.price" class="w-16 bg-stone-50 border border-stone-200 rounded px-2 py-1.5 text-sm font-bold text-center" placeholder="0">
+                        <button @click="opt.active = !opt.active" class="w-8 h-4 rounded-full flex items-center p-0.5" :class="opt.active ? 'bg-green-500 justify-end' : 'bg-stone-300 justify-start'"><div class="w-3 h-3 bg-white rounded-full"></div></button>
+                        <button @click="removeCheckoutOption(index)" class="text-stone-300"><span class="material-icons-round text-base">close</span></button>
+                    </div>
                 </article>
             </div>
-<button @click="addCheckoutOption" class="w-full py-2 border border-dashed border-stone-300 text-stone-500 rounded-lg text-sm font-bold hover:bg-stone-100 transition-colors flex items-center justify-center gap-1 mt-2">
-                <span class="material-icons-round text-sm">add</span> 新增結帳服務
-            </button>
+            <button @click="addCheckoutOption" class="w-full py-2 border border-dashed border-stone-300 text-stone-500 rounded-lg text-sm font-bold mt-2"><span class="material-icons-round text-sm">add</span> 新增結帳服務選項</button>
         </div>
     </section>
 
@@ -1072,7 +1064,7 @@
     
 
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
@@ -1323,7 +1315,9 @@ const moveCategoryDown = (idx) => {
                             const validData = Array.isArray(rawData) ? rawData.filter(opt => opt) : Object.values(rawData).filter(opt => opt);
                             
                             checkoutSettings.value = validData.map((opt, idx) => {
-                                if (!opt.id) opt.id = 'opt_legacy_' + idx; 
+                                if (!opt.id) opt.id = 'opt_legacy_' + idx;
+                                if (!opt.groupName) opt.groupName = '其他附加服務';
+                                if (!opt.selectionType) opt.selectionType = 'multiple';
                                 return opt;
                             });
                         });
@@ -1360,7 +1354,9 @@ const moveCategoryDown = (idx) => {
             const pendingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'pending').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
             const cancelRequestedOrders = computed(() => filteredOrders.value.filter(o => o.status === 'cancel_requested').sort((a,b)=>(a.cancellationRequestedAt||a.createdAt||0)-(b.cancellationRequestedAt||b.createdAt||0)));
             const processingOrders = computed(() => filteredOrders.value.filter(o => o.status === 'paid' || o.status === 'cancel_requested').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)));
-            const historyOrders = computed(() => filteredOrders.value.filter(o => o.status === 'done' || o.status === 'archived' || o.status === 'cancelled').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));
+            const historyOrders = computed(() => filteredOrders.value.filter(o => o.status === 'done' || o.status === 'archived').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));
+            const cancelledOrders = computed(() => filteredOrders.value.filter(o => o.status === 'cancelled' && Number(o.total) > 0 && (o.paidAt || o.stockDeducted === true || o.paymentMethod)).sort((a,b)=>(Number(a.refundCompletedAt || 0) - Number(b.refundCompletedAt || 0)) || (b.createdAt||0)-(a.createdAt||0)));
+            const historyView = ref('done');
 
             const searchResults = computed(() => {
                 let list = filteredOrders.value;
@@ -1428,30 +1424,37 @@ const uploadMenuImage = async (event, item) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        alert('請選擇 JPG、PNG 或 WEBP 圖片。');
-        return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-        alert('照片請控制在 5MB 以內。');
-        return;
-    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('請選擇 JPG、PNG 或 WEBP 圖片。'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('照片請控制在 5MB 以內。'); return; }
+    if (!auth.currentUser) { alert('登入狀態已失效，請重新登入後再上傳照片。'); return; }
     if (!item.id) item.id = Date.now();
     item.imageUploading = true;
+    item.imageUploadProgress = 0;
+    item.imageUploadError = '';
     try {
         const safeName = String(file.name || 'photo').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
         const path = `menu/${branchId}/${item.id}_${Date.now()}_${safeName}`;
         const fileRef = storageRef(storage, path);
-        await uploadBytes(fileRef, file, { contentType: file.type });
-        item.imageUrl = await getDownloadURL(fileRef);
+        const task = uploadBytesResumable(fileRef, file, { contentType: file.type });
+        await new Promise((resolve, reject) => task.on('state_changed',
+            snapshot => { item.imageUploadProgress = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100); },
+            reject, resolve
+        ));
+        item.imageUrl = await getDownloadURL(task.snapshot.ref);
         item.imagePath = path;
+        item.imageUploadProgress = 100;
         alert('照片上傳完成！記得按下方「同步更新至前台」儲存商品設定。');
     } catch (error) {
         console.error('商品照片上傳失敗', error);
-        alert('照片上傳失敗：' + (error?.message || '請確認 Firebase Storage 已啟用及 Storage Rules 權限'));
-    } finally {
-        item.imageUploading = false;
-    }
+        const code = error?.code || '';
+        const message = code.includes('retry-limit-exceeded')
+            ? '網路連線不穩，Firebase 重試逾時。請確認網路後重新選擇照片上傳。'
+            : code.includes('unauthorized') || code.includes('unauthenticated')
+                ? '上傳權限不足，請確認 Storage Rules 與登入狀態。'
+                : (error?.message || '請確認 Firebase Storage 已啟用及 Storage Rules 權限。');
+        item.imageUploadError = message;
+        alert('照片上傳失敗：' + message);
+    } finally { item.imageUploading = false; }
 };
 
 const saveFrontEndSettings = () => { 
@@ -1666,6 +1669,19 @@ const salesReport = computed(() => {
 
             const activeCheckoutOptions = computed(() => checkoutSettings.value.filter(opt => opt.active));
             const posSelectedCheckoutOptions = ref([]);
+            const togglePosCheckoutOption = (opt, checked) => {
+                const groupName = opt.groupName || '其他附加服務';
+                const type = opt.selectionType === 'single' ? 'single' : 'multiple';
+                const idsInGroup = activeCheckoutOptions.value.filter(item =>
+                    (item.groupName || '其他附加服務') === groupName &&
+                    (item.selectionType === 'single' ? 'single' : 'multiple') === type
+                ).map(item => item.id);
+                if (type === 'single') posSelectedCheckoutOptions.value = checked
+                    ? [...posSelectedCheckoutOptions.value.filter(id => !idsInGroup.includes(id)), opt.id]
+                    : posSelectedCheckoutOptions.value.filter(id => id !== opt.id);
+                else if (checked && !posSelectedCheckoutOptions.value.includes(opt.id)) posSelectedCheckoutOptions.value.push(opt.id);
+                else if (!checked) posSelectedCheckoutOptions.value = posSelectedCheckoutOptions.value.filter(id => id !== opt.id);
+            };
             const isPosModalOpen = ref(false); 
             const isPosCheckoutView = ref(false); 
             const isPosCheckoutOptionsOpen = ref(false); 
@@ -2001,7 +2017,7 @@ const removeMenuItem = (item) => {
                         updates[`orders/${parent.key}/baseTotal`] = parent.baseTotal !== undefined ? Number(parent.baseTotal) : (Number(parent.total) || 0);
                         updates[`orders/${parent.key}/total`] = (Number(parent.total) || 0) + (Number(order.total) || 0);
                         if (order.note) updates[`orders/${parent.key}/note`] = parent.note ? `${parent.note} + ${order.note}` : order.note;
-                        updates[`orders/${parent.key}/addonPayments/${order.key}`] = { paymentMethod: selectedMethod, amount: Number(order.total) || 0, items: order.items || [], paidAt: Date.now() };
+                        updates[`orders/${parent.key}/addonPayments/${order.key}`] = { paymentMethod: selectedMethod, amount: Number(order.total) || 0, items: order.items || [], checkoutOptions: order.checkoutOptions || [], timeString: order.timeString || '', paidAt: Date.now() };
                         updates[`orders/${parent.key}/stockDeducted`] = true;
                         if (parent.status === 'done') updates[`orders/${parent.key}/status`] = 'paid';
                         updates[`orders/${order.key}`] = null;
@@ -2042,7 +2058,9 @@ const removeMenuItem = (item) => {
                         [`orders/${order.key}/status`]: 'cancelled',
                         [`orders/${order.key}/cancelledAt`]: serverTimestamp(),
                         [`orders/${order.key}/cancelledBy`]: 'staff',
-                        [`orders/${order.key}/stockRestored`]: shouldRestoreStock
+                        [`orders/${order.key}/stockRestored`]: shouldRestoreStock,
+                        [`orders/${order.key}/refundStatus`]: Number(order.total) > 0 ? 'pending' : 'none',
+                        [`orders/${order.key}/refundDue`]: Number(order.total) > 0 ? Number(order.total) : 0
                     });
                     if (String(order.number) === String((await get(dbRef(db, 'currentCallingNumber'))).val())) await set(dbRef(db, 'currentCallingNumber'), null);
                 } catch (error) { alert('取消處理失敗：' + error.message); }
@@ -2081,13 +2099,28 @@ const deleteOrder = async (order) => {
                 const stockOk = await adjustOrderStock(order, 1);
                 if (!stockOk) { alert('庫存回補失敗，訂單尚未取消。'); return; }
             }
-            await update(dbRef(db), { [`orders/${order.key}/status`]: 'cancelled', [`orders/${order.key}/cancelledAt`]: serverTimestamp(), [`orders/${order.key}/cancelledBy`]: 'staff', [`orders/${order.key}/stockRestored`]: shouldRestoreStock });
+            await update(dbRef(db), { [`orders/${order.key}/status`]: 'cancelled', [`orders/${order.key}/cancelledAt`]: serverTimestamp(), [`orders/${order.key}/cancelledBy`]: 'staff', [`orders/${order.key}/stockRestored`]: shouldRestoreStock, [`orders/${order.key}/refundStatus`]: Number(order.total) > 0 ? 'pending' : 'none', [`orders/${order.key}/refundDue`]: Number(order.total) > 0 ? Number(order.total) : 0 });
         } catch (error) { alert('取消訂單失敗：' + error.message); }
     } else if (order.status === 'pending') {
-        if (confirm(`確定取消尚未付款的訂單 #${order.number}？`)) await update(dbRef(db), { [`orders/${order.key}/status`]: 'cancelled', [`orders/${order.key}/cancelledAt`]: serverTimestamp(), [`orders/${order.key}/cancelledBy`]: 'staff' });
+        if (confirm(`確定取消尚未付款的訂單 #${order.number}？\n未付款訂單取消後將直接移除，不列入營收。`)) await remove(dbRef(db, `orders/${order.key}`));
     }
 };
             
+const markRefundCompleted = async (order) => {
+    if (!order || order.status !== 'cancelled' || order.refundStatus === 'completed') return;
+    const amount = Number(order.refundDue) || Number(order.total) || 0;
+    if (!confirm(`確認訂單 #${order.number} 已完成退款 $${amount}？\n退款方式：${order.paymentMethod || '原付款方式'}`)) return;
+    try {
+        await update(dbRef(db, `orders/${order.key}`), {
+            refundStatus: 'completed',
+            refundAmount: amount,
+            refundMethod: order.paymentMethod || '原付款方式',
+            refundCompletedAt: Date.now()
+        });
+    } catch (error) { alert('更新退款狀態失敗：' + (error?.message || error)); }
+};
+const getAddonPayments = (order) => Object.entries(order?.addonPayments || {}).map(([key, payment]) => ({ key, ...payment }));
+
 const deleteHistoryOrder = (order) => { 
     const safeTotal = Number(order.total) || 0;
     if(confirm(`⚠️ 確定刪除已出餐的訂單 #${order.number}？\n\n警告：這將會直接從今日總營業額中扣除 $${safeTotal}，且無法復原！`)) {
@@ -2205,9 +2238,8 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
             const addCheckoutOption = () => { 
                 checkoutSettings.value.push({ 
                     id: 'opt_' + Date.now() + Math.random().toString(36).substr(2, 4),
-                    name: '', 
-                    price: 0, 
-                    active: true 
+                    name: '', groupName: '其他附加服務', selectionType: 'multiple',
+                    price: 0, active: true 
                 }); 
             };
  
@@ -2216,7 +2248,7 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
             return { 
                 shopName, isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
                 branchId, branchNames, branchName, switchBranch, editBranchName, 
-                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders,
+                selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, historyView, markRefundCompleted, getAddonPayments,
                 dailyRevenue, cashRevenue, linePayRevenue, completedOrdersCount, salesReport, showReport, updateStatus, exportCombinedReport, cancelRequestedOrders, approveCancellation, rejectCancellation, archiveOrder,
                 shopIsOpen, toggleShopStatus, deleteOrder, deleteHistoryOrder, deleteOrderItem, toggleItemReady,
                 deleteAllOrdersByDate, currentTab, frontTab, isDesktop, menuSettings, 
@@ -2229,7 +2261,7 @@ ${isPaidOrder ? `本次需退款 $${refundAmount.toLocaleString('zh-TW')}，並�
                 posCartCount, posCartTotal, addPosCart, confirmPosAddOptions, handlePosSelect, isPosOptionSelected, increasePosCart, decreasePosCart, removePosCartItem, submitPosOrder, updateOrderNote,
                 recallOrder, marqueeSettings, showPrepStats, preparationStats, expandedPrepItems, togglePrepItem,
                 showSearchModal, searchQuery, searchStatus, searchResults, isMenuCompactMode, selectedMenuCategory, filteredMenuSettings, inactiveMenuSettings, moveMenuUpFiltered, moveMenuDownFiltered, moveCategoryUp, moveCategoryDown, scrollToTop,
-                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
+                activeCategoryTab, isMenuNoticeOpen, checkoutSettings, addCheckoutOption, removeCheckoutOption, activeCheckoutOptions, posSelectedCheckoutOptions, togglePosCheckoutOption, posFinalTotal, isPosCheckoutOptionsOpen, isPosModalOpen, isPosCheckoutView, isConnected,
             };
         }
     }).mount('#app');
