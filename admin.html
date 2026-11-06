@@ -1078,19 +1078,22 @@ const editBranchName = async () => {
     await update(rawDbRef(db), { [`branchConfig/${branchId}/name`]: cleanName });
 };
 const ensureLegacyBranchMigration = async () => {
+    // 舊版 Rules 沒有開放資料庫根目錄讀取，因此不可 get(root)。
+    // 改成逐一讀取有開放權限的舊資料節點，再搬到 branches/A。
+    const keys = ['orders','menu','menuCategories','shopStatus','brandInfo','sharedOptionGroups','checkoutOptions','marqueeData','currentCallingNumber'];
     const markerSnap = await get(rawDbRef(db, 'branches/A/_legacyMigrated'));
     if (markerSnap.val() === true) return;
-    const [rootSnap, branchSnap] = await Promise.all([
-        get(rawDbRef(db)),
-        get(rawDbRef(db, 'branches/A'))
+
+    const [legacySnaps, existingSnaps] = await Promise.all([
+        Promise.all(keys.map(key => get(rawDbRef(db, key)))),
+        Promise.all(keys.map(key => get(rawDbRef(db, `branches/A/${key}`))))
     ]);
-    const legacy = rootSnap.val() || {};
-    const existing = branchSnap.val() || {};
-    const keys = ['orders','menu','menuCategories','shopStatus','brandInfo','sharedOptionGroups','checkoutOptions','marqueeData','currentCallingNumber'];
     const updates = {};
-    keys.forEach(key => {
-        if ((existing[key] === undefined || existing[key] === null) && legacy[key] !== undefined && legacy[key] !== null) {
-            updates[`branches/A/${key}`] = legacy[key];
+    keys.forEach((key, index) => {
+        const legacyValue = legacySnaps[index].val();
+        const existingValue = existingSnaps[index].val();
+        if ((existingValue === undefined || existingValue === null) && legacyValue !== undefined && legacyValue !== null) {
+            updates[`branches/A/${key}`] = legacyValue;
         }
     });
     updates['branches/A/_legacyMigrated'] = true;
@@ -1259,7 +1262,7 @@ const moveCategoryDown = (idx) => {
                     if (user) {
                         isLoggedIn.value = true;
                         try {
-                            await ensureLegacyBranchMigration();
+                            if (branchId === 'A') await ensureLegacyBranchMigration();
                         } catch (migrationError) {
                             console.error('板橋店舊資料初始化失敗', migrationError);
                             alert('分店資料初始化失敗，請確認網路後重新登入。');
