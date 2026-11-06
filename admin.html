@@ -51,7 +51,21 @@
         .drawer-enter-active, .drawer-leave-active { transition: transform 0.25s ease; }
         .drawer-enter-from, .drawer-leave-to { transform: translateX(100%); }
     </style>
-<!-- 已移除阻擋 F12／開發者工具的程式，方便排查問題。 -->
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const isBoss = urlParams.get('boss') === 'bao';
+
+    if (!isBoss) {
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', event => {
+            if (event.keyCode === 123 || 
+               (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74)) || 
+               (event.ctrlKey && event.keyCode === 85)) {
+                event.preventDefault();
+            }
+        });
+    }
+</script>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden text-stone-700 select-none">
 
@@ -1054,13 +1068,13 @@
     
 
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, setMaxUploadRetryTime } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 
     const app = initializeApp(window.MARKET_CONFIG.firebase);
     const db = getDatabase(app);
     const storage = getStorage(app, "gs://jiantou-000rlhad.firebasestorage.app");
-    setMaxUploadRetryTime(storage, 120000);
+    storage.maxUploadRetryTime = 120000;
     const branchId = new URLSearchParams(window.location.search).get('branch') === 'B' ? 'B' : 'A';
     const branchRootPath = `branches/${branchId}`;
     const dbRef = (database, path) => {
