@@ -92,7 +92,6 @@
                     <option value="A">{{ branchNames.A }}</option>
                     <option value="B">{{ branchNames.B }}</option>
                 </select>
-                <button @click="editBranchName" class="w-7 h-7 flex-shrink-0 rounded-full text-stone-400 hover:bg-stone-100" title="修改店名"><span class="material-icons-round text-sm">edit</span></button>
                 <button @click="toggleShopStatus" class="flex items-center gap-1 px-2 py-2 rounded-full text-[11px] sm:text-xs font-bold whitespace-nowrap" :class="shopIsOpen ? 'bg-green-100 text-green-700' : 'bg-stone-200 text-stone-500'">
                     <span class="w-1.5 h-1.5 rounded-full" :class="shopIsOpen ? 'bg-green-500' : 'bg-stone-400'"></span>{{ shopIsOpen ? '營業中' : '休息中' }}
                 </button>
@@ -605,7 +604,8 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-xs font-bold text-stone-500 mb-1">店鋪名稱</label>
-                                <input type="text" v-model="brandSettings.name" placeholder="輸入店鋪名稱..." class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary">
+                                <input type="text" v-model="brandSettings.name" maxlength="20" placeholder="輸入店鋪名稱..." class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary">
+                                <p class="text-[10px] text-stone-400 mt-1">儲存時會同步更新後台分店名稱，不需要再另外修改。</p>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-stone-500 mb-1">品牌標語 (Slogan)</label>
@@ -1186,19 +1186,6 @@ const switchBranch = (nextId) => {
     url.searchParams.set('branch', nextId);
     window.location.href = url.toString();
 };
-const editBranchName = async () => {
-    const current = branchNames.value[branchId] || (branchId === 'A' ? 'A店' : 'B店');
-    const next = prompt(`修改${branchId}店名稱`, current);
-    if (next === null || !next.trim()) return;
-    const cleanName = next.trim().slice(0, 20);
-    try {
-        await update(rawDbRef(db), { [`branchConfig/${branchId}/name`]: cleanName });
-        branchNames.value = { ...branchNames.value, [branchId]: cleanName };
-    } catch (error) {
-        alert('名稱更新失敗，請稍後再試。');
-        console.error(error);
-    }
-};
 const ensureLegacyBranchMigration = async () => {
     // 舊版 Rules 沒有開放資料庫根目錄讀取，因此不可 get(root)。
     // 改成逐一讀取有開放權限的舊資料節點，再搬到 branches/A。
@@ -1590,7 +1577,15 @@ const deleteLibraryImage = async (image) => {
     } catch (error) { alert('刪除圖片失敗：' + (error?.message || error)); }
 };
 
-const saveFrontEndSettings = () => {
+const saveFrontEndSettings = async () => {
+    const cleanShopName = String(brandSettings.value.name || '').trim().slice(0, 20);
+    if (!cleanShopName) {
+        alert('請先填寫店鋪名稱，再同步更新。');
+        frontTab.value = 'brand';
+        return;
+    }
+
+    brandSettings.value.name = cleanShopName;
     checkoutSettings.value = checkoutGroups.value.flatMap(group =>
         (group.options || []).map(opt => ({
             id: opt.id || ('opt_' + Date.now() + Math.random().toString(36).slice(2, 6)),
@@ -1614,14 +1609,27 @@ const saveFrontEndSettings = () => {
         return processedItem;
     });
 
-    update(dbRef(db), {
-        brandInfo: JSON.parse(JSON.stringify(brandSettings.value)),
-        menuCategories: JSON.parse(JSON.stringify(menuCategories.value)),
-        sharedOptionGroups: JSON.parse(JSON.stringify(sharedOptionGroups.value)),
-        menu: JSON.parse(JSON.stringify(menuToSave)),
-        marqueeData: { text: marqueeSettings.value.text, showCount: marqueeSettings.value.showCount, count: waitingOrdersCount.value },
-        checkoutOptions: JSON.parse(JSON.stringify(checkoutSettings.value))
-    }).then(() => { alert('前台設定已同步更新！'); currentTab.value = 'pending'; }); 
+    // 品牌名稱是唯一管理入口：同步更新品牌資料與目前分店名稱。
+    const updates = {
+        [`branches/${branchId}/brandInfo`]: JSON.parse(JSON.stringify(brandSettings.value)),
+        [`branches/${branchId}/menuCategories`]: JSON.parse(JSON.stringify(menuCategories.value)),
+        [`branches/${branchId}/sharedOptionGroups`]: JSON.parse(JSON.stringify(sharedOptionGroups.value)),
+        [`branches/${branchId}/menu`]: JSON.parse(JSON.stringify(menuToSave)),
+        [`branches/${branchId}/marqueeData`]: { text: marqueeSettings.value.text, showCount: marqueeSettings.value.showCount, count: waitingOrdersCount.value },
+        [`branches/${branchId}/checkoutOptions`]: JSON.parse(JSON.stringify(checkoutSettings.value)),
+        [`branchConfig/${branchId}/name`]: cleanShopName
+    };
+
+    try {
+        await update(rawDbRef(db), updates);
+        branchNames.value = { ...branchNames.value, [branchId]: cleanShopName };
+        shopName.value = cleanShopName;
+        alert('前台設定與分店名稱已同步更新！');
+        currentTab.value = 'pending';
+    } catch (error) {
+        console.error('同步前台設定失敗', error);
+        alert('同步失敗：' + (error?.message || '請檢查網路連線與 Firebase 權限'));
+    }
 };
 
 const salesReport = computed(() => {
@@ -2666,7 +2674,7 @@ const toggleItemReady = (order, itemIndex) => {
 
             return { 
                 shopName, isLoggedIn, loginUser, loginPass, loginError, checkLogin, logout,
-                branchId, branchNames, branchName, switchBranch, editBranchName, 
+                branchId, branchNames, branchName, switchBranch, 
                 selectedDate, isToday, formattedDateString, pendingOrders, processingOrders, historyOrders, cancelledOrders, refundOrders, markRefundGroupCompleted, getRefundRecords, getPendingRefundAmount, getPendingRefundGroups, getRefundSourceMethod, refundMethodSelections, formatRecordTime, canCompleteOrder, areAllItemsReady, cancelSelection, openCancelSelector, adjustCancelQty, confirmItemCancellation, getAddonPayments, getBaseOrderAmount, getAddonOrderAmount, getMainOrderItems, toggleAddonItemReady, deleteAddonPaymentItem,
                 dailyRevenue, cashRevenue, linePayRevenue, completedOrdersCount, reportRefundRecords, salesReport, showReport, updateStatus, exportCombinedReport, cancelRequestedOrders, approveCancellation, rejectCancellation, archiveOrder,
                 shopIsOpen, toggleShopStatus, deleteOrder, deleteHistoryOrder, deleteOrderItem, toggleItemReady,
